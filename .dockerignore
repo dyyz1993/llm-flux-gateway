@@ -10,7 +10,7 @@ data
 .github
 .vscode
 .claude
-scripts
+# scripts  <-- 移除这一行，因为 Docker 构建需要用到脚本
 docs
 tests
 *.md
