@@ -42,6 +42,10 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/dist-server ./dist-server
 COPY --from=builder /app/config ./config
 
+# 复制入口脚本
+COPY scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh
+RUN chmod +x ./scripts/docker-entrypoint.sh
+
 # 创建数据目录
 RUN mkdir -p data
 
@@ -49,4 +53,4 @@ RUN mkdir -p data
 EXPOSE 3000
 
 # 启动命令
-CMD ["npm", "start"]
+ENTRYPOINT ["./scripts/docker-entrypoint.sh"]

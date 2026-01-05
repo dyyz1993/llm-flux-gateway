@@ -6,7 +6,22 @@ import { mockStore } from './mockStore';
 // ============================================
 
 const USE_MOCK_SERVER = false;
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+
+/**
+ * 获取 API 基础地址
+ * 优先从 window.env 读取（由 Docker 运行时注入），
+ * 其次使用编译时环境变量，最后默认 localhost
+ */
+const getApiBaseUrl = () => {
+  // @ts-ignore - window.env 是动态注入的
+  if (window.env && window.env.VITE_API_BASE_URL) {
+    // @ts-ignore
+    return window.env.VITE_API_BASE_URL;
+  }
+  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // ============================================
 // Type Definitions
