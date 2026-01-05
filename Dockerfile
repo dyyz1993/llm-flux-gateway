@@ -15,10 +15,14 @@ WORKDIR /app
 FROM base AS builder
 
 COPY package*.json ./
-RUN npm install
+# 禁用 husky 以避免在 Docker 环境中构建失败
+RUN npm install --ignore-scripts
 
 COPY . .
 RUN npm run build
+
+# 清理开发依赖
+RUN npm prune --omit=dev --ignore-scripts
 
 # 运行阶段
 FROM base AS runner
@@ -29,11 +33,10 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# 复制 package.json 用于安装运行时依赖
+# 从构建阶段复制 node_modules (已完成 prune)
+COPY --from=builder /app/node_modules ./node_modules
+# 复制 package.json
 COPY package*.json ./
-# 只安装生产环境依赖，且包含 native modules 的构建
-RUN npm install --omit=dev
-
 # 复制构建产物
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/dist-server ./dist-server
