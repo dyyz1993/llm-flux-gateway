@@ -41,6 +41,8 @@ COPY package*.json ./
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/dist-server ./dist-server
 COPY --from=builder /app/config ./config
+# 保留一份默认配置，用于在挂载空卷时恢复
+COPY --from=builder /app/config ./config.dist
 
 # 复制入口脚本
 COPY scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh

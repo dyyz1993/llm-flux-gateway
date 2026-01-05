@@ -10,5 +10,12 @@ EOF
 
 echo "注入环境变量 VITE_API_BASE_URL: ${VITE_API_BASE_URL}"
 
+# 如果挂载了空的 config 目录，则恢复默认配置文件
+if [ ! -f /app/config/vendors.yaml ]; then
+  echo "检测到 /app/config/vendors.yaml 不存在，正在从默认配置恢复..."
+  mkdir -p /app/config
+  cp /app/config.dist/vendors.yaml /app/config/vendors.yaml
+fi
+
 # 启动应用
 exec npm start
