@@ -14,11 +14,14 @@ const USE_MOCK_SERVER = false;
  */
 const getApiBaseUrl = () => {
   // @ts-ignore - window.env 是动态注入的
-  if (window.env && window.env.VITE_API_BASE_URL) {
+  if (window.env && typeof window.env.VITE_API_BASE_URL === 'string') {
     // @ts-ignore
     return window.env.VITE_API_BASE_URL;
   }
-  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+  // 生产环境打包后，如果没有注入 window.env，默认使用相对路径 ""
+  return import.meta.env.VITE_API_BASE_URL !== undefined 
+    ? import.meta.env.VITE_API_BASE_URL 
+    : (import.meta.env.MODE === 'production' ? '' : 'http://localhost:3000');
 };
 
 const API_BASE_URL = getApiBaseUrl();
