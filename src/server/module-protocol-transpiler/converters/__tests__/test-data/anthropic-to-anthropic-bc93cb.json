@@ -1,0 +1,114 @@
+{
+  "description": "Test data from bc93cb analysis - Anthropic format with snake_case tool schema properties",
+  "source": "bc93cb-analysis.md",
+  "requestId": "8aeff49e-6834-48a7-a932-7d543bbc93cb",
+
+  "originalAnthropicRequest": {
+    "model": "glm-4-air",
+    "messages": [
+      {
+        "role": "user",
+        "content": "What is the current weather in San Francisco?"
+      }
+    ],
+    "tools": [
+      {
+        "name": "web_search",
+        "description": "搜索互联网获取实时信息",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "搜索查询关键词"
+            },
+            "num_results": {
+              "type": "number",
+              "description": "返回结果数量",
+              "default": 5
+            }
+          },
+          "required": ["query"]
+        }
+      }
+    ],
+    "max_tokens": 4096,
+    "stream": true
+  },
+
+  "expectedInternalFormat": {
+    "model": "glm-4-air",
+    "messages": [
+      {
+        "role": "user",
+        "content": "What is the current weather in San Francisco?"
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "web_search",
+          "description": "搜索互联网获取实时信息",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string",
+                "description": "搜索查询关键词"
+              },
+              "num_results": {
+                "type": "number",
+                "description": "返回结果数量",
+                "default": 5
+              }
+            },
+            "required": ["query"]
+          }
+        }
+      }
+    ],
+    "maxTokens": 4096,
+    "stream": true
+  },
+
+  "expectedAnthropicOutput": {
+    "model": "glm-4-air",
+    "messages": [
+      {
+        "role": "user",
+        "content": "What is the current weather in San Francisco?"
+      }
+    ],
+    "tools": [
+      {
+        "name": "web_search",
+        "description": "搜索互联网获取实时信息",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "搜索查询关键词"
+            },
+            "num_results": {
+              "type": "number",
+              "description": "返回结果数量",
+              "default": 5
+            }
+          },
+          "required": ["query"]
+        }
+      }
+    ],
+    "max_tokens": 4096,
+    "stream": true
+  },
+
+  "bugDetails": {
+    "issue": "Field normalizer converts tool schema properties from snake_case to camelCase",
+    "expected": "Tool schema properties should remain in snake_case for Anthropic format",
+    "actual": "num_results was converted to numResults in the upstream request",
+    "impact": "GLM's Anthropic-compatible API may reject requests with camelCase tool properties"
+  }
+}

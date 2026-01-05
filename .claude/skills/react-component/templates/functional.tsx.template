@@ -1,0 +1,67 @@
+import { useEffect, useState } from 'react';
+import { useAppStore } from '@client/stores/appStore';
+import type { FishEntity } from '@shared/types';
+
+interface MyComponentProps {
+  id: string;
+  onAction?: () => void;
+}
+
+export const MyComponent: React.FC<MyComponentProps> = ({ id, onAction }) => {
+  // Use precise selectors to avoid re-renders
+  const fish = useAppStore((state) =>
+    state.myFish.find(f => f.id === id)
+  );
+
+  // Action selector (stable reference)
+  const updateFish = useAppStore((state) => state.updateFish);
+
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!fish) {
+      setError('Fish not found');
+      return;
+    }
+
+    // Setup logic
+    console.log('Fish loaded:', fish.name);
+
+    // Cleanup
+    return () => {
+      console.log('Cleanup');
+    };
+  }, [fish]);
+
+  const handleClick = async () => {
+    if (!fish) return;
+
+    setIsProcessing(true);
+    setError(null);
+
+    try {
+      await updateFish(fish.id, { name: 'Updated' });
+      onAction?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  if (!fish) {
+    return <div className="error">{error || 'Not found'}</div>;
+  }
+
+  return (
+    <div className="my-component">
+      <h2>{fish.name}</h2>
+      <p>Status: {fish.isApproved ? 'Approved' : 'Pending'}</p>
+      <button onClick={handleClick} disabled={isProcessing}>
+        {isProcessing ? 'Processing...' : 'Update'}
+      </button>
+      {error && <div className="error">{error}</div>}
+    </div>
+  );
+};

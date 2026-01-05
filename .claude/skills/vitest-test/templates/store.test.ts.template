@@ -1,0 +1,90 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { useAppStore } from '../appStore';
+
+// Mock all external dependencies
+vi.mock('@client/services/apiClient', () => ({
+  fetchCurrentUser: vi.fn(() => Promise.resolve({ success: true, data: null })),
+  fetchMyFish: vi.fn(() => Promise.resolve({ success: true, data: [] })),
+}));
+
+vi.mock('@client/services/geminiService', () => ({
+  enhanceFishConcept: vi.fn(),
+  generateFishImage: vi.fn(),
+  analyzeFishStructure: vi.fn(),
+}));
+
+describe('appStore', () => {
+  // Mock data
+  const mockFish = {
+    id: 'fish-1',
+    ownerId: 'user-123',
+    name: 'Test Fish',
+    imageUrl: 'data:image/png;base64,test',
+    skeleton: {},
+    style: 'scientific',
+    createdAt: Date.now(),
+    likes: 5,
+    inPond: true,
+  };
+
+  beforeEach(() => {
+    // Reset state before each test
+    useAppStore.setState({
+      view: 'HOME',
+      currentUser: null,
+      myFish: [],
+      pondFish: [],
+      prompt: '',
+      style: 'scientific',
+    });
+    vi.clearAllMocks();
+  });
+
+  describe('Initial State', () => {
+    it('should have correct initial values', () => {
+      const state = useAppStore.getState();
+      expect(state.view).toBe('HOME');
+      expect(state.currentUser).toBe(null);
+      expect(state.myFish).toEqual([]);
+      expect(state.prompt).toBe('');
+    });
+  });
+
+  describe('View Actions', () => {
+    it('should update view', () => {
+      const { setView } = useAppStore.getState();
+      setView('POND');
+      expect(useAppStore.getState().view).toBe('POND');
+    });
+  });
+
+  describe('Data Actions', () => {
+    it('should add fish to collection', () => {
+      const { setMyFish } = useAppStore.getState();
+      setMyFish([mockFish]);
+      expect(useAppStore.getState().myFish).toEqual([mockFish]);
+    });
+
+    it('should update prompt', () => {
+      const { setPrompt } = useAppStore.getState();
+      setPrompt('Golden Koi');
+      expect(useAppStore.getState().prompt).toBe('Golden Koi');
+    });
+  });
+
+  describe('Selector Hooks', () => {
+    it('useView should return view', () => {
+      const { setView } = useAppStore.getState();
+      setView('POND');
+      const view = useAppStore((state) => state.view);
+      expect(view).toBe('POND');
+    });
+
+    it('useMyFish should return myFish', () => {
+      const { setMyFish } = useAppStore.getState();
+      setMyFish([mockFish]);
+      const myFish = useAppStore((state) => state.myFish);
+      expect(myFish).toEqual([mockFish]);
+    });
+  });
+});

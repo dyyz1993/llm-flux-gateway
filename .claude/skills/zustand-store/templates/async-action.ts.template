@@ -1,0 +1,57 @@
+// ========== ASYNC ACTION WITH LOADING STATE ==========
+
+// Add to AppState interface
+interface AppState {
+  // Loading state
+  isLoadingMyData: boolean;
+  myDataError: string | null;
+
+  // Async action
+  fetchMyDataWithLoading: () => Promise<void>;
+}
+
+// Add to initial state
+isLoadingMyData: false,
+myDataError: null,
+
+// Add to implementation
+fetchMyDataWithLoading: async () => {
+  const { myNewData } = get();
+
+  set({ isLoadingMyData: true, myDataError: null });
+
+  try {
+    const result = await ApiClient.fetchMyData();
+
+    if (result.success) {
+      set({ myNewData: result.data ?? [] });
+    } else {
+      set({ myDataError: result.error ?? 'Failed to fetch data' });
+    }
+  } catch (error) {
+    set({
+      myDataError: error instanceof Error ? error.message : 'Unknown error',
+    });
+  } finally {
+    set({ isLoadingMyData: false });
+  }
+},
+
+// ========== SELECTOR HOOKS ==========
+export const useMyDataLoading = () =>
+  useAppStore((state) => ({
+    isLoading: state.isLoadingMyData,
+    error: state.myDataError,
+  }));
+
+// ========== COMPONENT USAGE ==========
+// In your component:
+const { isLoading, error } = useMyDataLoading();
+const fetchMyData = useAppStore((state) => state.fetchMyDataWithLoading);
+
+useEffect(() => {
+  fetchMyData();
+}, []);
+
+if (isLoading) return <div>Loading...</div>;
+if (error) return <div>Error: {error}</div>;

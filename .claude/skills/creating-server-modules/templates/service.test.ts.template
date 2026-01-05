@@ -1,0 +1,137 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { {Name}Service } from '../{name}-service';
+import * as shared from '@server/shared';
+
+// Mock dependencies
+vi.mock('@server/shared', async () => {
+  return {
+    getDb: vi.fn(),
+    schema: {
+      {resource}sTable: '{resource}s',
+    },
+  };
+});
+
+describe('{Name}Service', () => {
+  let service: {Name}Service;
+  let mockDb: any;
+
+  beforeEach(() => {
+    service = new {Name}Service();
+
+    // Create chainable mock database
+    mockDb = {
+      select: vi.fn(function() { return this; }),
+      from: vi.fn(function() { return this; }),
+      where: vi.fn(function() { return this; }),
+      orderBy: vi.fn(function() { return this; }),
+      limit: vi.fn(function() { return this; }),
+      insert: vi.fn(function() { return this; }),
+      values: vi.fn(function() { return this; }),
+      update: vi.fn(function() { return this; }),
+      set: vi.fn(function() { return this; }),
+      delete: vi.fn(function() { return this; }),
+    };
+
+    vi.mocked(shared.getDb).mockResolvedValue(mockDb);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('getUser{Resource}s', () => {
+    it('should return all {resource}s for a user', async () => {
+      const mock{Resource}s = [
+        { id: '1', userId: 'user-123', name: 'Test 1', value: 100 },
+        { id: '2', userId: 'user-123', name: 'Test 2', value: 200 },
+      ];
+
+      mockDb.orderBy.mockResolvedValue(mock{Resource}s);
+
+      const result = await service.getUser{Resource}s('user-123');
+
+      expect(result).toEqual(mock{Resource}s);
+      expect(mockDb.select).toHaveBeenCalled();
+      expect(mockDb.from).toHaveBeenCalledWith(shared.schema.{resource}sTable);
+      expect(mockDb.where).toHaveBeenCalled();
+    });
+  });
+
+  describe('get{Resource}ById', () => {
+    it('should return a {resource} by ID', async () => {
+      const mock{Resource} = { id: '1', userId: 'user-123', name: 'Test', value: 100 };
+
+      mockDb.limit.mockResolvedValue([mock{Resource}]);
+
+      const result = await service.get{Resource}ById('1');
+
+      expect(result).toEqual(mock{Resource});
+    });
+
+    it('should return null if {resource} not found', async () => {
+      mockDb.limit.mockResolvedValue([]);
+
+      const result = await service.get{Resource}ById('nonexistent');
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('create{Resource}', () => {
+    it('should create a new {resource}', async () => {
+      const new{Resource} = { id: '1', userId: 'user-123', name: 'New', value: 100, createdAt: new Date(), updatedAt: new Date() };
+
+      mockDb.values.mockResolvedValue([new{Resource}]);
+
+      const result = await service.create{Resource}('user-123', { name: 'New', value: 100 });
+
+      expect(result).toEqual(new{Resource});
+      expect(mockDb.insert).toHaveBeenCalledWith(shared.schema.{resource}sTable);
+    });
+  });
+
+  describe('update{Resource}', () => {
+    it('should update an existing {resource}', async () => {
+      const updated{Resource} = { id: '1', userId: 'user-123', name: 'Updated', value: 200, createdAt: new Date(), updatedAt: new Date() };
+
+      mockDb.set.mockResolvedValue([updated{Resource}]);
+
+      const result = await service.update{Resource}('1', { name: 'Updated', value: 200 });
+
+      expect(result).toEqual(updated{Resource});
+    });
+
+    it('should return null if {resource} not found', async () => {
+      mockDb.set.mockResolvedValue([]);
+
+      const result = await service.update{Resource}('nonexistent', { name: 'Updated' });
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('delete{Resource}', () => {
+    it('should delete a {resource}', async () => {
+      mockDb.delete = vi.fn(function() { return this; });
+      mockDb.where = vi.fn(function() {
+        return { rowsAffected: 1 };
+      });
+
+      const result = await service.delete{Resource}('1');
+
+      expect(result).toBe(true);
+    });
+
+    it('should return false if {resource} not found', async () => {
+      mockDb.delete = vi.fn(function() { return this; });
+      mockDb.where = vi.fn(function() {
+        return { rowsAffected: 0 };
+      });
+
+      const result = await service.delete{Resource}('nonexistent');
+
+      expect(result).toBe(false);
+    });
+  });
+});

@@ -1,0 +1,83 @@
+{
+  "metadata": {
+    "requestId": "d918cfa7-1a74-443b-9137-19c4e86761d6",
+    "timestamp": "2026-01-04T15:17:19.679Z",
+    "vendor": "anthropic",
+    "url": "https://open.bigmodel.cn/api/anthropic/v1/messages",
+    "requestType": "non-streaming",
+    "latency": 506,
+    "statusCode": 200
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://open.bigmodel.cn/api/anthropic/v1/messages",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer [REDACTED]"
+    },
+    "body": {
+      "model": "glm-4.6",
+      "messages": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "有 task 清单?"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "type": "text",
+              "text": "{"
+            }
+          ]
+        }
+      ],
+      "max_tokens": 4096,
+      "system": [
+        {
+          "type": "text",
+          "text": "You are Claude Code, Anthropic's official CLI for Claude."
+        },
+        {
+          "type": "text",
+          "text": "Analyze if this message indicates a new conversation topic. If it does, extract a 2-3 word title that captures the new topic. Format your response as a JSON object with two fields: 'isNewTopic' (boolean) and 'title' (string, or null if isNewTopic is false). Only include these fields, no other text. ONLY generate the JSON object, no other text (eg. no markdown)."
+        }
+      ],
+      "temperature": 1
+    }
+  },
+  "response": {
+    "statusCode": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "id": "msg_202601042317198e528c6c93b84fe6",
+      "type": "message",
+      "role": "assistant",
+      "model": "glm-4.6",
+      "content": [
+        {
+          "type": "text",
+          "text": "  \"isNewTopic\": true,\n  \"title\": \"Task checklist\"\n}"
+        }
+      ],
+      "stop_reason": "end_turn",
+      "stop_sequence": null,
+      "usage": {
+        "input_tokens": 112,
+        "output_tokens": 17,
+        "cache_read_input_tokens": 0,
+        "server_tool_use": {
+          "web_search_requests": 0
+        },
+        "service_tier": "standard"
+      }
+    }
+  }
+}

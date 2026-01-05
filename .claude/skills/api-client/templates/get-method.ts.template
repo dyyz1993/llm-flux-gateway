@@ -1,0 +1,109 @@
+// Concurrent request deduplication cache
+const pending{Resource}Requests = new Map<string, Promise<ApiResponse<{Resource}[]>>>();
+
+/**
+ * Fetch {resource} from the server
+ * @returns ApiResponse with {resource} data
+ */
+export const fetch{Resource}s = async (): Promise<ApiResponse<{Resource}[]>> => {
+  const cacheKey = 'all';
+
+  // Return existing request if in flight
+  if (pending{Resource}Requests.has(cacheKey)) {
+    return pending{Resource}Requests.get(cacheKey)!;
+  }
+
+  // Create new request
+  const requestPromise = (async () => {
+    try {
+      // Mock mode
+      if (USE_MOCK_SERVER) {
+        await delay(200);
+        const data = MockStore.get{Resource}s();
+        return { success: true, data };
+      }
+
+      // Real API call with advanced headers
+      const result = await apiRequest<{Resource}[]>('/{resource}s', {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          // Add auth token if available
+          ...(localStorage.getItem('authToken') && {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          }),
+          // Add request ID for tracking
+          'X-Request-ID': crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`
+        }
+      });
+
+      if (result.ok) {
+        const data = await result.json();
+        return { success: true, data };
+      }
+      return handleError(result);
+    } catch (e) {
+      return handleError(e);
+    } finally {
+      // Remove from cache after completion
+      pending{Resource}Requests.delete(cacheKey);
+    }
+  })();
+
+  pending{Resource}Requests.set(cacheKey, requestPromise);
+  return requestPromise;
+};
+
+/**
+ * Fetch a single {resource} by ID
+ * @param id - {Resource} ID
+ * @returns ApiResponse with {resource} data
+ */
+export const fetch{Resource}ById = async (id: string): Promise<ApiResponse<{Resource}>> => {
+  const cacheKey = `id-${id}`;
+
+  // Return existing request if in flight
+  if (pending{Resource}Requests.has(cacheKey)) {
+    return pending{Resource}Requests.get(cacheKey)!;
+  }
+
+  // Create new request
+  const requestPromise = (async () => {
+    try {
+      if (USE_MOCK_SERVER) {
+        await delay(200);
+        const data = MockStore.get{Resource}ById(id);
+        if (!data) return { success: false, error: '{Resource} not found' };
+        return { success: true, data };
+      }
+
+      // Real API call with advanced headers
+      const result = await apiRequest<{Resource}>(`/{resource}s/${id}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          // Add auth token if available
+          ...(localStorage.getItem('authToken') && {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          }),
+          // Add request ID for tracking
+          'X-Request-ID': crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`
+        }
+      });
+
+      if (result.ok) {
+        const data = await result.json();
+        return { success: true, data };
+      }
+      return handleError(result);
+    } catch (e) {
+      return handleError(e);
+    } finally {
+      // Remove from cache after completion
+      pending{Resource}Requests.delete(cacheKey);
+    }
+  })();
+
+  pending{Resource}Requests.set(cacheKey, requestPromise);
+  return requestPromise;
+};

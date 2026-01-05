@@ -1,0 +1,97 @@
+================================================================================
+GATEWAY CONTROLLER FORMAT CLEANUP - QUICK REFERENCE
+================================================================================
+
+FILE: src/server/module-gateway/controllers/gateway-controller.ts
+
+================================================================================
+CHANGE 1: Streaming Token Usage (Line 396-403)
+================================================================================
+
+BEFORE:
+  promptTokens = chunkData.usage.prompt_tokens || 0;
+  completionTokens = chunkData.usage.completion_tokens || 0;
+  cachedTokens = chunkData.usage.prompt_tokens_details?.cached_tokens || 0;
+
+AFTER:
+  promptTokens = chunkData.usage.promptTokens || 0;
+  completionTokens = chunkData.usage.completionTokens || 0;
+  cachedTokens = chunkData.usage.cacheReadTokens ||
+                 chunkData.usage.promptTokensDetails?.cachedTokens ||
+                 0;
+
+================================================================================
+CHANGE 2: Streaming Metadata (Line 406-410)
+================================================================================
+
+BEFORE:
+  if (chunkData.choices?.[0]?.finish_reason) {
+    responseParams.finish_reason = chunkData.choices[0].finish_reason;
+  }
+  if (chunkData.system_fingerprint) 
+    responseParams.system_fingerprint = chunkData.system_fingerprint;
+
+AFTER:
+  if (chunkData.choices?.[0]?.finishReason) {
+    responseParams.finish_reason = chunkData.choices[0].finishReason;
+  }
+  if (chunkData.systemFingerprint) 
+    responseParams.system_fingerprint = chunkData.systemFingerprint;
+
+================================================================================
+CHANGE 3: Non-Streaming Metadata (Line 691-699)
+================================================================================
+
+BEFORE:
+  const responseParams: any = {};
+  if ((upstreamResponse as any).choices?.[0]?.finish_reason) {
+    responseParams.finish_reason = (upstreamResponse as any).choices[0].finish_reason;
+  }
+  if ((upstreamResponse as any).model) 
+    responseParams.model = (upstreamResponse as any).model;
+
+AFTER:
+  const responseParams: any = {};
+  const internalResponse = internalResponseResult.data as any; // InternalResponse
+  if (internalResponse?.choices?.[0]?.finishReason) {
+    responseParams.finish_reason = internalResponse.choices[0].finishReason;
+  }
+  if (internalResponse?.model) 
+    responseParams.model = internalResponse.model;
+
+================================================================================
+CHANGE 4: Non-Streaming Token Logging (Line 714-722)
+================================================================================
+
+BEFORE:
+  const usage = (upstreamResponse as any).usage || {};
+  await requestLogService.updateLog(logId, {
+    promptTokens: usage.prompt_tokens || usage.input_tokens || 0,
+    completionTokens: usage.completion_tokens || usage.output_tokens || 0,
+    cachedTokens: usage.prompt_tokens_details?.cached_tokens ||
+                  usage.cache_read_input_tokens ||
+                  usage.cachedTokens || 0,
+    ...
+  });
+
+AFTER:
+  await requestLogService.updateLog(logId, {
+    promptTokens: internalResponse?.usage?.promptTokens || 0,
+    completionTokens: internalResponse?.usage?.completionTokens || 0,
+    cachedTokens: internalResponse?.usage?.cacheReadTokens ||
+                  internalResponse?.usage?.promptTokensDetails?.cachedTokens ||
+                  0,
+    ...
+  });
+
+================================================================================
+KEY IMPROVEMENTS
+================================================================================
+
+✅ Removed all "upstreamResponse as any" type assertions
+✅ Removed format compatibility code (|| fallbacks)
+✅ Now uses Internal Format (camelCase) consistently
+✅ Improved type safety with internalResponse variable
+✅ Clear separation of concerns (Gateway vs Transpiler)
+
+================================================================================

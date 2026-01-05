@@ -1,0 +1,97 @@
+import { getDb } from '@server/shared/database';
+import { schema } from '@server/shared/schema';
+import { eq } from 'drizzle-orm';
+
+export class {Name}Service {
+  /**
+   * Get all {resource} for a user
+   */
+  async getUser{Resource}s(userId: string): Promise<{resource}[]> {
+    const db = getDb();
+    const results = await db
+      .select()
+      .from(schema.{resource}sTable)
+      .where(eq(schema.{resource}sTable.userId, userId))
+      .orderBy(schema.{resource}sTable.createdAt);
+    return results;
+  }
+
+  /**
+   * Get a single {resource} by ID
+   */
+  async get{Resource}ById(id: string): Promise<{resource} | null> {
+    const db = getDb();
+    const [result] = await db
+      .select()
+      .from(schema.{resource}sTable)
+      .where(eq(schema.{resource}sTable.id, id))
+      .limit(1);
+    return result || null;
+  }
+
+  /**
+   * Create a new {resource}
+   */
+  async create{Resource}(userId: string, data: Create{Resource}Input): Promise<{resource}> {
+    const db = getDb();
+    const [result] = await db
+      .insert(schema.{resource}sTable)
+      .values({
+        userId,
+        ...data,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+    return result;
+  }
+
+  /**
+   * Update an existing {resource}
+   */
+  async update{Resource}(id: string, data: Partial<Update{Resource}Input>): Promise<{resource} | null> {
+    const db = getDb();
+    const [result] = await db
+      .update(schema.{resource}sTable)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.{resource}sTable.id, id))
+      .returning();
+    return result || null;
+  }
+
+  /**
+   * Delete a {resource}
+   */
+  async delete{Resource}(id: string): Promise<boolean> {
+    const db = getDb();
+    const result = await db
+      .delete(schema.{resource}sTable)
+      .where(eq(schema.{resource}sTable.id, id));
+    return result.rowsAffected > 0;
+  }
+}
+
+// Types
+export interface Create{Resource}Input {
+  // TODO: Add your fields
+  name: string;
+  value: number;
+}
+
+export interface Update{Resource}Input {
+  // TODO: Add your fields
+  name?: string;
+  value?: number;
+}
+
+export interface {Resource} {
+  id: string;
+  userId: string;
+  name: string;
+  value: number;
+  createdAt: Date;
+  updatedAt: Date;
+}

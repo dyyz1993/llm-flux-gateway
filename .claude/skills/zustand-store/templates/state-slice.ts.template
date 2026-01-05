@@ -1,0 +1,87 @@
+// Add to AppState interface in src/client/stores/appStore.ts
+
+interface AppState {
+  // ========== NEW STATE SLICE ==========
+
+  // State
+  myNewData: MyDataType[];
+
+  // Sync Actions
+  setMyNewData: (data: MyDataType[]) => void;
+  addMyData: (item: MyDataType) => void;
+  removeMyData: (id: string) => void;
+  updateMyData: (id: string, updates: Partial<MyDataType>) => void;
+
+  // Async Actions
+  fetchMyData: () => Promise<void>;
+  createMyData: (data: CreateMyDataInput) => Promise<void>;
+}
+
+// ========== INITIAL STATE ==========
+myNewData: [],
+
+// ========== IMPLEMENTATION ==========
+// Sync actions
+setMyNewData: (data) => set({ myNewData: data }),
+
+addMyData: (item) => set((state) => ({
+  myNewData: [...state.myNewData, item],
+})),
+
+removeMyData: (id) => set((state) => ({
+  myNewData: state.myNewData.filter(item => item.id !== id),
+})),
+
+updateMyData: (id, updates) => set((state) => ({
+  myNewData: state.myNewData.map(item =>
+    item.id === id ? { ...item, ...updates } : item
+  ),
+})),
+
+// Async actions
+fetchMyData: async () => {
+  const result = await ApiClient.fetchMyData();
+  if (result.success) {
+    set({ myNewData: result.data ?? [] });
+  }
+},
+
+createMyData: async (data) => {
+  const result = await ApiClient.createMyData(data);
+  if (result.success) {
+    set((state) => ({
+      myNewData: [...state.myNewData, result.data!],
+    }));
+  }
+},
+
+// ========== SELECTOR HOOKS ==========
+// Add after the store definition
+
+export const useMyNewData = () =>
+  useAppStore((state) => state.myNewData);
+
+export const useMyDataActions = () =>
+  useAppStore((state) => ({
+    setMyNewData: state.setMyNewData,
+    addMyData: state.addMyData,
+    removeMyData: state.removeMyData,
+    updateMyData: state.updateMyData,
+    fetchMyData: state.fetchMyData,
+    createMyData: state.createMyData,
+  }));
+
+// ========== TYPES ==========
+// Add to src/shared/types.ts or define locally
+
+export interface MyDataType {
+  id: string;
+  name: string;
+  value: number;
+  createdAt: number;
+}
+
+export interface CreateMyDataInput {
+  name: string;
+  value: number;
+}

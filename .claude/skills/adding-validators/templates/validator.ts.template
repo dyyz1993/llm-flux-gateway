@@ -1,0 +1,111 @@
+import type { ValidationResult } from '../config/project.config';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+
+/**
+ * Validates custom patterns in the codebase
+ *
+ * Scans specified directories for files matching certain patterns
+ * and reports any violations.
+ *
+ * @param options - Validator options
+ * @returns Validation result with issues found
+ */
+export const validateMyCustom = (
+  options: MyCustomValidatorOptions = {}
+): ValidationResult => {
+  const {
+    pattern = 'my-pattern',
+    fileExtensions = ['.ts', '.tsx'],
+    excludeDirs = ['node_modules', 'dist', '__tests__', '.git'],
+  } = options;
+
+  const issues: string[] = [];
+  let fileCount = 0;
+  let issueCount = 0;
+
+  // Configuration
+  const rootDir = process.cwd();
+  const scanDirs = ['src/', 'scripts/'];
+
+  // Scan each directory
+  for (const scanDir of scanDirs) {
+    const dirPath = path.join(rootDir, scanDir);
+
+    if (!fs.existsSync(dirPath)) continue;
+
+    const files = getAllFiles(dirPath, excludeDirs, fileExtensions);
+    fileCount += files.length;
+
+    // Check each file
+    for (const file of files) {
+      const relativePath = path.relative(rootDir, file);
+      const content = fs.readFileSync(file, 'utf-8');
+
+      // Find matches
+      const lines = content.split('\n');
+      lines.forEach((line, index) => {
+        if (line.includes(pattern)) {
+          const message = `${relativePath}:${index + 1}: Found "${pattern}"`;
+          issues.push(message);
+          issueCount++;
+        }
+      });
+    }
+  }
+
+  return {
+    passed: issues.length === 0,
+    issues,
+    summary: {
+      fileCount,
+      issueCount,
+      message: issues.length === 0
+        ? `✓ No issues found in ${fileCount} files`
+        : `✗ Found ${issueCount} issues in ${fileCount} files`,
+    },
+  };
+};
+
+/**
+ * Recursively get all files in a directory
+ */
+function getAllFiles(
+  dirPath: string,
+  excludeDirs: string[],
+  extensions: string[]
+): string[] {
+  const files: string[] = [];
+  const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const fullPath = path.join(dirPath, entry.name);
+
+    if (entry.isDirectory()) {
+      // Skip excluded directories
+      if (excludeDirs.includes(entry.name)) continue;
+      // Recursively scan subdirectories
+      files.push(...getAllFiles(fullPath, excludeDirs, extensions));
+    } else if (entry.isFile()) {
+      // Check file extension
+      const ext = path.extname(entry.name);
+      if (extensions.includes(ext)) {
+        files.push(fullPath);
+      }
+    }
+  }
+
+  return files;
+}
+
+/**
+ * Validator options
+ */
+export interface MyCustomValidatorOptions {
+  /** Pattern to search for */
+  pattern?: string;
+  /** File extensions to scan */
+  fileExtensions?: string[];
+  /** Directories to exclude */
+  excludeDirs?: string[];
+}

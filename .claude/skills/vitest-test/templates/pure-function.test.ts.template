@@ -1,0 +1,57 @@
+import { describe, it, expect } from 'vitest';
+import {
+  myFunction,
+  myConstant,
+  type InputType,
+  type OutputType,
+} from '../myPureFunction';
+
+describe('myPureFunction', () => {
+  const baseInput: InputType = {
+    value: 50,
+    multiplier: 2,
+  };
+
+  describe('myFunction', () => {
+    it('should return correct result', () => {
+      const result = myFunction(baseInput);
+      expect(result).toEqual({ result: 100 });
+    });
+
+    it('should handle zero values', () => {
+      const result = myFunction({ value: 0, multiplier: 5 });
+      expect(result.result).toBe(0);
+    });
+
+    it('should handle negative values', () => {
+      const result = myFunction({ value: -10, multiplier: 2 });
+      expect(result.result).toBe(-20);
+    });
+
+    it('should handle edge cases', () => {
+      const result = myFunction({ value: Number.MAX_SAFE_INTEGER, multiplier: 1 });
+      expect(result.result).toBe(Number.MAX_SAFE_INTEGER);
+    });
+  });
+
+  describe('myConstant', () => {
+    it('should have expected value', () => {
+      expect(myConstant).toBeDefined();
+      expect(typeof myConstant).toBe('number');
+    });
+  });
+
+  describe('Type Guards', () => {
+    it('should validate input type', () => {
+      const input: InputType = { value: 10, multiplier: 2 };
+      expect(input.value).toBe(10);
+      expect(input.multiplier).toBe(2);
+    });
+
+    it('should validate output type', () => {
+      const result: OutputType = myFunction(baseInput);
+      expect(result.result).toBeDefined();
+      expect(typeof result.result).toBe('number');
+    });
+  });
+});

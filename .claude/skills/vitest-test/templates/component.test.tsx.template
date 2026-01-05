@@ -1,0 +1,213 @@
+/**
+ * React Component Test Template
+ *
+ * Testing Library + Vitest + jsdom
+ *
+ * Usage:
+ * - Copy to src/client/components/__tests__/ComponentName.test.tsx
+ * - Replace placeholders (ComponentName, props, etc.)
+ */
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import type { ComponentNameProps } from '../ComponentName';
+
+// Mock external dependencies
+vi.mock('@client/stores/appStore', () => ({
+  useAppStore: vi.fn(),
+}));
+
+describe('ComponentName', () => {
+  let defaultProps: ComponentNameProps;
+  let mockStore: any;
+
+  beforeEach(() => {
+    // Setup: Initialize default props and mocks
+    defaultProps = {
+      title: 'Test Title',
+      onAction: vi.fn(),
+    };
+
+    // Mock store if needed
+    mockStore = {
+      items: [],
+      setItems: vi.fn(),
+    };
+
+    vi.mocked(useAppStore).mockReturnValue(mockStore);
+  });
+
+  afterEach(() => {
+    // Teardown: Cleanup
+    vi.clearAllMocks();
+  });
+
+  describe('Rendering', () => {
+    it('should render component with props', () => {
+      render(<ComponentName {...defaultProps} />);
+
+      // Verify specific elements with concrete values
+      expect(screen.getByText('Test Title')).toBeInTheDocument();
+      expect(screen.getByRole('button')).toHaveAttribute('type', 'submit');
+    });
+
+    it('should render list of items correctly', () => {
+      const items = [
+        { id: '1', name: 'First', value: 100 },
+        { id: '2', name: 'Second', value: 200 },
+        { id: '3', name: 'Third', value: 300 },
+      ];
+
+      render(<ComponentName {...defaultProps} items={items} />);
+
+      // Verify all items are rendered
+      expect(screen.getByText('First')).toBeInTheDocument();
+      expect(screen.getByText('Second')).toBeInTheDocument();
+      expect(screen.getByText('Third')).toBeInTheDocument();
+
+      // Verify count
+      const listItems = screen.getAllByRole('listitem');
+      expect(listItems).toHaveLength(3);
+    });
+
+    it('should show loading state when isLoading is true', () => {
+      render(<ComponentName {...defaultProps} isLoading={true} />);
+
+      expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
+      expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('User Interactions', () => {
+    it('should call onAction when button is clicked', async () => {
+      const user = userEvent.setup();
+      render(<ComponentName {...defaultProps} />);
+
+      await user.click(screen.getByRole('button'));
+
+      // Verify callback was called with specific args
+      expect(defaultProps.onAction).toHaveBeenCalledTimes(1);
+      expect(defaultProps.onAction).toHaveBeenCalledWith('click', expect.any(Object));
+    });
+
+    it('should update input value on change', async () => {
+      const user = userEvent.setup();
+      render(<ComponentName {...defaultProps} />);
+
+      const input = screen.getByRole('textbox');
+      await user.type(input, 'test input');
+
+      expect(input).toHaveValue('test input');
+    });
+
+    it('should submit form with correct data', async () => {
+      const user = userEvent.setup();
+      render(<ComponentName {...defaultProps} />);
+
+      // Fill form
+      await user.type(screen.getByLabelText('Name'), 'Test Item');
+      await user.type(screen.getByLabelText('Count'), '5');
+
+      // Submit
+      await user.click(screen.getByRole('button', { name: 'Submit' }));
+
+      // Verify submission
+      expect(defaultProps.onAction).toHaveBeenCalledWith({
+        name: 'Test Item',
+        count: 5,
+      });
+    });
+  });
+
+  describe('State Changes', () => {
+    it('should update display when data changes', async () => {
+      const { rerender } = render(<ComponentName {...defaultProps} count={0} />);
+
+      expect(screen.getByText('Count: 0')).toBeInTheDocument();
+
+      // Update props
+      rerender(<ComponentName {...defaultProps} count={5} />);
+
+      expect(screen.getByText('Count: 5')).toBeInTheDocument();
+    });
+
+    it('should show error message when validation fails', async () => {
+      const user = userEvent.setup();
+      render(<ComponentName {...defaultProps} />);
+
+      // Trigger validation error
+      await user.click(screen.getByRole('button'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Name is required')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it('should handle empty items list', () => {
+      render(<ComponentName {...defaultProps} items={[]} />);
+
+      expect(screen.getByText('No items found')).toBeInTheDocument();
+    });
+
+    it('should handle null or undefined props gracefully', () => {
+      render(<ComponentName {...defaultProps} data={null} />);
+
+      expect(screen.getByText('No data available')).toBeInTheDocument();
+    });
+
+    it('should disable button when action is pending', () => {
+      render(<ComponentName {...defaultProps} isPending={true} />);
+
+      const button = screen.getByRole('button');
+      expect(button).toBeDisabled();
+      expect(button).toHaveTextContent('Processing...');
+    });
+  });
+
+  describe('Integration with Store', () => {
+    it('should call store action on user interaction', async () => {
+      const user = userEvent.setup();
+      render(<ComponentName {...defaultProps} />);
+
+      await user.click(screen.getByRole('button', { name: 'Add Item' }));
+
+      expect(mockStore.addItem).toHaveBeenCalledWith({
+        id: expect.any(String),
+        name: 'New Item',
+      });
+    });
+
+    it('should update when store state changes', async () => {
+      const { rerender } = render(<ComponentName {...defaultProps} />);
+
+      // Simulate store update
+      mockStore.items = [{ id: '1', name: 'Updated' }];
+      vi.mocked(useAppStore).mockReturnValue(mockStore);
+
+      rerender(<ComponentName {...defaultProps} />);
+
+      expect(screen.getByText('Updated')).toBeInTheDocument();
+    });
+  });
+});
+
+/**
+ * Example: Testing with real store integration
+ */
+describe('ComponentName (with store integration)', () => {
+  it('example: should work with Zustand store', () => {
+    // This shows how to test with real store (if needed)
+    const { result } = renderHook(() => useAppStore(), {
+      wrapper: createWrapper(),
+    });
+
+    act(() => {
+      result.current.setItems([{ id: '1', name: 'Test' }]);
+    });
+
+    expect(result.current.items).toEqual([{ id: '1', name: 'Test' }]);
+  });
+});

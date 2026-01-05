@@ -1,0 +1,25 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running type check (src/ only)..."
+# 只检查 src/ 目录的类型错误（Phase 1 临时措施）
+ERROR_COUNT=$(npx tsc --noEmit 2>&1 | grep "src/.*error TS" | wc -l | xargs)
+if [ "$ERROR_COUNT" -ne 0 ]; then
+  echo "❌ Type check failed: $ERROR_COUNT errors in src/ directory."
+  echo ""
+  echo "Run 'npx tsc --noEmit | grep \"src/.*error TS\"' to see errors."
+  exit 1
+fi
+
+echo "✅ Type check passed (src/ directory: 0 errors)"
+
+echo ""
+echo "🧪 Running tests..."
+npm test -- --run
+TEST_EXIT=$?
+if [ $TEST_EXIT -ne 0 ]; then
+  echo "❌ Tests failed. Please fix failing tests before committing."
+  exit 1
+fi
+
+echo "✅ All tests passed"

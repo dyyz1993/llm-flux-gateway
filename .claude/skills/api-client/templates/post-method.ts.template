@@ -1,0 +1,68 @@
+// Concurrent request deduplication cache
+const pending{Resource}Requests = new Map<string, Promise<ApiResponse<{Resource}>>>();
+
+/**
+ * Create a new {resource}
+ * @param data - {Resource} creation data
+ * @returns ApiResponse with created {resource}
+ */
+export const create{Resource} = async (
+  data: Create{Resource}Input
+): Promise<ApiResponse<{Resource}>> => {
+  // Generate cache key from data (excluding timestamp fields)
+  const cacheKey = `create-${JSON.stringify(data)}`;
+
+  // Return existing request if in flight
+  if (pending{Resource}Requests.has(cacheKey)) {
+    return pending{Resource}Requests.get(cacheKey)!;
+  }
+
+  // Create new request
+  const requestPromise = (async () => {
+    try {
+      // Mock mode
+      if (USE_MOCK_SERVER) {
+        await delay(200);
+        const new{Resource} = MockStore.create{Resource}(data);
+        return { success: true, data: new{Resource} };
+      }
+
+      // Real API call with advanced headers
+      const result = await apiRequest<{Resource}>('/{resource}s', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          // Add auth token if available
+          ...(localStorage.getItem('authToken') && {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          }),
+          // Add request ID for tracking
+          'X-Request-ID': crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (result.ok) {
+        const created = await result.json();
+        return { success: true, data: created };
+      }
+      return handleError(result);
+    } catch (e) {
+      return handleError(e);
+    } finally {
+      // Remove from cache after completion
+      pending{Resource}Requests.delete(cacheKey);
+    }
+  })();
+
+  pending{Resource}Requests.set(cacheKey, requestPromise);
+  return requestPromise;
+};
+
+// Types
+export interface Create{Resource}Input {
+  // TODO: Add your fields
+  name: string;
+  value: number;
+}

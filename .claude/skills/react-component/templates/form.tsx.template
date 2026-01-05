@@ -1,0 +1,125 @@
+import { useState, FormEvent } from 'react';
+import { useAppStore } from '@client/stores/appStore';
+
+interface FormComponentProps {
+  onSubmit?: (data: SubmitData) => void;
+  initialData?: Partial<SubmitData>;
+}
+
+interface SubmitData {
+  name: string;
+  email: string;
+  age: number;
+}
+
+export const FormComponent: React.FC<FormComponentProps> = ({
+  onSubmit,
+  initialData,
+}) => {
+  // Use action selector (stable reference)
+  const createUser = useAppStore((state) => state.createUser);
+
+  // Form state
+  const [formData, setFormData] = useState<SubmitData>({
+    name: initialData?.name || '',
+    email: initialData?.email || '',
+    age: initialData?.age || 0,
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Partial<Record<keyof SubmitData, string>>>({});
+
+  const handleChange = (field: keyof SubmitData, value: string | number) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error for this field
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const validate = (): boolean => {
+    const newErrors: Partial<Record<keyof SubmitData, string>> = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
+    }
+    if (!formData.email.trim() || !formData.email.includes('@')) {
+      newErrors.email = 'Valid email is required';
+    }
+    if (formData.age < 0 || formData.age > 150) {
+      newErrors.age = 'Age must be between 0 and 150';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+
+    if (!validate()) return;
+
+    setIsSubmitting(true);
+
+    try {
+      // Call store action
+      const result = await createUser(formData);
+
+      if (result.success) {
+        onSubmit?.(formData);
+        // Reset form
+        setFormData({ name: '', email: '', age: 0 });
+      } else {
+        setErrors({ name: result.error || 'Failed to create user' });
+      }
+    } catch (err) {
+      setErrors({ name: err instanceof Error ? err.message : 'Unknown error' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="form-component">
+      <div className="field">
+        <label htmlFor="name">Name:</label>
+        <input
+          id="name"
+          type="text"
+          value={formData.name}
+          onChange={(e) => handleChange('name', e.target.value)}
+          disabled={isSubmitting}
+        />
+        {errors.name && <span className="error">{errors.name}</span>}
+      </div>
+
+      <div className="field">
+        <label htmlFor="email">Email:</label>
+        <input
+          id="email"
+          type="email"
+          value={formData.email}
+          onChange={(e) => handleChange('email', e.target.value)}
+          disabled={isSubmitting}
+        />
+        {errors.email && <span className="error">{errors.email}</span>}
+      </div>
+
+      <div className="field">
+        <label htmlFor="age">Age:</label>
+        <input
+          id="age"
+          type="number"
+          value={formData.age}
+          onChange={(e) => handleChange('age', parseInt(e.target.value) || 0)}
+          disabled={isSubmitting}
+        />
+        {errors.age && <span className="error">{errors.age}</span>}
+      </div>
+
+      <button type="submit" disabled={isSubmitting}>
+        {isSubmitting ? 'Submitting...' : 'Submit'}
+      </button>
+    </form>
+  );
+};

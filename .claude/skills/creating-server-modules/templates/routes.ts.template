@@ -1,0 +1,56 @@
+import { Hono } from 'hono';
+import { zValidator } from '@hono/zod-validator';
+import { z } from 'zod';
+import { {Name}Service } from '../services/{name}-service';
+import { apiResponse, apiError } from '@server/shared';
+
+const service = new {Name}Service();
+
+// Define Schemas
+const {name}Schema = z.object({
+  // TODO: Add schema fields
+});
+
+/**
+ * ⚠️ 核心原则：必须使用链式调用（Chained Methods）
+ *
+ * Hono RPC 的类型推导完全依赖于 TypeScript 对链式调用返回值的追踪。
+ * 如果断开链式调用，客户端将无法获得任何类型提示。
+ *
+ * ❌ 错误写法 - 类型推导中断：
+ * const router = new Hono();
+ * router.get('/', handler);
+ * router.post('/', handler);
+ *
+ * ✅ 正确写法 - 保留完整类型：
+ * const router = new Hono()
+ *   .get('/', handler)
+ *   .post('/', handler);
+ */
+const router = new Hono()
+  // GET /{name}s - Get all {resource}s
+  .get('/', async (c) => {
+    try {
+      const userId = c.get('userId') || 'guest';
+      const results = await service.getUser{Resource}s(userId);
+      return c.json(apiResponse(results));
+    } catch (error) {
+      return c.json(apiError('Failed to fetch {resource}s'), 500);
+    }
+  })
+
+  // POST /{name}s - Create a new {resource}
+  .post('/',
+    zValidator('json', {name}Schema),
+    async (c) => {
+      try {
+        const data = c.req.valid('json');
+        const result = await service.create{Resource}(data);
+        return c.json(apiResponse(result));
+      } catch (error) {
+        return c.json(apiError('Failed to create {resource}'), 500);
+      }
+    }
+  );
+
+export default router;

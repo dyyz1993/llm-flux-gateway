@@ -1,0 +1,94 @@
+{
+  "originalAnthropicRequest": {
+    "model": "glm-4.7",
+    "messages": [
+      {
+        "role": "user",
+        "content": "hi"
+      }
+    ],
+    "tools": [
+      {
+        "name": "Task",
+        "description": "Launch a new agent",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "description": { "type": "string" },
+            "prompt": { "type": "string" },
+            "subagent_type": { "type": "string" },
+            "run_in_background": { "type": "boolean" }
+          },
+          "required": ["description", "prompt", "subagent_type"],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        }
+      },
+      {
+        "name": "Grep",
+        "description": "A powerful search tool",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "pattern": { "type": "string" },
+            "-B": { "type": "number" },
+            "-A": { "type": "number" },
+            "-C": { "type": "number" }
+          },
+          "required": ["pattern"],
+          "additionalProperties": false
+        }
+      }
+    ],
+    "max_tokens": 4096
+  },
+  "expectedOpenAIRequest": {
+    "model": "glm-4.7",
+    "messages": [
+      {
+        "role": "user",
+        "content": "hi"
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "Task",
+          "description": "Launch a new agent",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "description": { "type": "string" },
+              "prompt": { "type": "string" },
+              "subagent_type": { "type": "string" },
+              "run_in_background": { "type": "boolean" }
+            },
+            "required": ["description", "prompt", "subagent_type"],
+            "additionalProperties": false,
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          }
+        }
+      },
+      {
+        "type": "function",
+        "function": {
+          "name": "Grep",
+          "description": "A powerful search tool",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "pattern": { "type": "string" },
+              "-B": { "type": "number" },
+              "-A": { "type": "number" },
+              "-C": { "type": "number" }
+            },
+            "required": ["pattern"],
+            "additionalProperties": false
+          }
+        }
+      }
+    ],
+    "max_tokens": 4096
+  }
+}

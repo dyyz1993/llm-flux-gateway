@@ -1,0 +1,71 @@
+import { useEffect, useRef } from 'react';
+import { PondFish, PondFishRenderer } from '@client/classes';
+import type { FishEntity } from '@shared/types';
+
+interface CanvasComponentProps {
+  fish: FishEntity;
+  motion: keyof import('@client/classes/PondFishConstants').MOTION_SPEEDS;
+  width?: number;
+  height?: number;
+}
+
+export const CanvasComponent: React.FC<CanvasComponentProps> = ({
+  fish,
+  motion,
+  width = 800,
+  height = 600,
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fishRef = useRef<PondFish | null>(null);
+  const rendererRef = useRef<PondFishRenderer | null>(null);
+  const animationRef = useRef<number>();
+
+  useEffect(() => {
+    if (!canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Create fish entity
+    fishRef.current = new PondFish({
+      fish,
+      motion,
+      x: canvas.width / 2,
+      y: canvas.height / 2,
+    });
+
+    // Create renderer
+    rendererRef.current = new PondFishRenderer(ctx);
+
+    // Animation loop
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (fishRef.current && rendererRef.current) {
+        fishRef.current.update(0.016); // ~60fps
+        rendererRef.current.render(fishRef.current);
+      }
+
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    // Cleanup
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [fish, motion, width, height]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      width={width}
+      height={height}
+      style={{ border: '1px solid #ccc' }}
+    />
+  );
+};
