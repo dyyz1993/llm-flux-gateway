@@ -193,24 +193,54 @@ export function initDatabase() {
     const hasNameColumn = columns.some((col: any) => col.name === 'name');
     const hasConfigTypeColumn = columns.some((col: any) => col.name === 'config_type');
 
-    // Handle legacy route_name column
-    if (hasRouteNameColumn && !hasNameColumn) {
-      console.log('[Database] Detected legacy route_name column, adding new name column...');
-      sqlite.exec(`ALTER TABLE routes ADD COLUMN name TEXT;`);
-      sqlite.exec(`UPDATE routes SET name = route_name WHERE name IS NULL;`);
-      console.log('[Database] Migration completed: copied route_name to name');
-    }
+    // Handle legacy route_name column - need to recreate table
+    if (hasRouteNameColumn) {
+      console.log('[Database] Detected legacy route_name column, recreating routes table...');
 
-    if (!hasUpdatedAtColumn) {
-      console.log('[Database] Adding updated_at column to routes...');
-      sqlite.exec(`ALTER TABLE routes ADD COLUMN updated_at INTEGER NOT NULL DEFAULT ${Date.now()};`);
-      console.log('[Database] Migration completed: updated_at column added to routes');
-    }
+      // Create new table with correct schema
+      sqlite.exec(`CREATE TABLE routes_new (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        asset_id TEXT NOT NULL,
+        overrides TEXT NOT NULL DEFAULT '[]',
+        is_active INTEGER NOT NULL DEFAULT 1,
+        config_type TEXT NOT NULL DEFAULT 'yaml',
+        priority INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE
+      );`);
 
-    if (!hasConfigTypeColumn) {
-      console.log('[Database] Adding config_type column to routes...');
-      sqlite.exec(`ALTER TABLE routes ADD COLUMN config_type TEXT NOT NULL DEFAULT 'yaml';`);
-      console.log('[Database] Migration completed: config_type column added to routes');
+      // Copy data, mapping route_name to name
+      sqlite.exec(`INSERT INTO routes_new (id, name, asset_id, overrides, is_active, config_type, priority, created_at, updated_at)
+        SELECT id, ${hasNameColumn ? 'name' : 'route_name'} as name, asset_id, overrides, is_active,
+               ${hasConfigTypeColumn ? 'config_type' : "'yaml'"} as config_type,
+               priority, created_at, ${hasUpdatedAtColumn ? 'updated_at' : 'created_at'} as updated_at
+        FROM routes;`);
+
+      // Drop old table and rename new one
+      sqlite.exec(`DROP TABLE routes;`);
+      sqlite.exec(`ALTER TABLE routes_new RENAME TO routes;`);
+
+      // Recreate indexes
+      sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_routes_asset ON routes(asset_id);`);
+      sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_routes_active ON routes(is_active);`);
+      sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_routes_priority ON routes(priority);`);
+
+      console.log('[Database] Migration completed: routes table recreated with name column');
+    } else {
+      // No route_name column, just add missing columns
+      if (!hasUpdatedAtColumn) {
+        console.log('[Database] Adding updated_at column to routes...');
+        sqlite.exec(`ALTER TABLE routes ADD COLUMN updated_at INTEGER NOT NULL DEFAULT ${Date.now()};`);
+        console.log('[Database] Migration completed: updated_at column added to routes');
+      }
+
+      if (!hasConfigTypeColumn) {
+        console.log('[Database] Adding config_type column to routes...');
+        sqlite.exec(`ALTER TABLE routes ADD COLUMN config_type TEXT NOT NULL DEFAULT 'yaml';`);
+        console.log('[Database] Migration completed: config_type column added to routes');
+      }
     }
   } catch (error) {
     console.error('[Database] Migration failed:', error);
