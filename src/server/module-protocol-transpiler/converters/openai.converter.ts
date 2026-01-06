@@ -190,7 +190,8 @@ export class OpenAIConverter implements FormatConverter {
           }
 
           // Update message with extracted content and tool calls
-          choice.message.content = textBlocks.length > 0 ? textBlocks.join('') : '' as any;
+          // ⭐ FIX: Use null instead of empty string for tool-only responses (OpenAI standard)
+          choice.message.content = textBlocks.length > 0 ? textBlocks.join('') : null as any;
           if (toolCalls.length > 0) {
             choice.message.toolCalls = toolCalls;
           }

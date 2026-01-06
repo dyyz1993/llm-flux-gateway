@@ -539,6 +539,9 @@ describe('OpenAIConverter - GLM Mixed Format (convertResponseToInternal)', () =>
       expect(internal.choices[0]?.message.toolCalls?.[0]?.type).toBe('function');
       expect(internal.choices[0]?.message.toolCalls?.[0]?.function?.name).toBe('calculator');
 
+      // ✅ IMPORTANT: content should be null for tool-only responses (OpenAI standard)
+      expect(internal.choices[0]?.message.content).toBeNull();
+
       // Verify usage was converted to camelCase
       expect(internal.usage?.promptTokens).toBe(1671);
       expect(internal.usage?.completionTokens).toBe(18);
