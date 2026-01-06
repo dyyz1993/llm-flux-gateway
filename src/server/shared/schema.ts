@@ -194,8 +194,6 @@ export interface Route {
   isActive: boolean;
   configType: ConfigType;
   priority: number;
-  requestFormat: ApiFormat;
-  responseFormat: ApiFormat;
   createdAt: number;
   updatedAt: number;
 }

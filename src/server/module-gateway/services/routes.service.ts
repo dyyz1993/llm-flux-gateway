@@ -1,7 +1,5 @@
 import { queryAll, queryFirst, queryRun } from '@server/shared/database';
 import { randomUUID } from 'node:crypto';
-import { inferFormatFromVendorTemplate, type VendorTemplateForInference } from '../utils/format-inferer';
-import { ApiFormat } from '../../module-protocol-transpiler';
 
 // ============================================
 // Type Definitions
@@ -36,9 +34,6 @@ export interface Route {
   assetEndpoint?: string;
   assetApiKey?: string;
   assetModels?: string[]; // model IDs
-  // Inferred format from vendor template
-  requestFormat?: ApiFormat;
-  responseFormat?: ApiFormat;
 }
 
 export interface CreateRouteInput {
@@ -207,9 +202,9 @@ export class RoutesService {
       `
       INSERT INTO routes (
         id, name, asset_id, is_active, overrides, config_type, priority,
-        request_format, response_format, created_at, updated_at
+        created_at, updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         id,
@@ -219,8 +214,6 @@ export class RoutesService {
         overridesJson,
         input.configType || 'yaml',
         input.priority ?? 0,
-        'openai', // Default value (will be inferred at runtime)
-        'openai', // Default value (will be inferred at runtime)
         now,
         now,
       ]
@@ -317,13 +310,6 @@ export class RoutesService {
    * Map database row to Route type
    */
   private mapRowToRoute(row: any): Route {
-    // Infer format from vendor template
-    const vendorTemplate: VendorTemplateForInference = {
-      baseUrl: row.assetBaseUrl,
-      endpoint: row.assetEndpoint || '/chat/completions',
-    };
-    const inferredFormat = inferFormatFromVendorTemplate(vendorTemplate);
-
     return {
       id: row.id,
       name: row.name,
@@ -340,8 +326,6 @@ export class RoutesService {
       assetEndpoint: row.assetEndpoint,
       assetApiKey: row.assetApiKey,
       assetModels: [],
-      requestFormat: inferredFormat,
-      responseFormat: inferredFormat,
     };
   }
 

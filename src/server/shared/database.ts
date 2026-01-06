@@ -85,8 +85,6 @@ export function initDatabase() {
     is_active INTEGER NOT NULL DEFAULT 1,
     config_type TEXT NOT NULL DEFAULT 'yaml',
     priority INTEGER NOT NULL DEFAULT 0,
-    request_format TEXT NOT NULL DEFAULT 'openai',
-    response_format TEXT NOT NULL DEFAULT 'openai',
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL,
     FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE
@@ -183,31 +181,6 @@ export function initDatabase() {
       sqlite.exec(`ALTER TABLE vendor_templates ADD COLUMN endpoint TEXT NOT NULL DEFAULT '/chat/completions';`);
       console.log('[Database] Migration completed: endpoint column added to vendor_templates');
     }
-  } catch (error) {
-    console.error('[Database] Migration failed:', error);
-  }
-
-  // Migration: Add format conversion columns to routes table if not exists
-  try {
-    const columns = sqlite.prepare("PRAGMA table_info(routes)").all() as any[];
-    const hasRequestFormatColumn = columns.some((col: any) => col.name === 'request_format');
-    const hasResponseFormatColumn = columns.some((col: any) => col.name === 'response_format');
-
-    if (!hasRequestFormatColumn) {
-      console.log('[Database] Adding request_format column to routes...');
-      sqlite.exec(`ALTER TABLE routes ADD COLUMN request_format TEXT NOT NULL DEFAULT 'openai';`);
-      console.log('[Database] Migration completed: request_format column added to routes');
-    }
-
-    if (!hasResponseFormatColumn) {
-      console.log('[Database] Adding response_format column to routes...');
-      sqlite.exec(`ALTER TABLE routes ADD COLUMN response_format TEXT NOT NULL DEFAULT 'openai';`);
-      console.log('[Database] Migration completed: response_format column added to routes');
-    }
-
-    // Create indexes for format columns to improve query performance
-    sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_routes_request_format ON routes(request_format);`);
-    sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_routes_response_format ON routes(response_format);`);
   } catch (error) {
     console.error('[Database] Migration failed:', error);
   }
