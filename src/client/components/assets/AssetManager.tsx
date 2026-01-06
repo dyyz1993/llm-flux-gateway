@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { Asset, Vendor, VendorModel } from '@shared/types';
 import { useAssetsStore } from '@client/stores/assetsStore';
 import * as ApiClient from '@client/services/apiClient';
+import { copyToClipboard } from '@client/utils/clipboard';
 import { Wallet, Copy, Check, Trash2, Plus, Edit2, X, Globe, ChevronRight, ChevronLeft, Zap, Play, Loader2, Clock, Download, Upload } from 'lucide-react';
 
 type WizardStep = 1 | 2 | 3;
@@ -92,10 +93,15 @@ export const AssetManager: React.FC = () => {
     }
   }, [wizardForm.vendorId]);
 
-  const handleCopy = (id: string, text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+  const handleCopy = async (id: string, text: string) => {
+    try {
+      await copyToClipboard(text);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+      alert('Failed to copy to clipboard. Please select and copy manually.');
+    }
   };
 
   const handleExport = () => {

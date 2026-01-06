@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Loader2, Terminal, CheckCircle } from 'lucide-react';
 import { QuickPrompts } from './QuickPrompts';
+import { copyToClipboard } from '@client/utils/clipboard';
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -82,11 +83,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, disable
   }'`;
 
     try {
-      await navigator.clipboard.writeText(curlCommand);
+      await copyToClipboard(curlCommand);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
+      alert('Failed to copy cURL command. Please select and copy manually.');
     }
   };
 

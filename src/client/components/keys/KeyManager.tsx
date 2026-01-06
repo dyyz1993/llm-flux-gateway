@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { ApiKey } from '@shared/types';
 import { useKeysStore } from '@client/stores/keysStore';
+import { copyToClipboard } from '@client/utils/clipboard';
 import { useRoutesStore } from '@client/stores/routesStore';
 import { useAssetsStore } from '@client/stores/assetsStore';
 import {
@@ -64,10 +65,15 @@ export const KeyManager: React.FC = () => {
     }
   }, []);
 
-  const handleCopy = (id: string, keyToken: string) => {
-    navigator.clipboard.writeText(keyToken);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+  const handleCopy = async (id: string, keyToken: string) => {
+    try {
+      await copyToClipboard(keyToken);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (error) {
+      console.error('Failed to copy key token:', error);
+      alert('Failed to copy to clipboard. Please select and copy manually.');
+    }
   };
 
   const handleGenerateKey = async () => {
@@ -89,8 +95,12 @@ export const KeyManager: React.FC = () => {
       setCreateForm({ name: '', routeIds: [] });
 
       // Auto-copy the key to clipboard
-      navigator.clipboard.writeText(result.keyToken);
-      setCopiedId(result.id);
+      try {
+        await copyToClipboard(result.keyToken);
+        setCopiedId(result.id);
+      } catch (error) {
+        console.error('Failed to auto-copy key token:', error);
+      }
     } else {
       alert('Failed to create key');
     }

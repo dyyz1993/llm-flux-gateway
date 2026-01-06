@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, Bug, Copy, Check } from 'lucide-react';
+import { copyToClipboard } from '@client/utils/clipboard';
 
 /**
  * Debug info for request transformation
@@ -35,10 +36,15 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({ debugInfo, onClear }) =>
     return null;
   }
 
-  const handleCopy = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(label);
-    setTimeout(() => setCopied(null), 2000);
+  const handleCopy = async (text: string, label: string) => {
+    try {
+      await copyToClipboard(text);
+      setCopied(label);
+      setTimeout(() => setCopied(null), 2000);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+      alert('Failed to copy to clipboard. Please select and copy manually.');
+    }
   };
 
   const formatJson = (obj: any) => {
