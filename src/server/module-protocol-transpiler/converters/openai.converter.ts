@@ -19,6 +19,8 @@ import type {
   InternalRequest,
   InternalResponse,
   InternalStreamChunk,
+  InternalContentBlock,
+  TextContentBlock,
 } from '../interfaces/internal-format';
 import type {
   FormatConverter,
@@ -196,8 +198,27 @@ export class OpenAIConverter implements FormatConverter {
   ): TranspileResult<Record<string, any>> {
     const startTime = Date.now();
 
-    // ⭐ FIX: Normalize camelCase to snake_case for OpenAI API format
-    const normalizedResponse = normalizeToSnakeCase(response, true);
+    // ⭐ FIX: Handle content array format (e.g., from Anthropic/GLM)
+    // When content is an array of content blocks, extract text from TextContentBlock
+    const processedResponse = {
+      ...response,
+      choices: response.choices?.map(choice => ({
+        ...choice,
+        message: {
+          ...choice.message,
+          // If content is an array, extract and join text from TextContentBlock
+          content: Array.isArray(choice.message.content)
+            ? (choice.message.content as InternalContentBlock[])
+                .filter((block): block is TextContentBlock => block.type === 'text')
+                .map(block => block.text)
+                .join('')
+            : choice.message.content
+        }
+      }))
+    };
+
+    // Normalize camelCase to snake_case for OpenAI API format
+    const normalizedResponse = normalizeToSnakeCase(processedResponse, true);
 
     const metadata: TranspileMetadata = {
       fromVendor: 'openai',
