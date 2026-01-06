@@ -352,9 +352,6 @@ export const RoutePlayground: React.FC = () => {
             if (accumulatedToolCalls.length > 0) {
               console.log('[RoutePlayground] Tool calls detected, executing...', accumulatedToolCalls);
 
-              // Save tool calls for display in final message
-              toolCallsToDisplay = [...accumulatedToolCalls];
-
               // ⭐ FIX: Persist tool calls to the first assistant message before creating second one
               chatStore.updateLastMessage(accumulatedContent, undefined, accumulatedToolCalls);
 
@@ -403,14 +400,21 @@ export const RoutePlayground: React.FC = () => {
               // Make second request with tool results
               await makeStreamingRequest(messagesWithToolResults);
             } else {
-              // No tool calls, just finalize
-              // Use toolCallsToDisplay if this is the second request (after tool execution)
-              const displayToolCalls = toolCallsToDisplay.length > 0 ? toolCallsToDisplay : accumulatedToolCalls;
-              chatStore.updateLastMessage(accumulatedContent, tokens, displayToolCalls);
+              // No tool calls in this response
+              // Check if this is the final response after tool execution
+              // (toolCallsToDisplay would have been set in the first round)
+              if (toolCallsToDisplay.length > 0) {
+                // This is the final response after tool execution
+                // Clear tool calls from display since they belong to the previous message
+                console.log('[RoutePlayground] Final response after tool execution, clearing tool calls display');
+                chatStore.updateLastMessage(accumulatedContent, tokens, []); // Empty array for final response
+                toolCallsToDisplay = [];
+              } else {
+                // This is a normal response without any tool calls
+                chatStore.updateLastMessage(accumulatedContent, tokens, accumulatedToolCalls);
+              }
               setStreamingContent('');
               setStreamingToolCalls([]);
-              // Reset tool calls display only after completely done
-              toolCallsToDisplay = [];
             }
           } catch (error) {
             console.error('[RoutePlayground] Error in onComplete:', error);
@@ -478,6 +482,7 @@ export const RoutePlayground: React.FC = () => {
             id: crypto.randomUUID(),
             role: 'tool',
             content: toolResult.content,
+            name: toolResult.name,
             toolCallId: toolResult.tool_call_id,
             timestamp: Date.now(),
           } as ChatMessage);
@@ -510,8 +515,9 @@ export const RoutePlayground: React.FC = () => {
         await makeNonStreamingRequest(messagesWithToolResults);
       } else {
         console.log('[RoutePlayground Non-Streaming] No tool calls, finalizing with tokens:', tokens);
-        // No tool calls, just finalize
-        chatStore.updateLastMessage(accumulatedContent, tokens, []);
+        // No tool calls in this response - always clear tool calls display
+        // (Either this is a normal response without tools, or the final response after tool execution)
+        chatStore.updateLastMessage(accumulatedContent, tokens, []); // Empty array to clear tool calls display
         setStreamingContent('');
         setStreamingToolCalls([]);
       }
@@ -608,61 +614,64 @@ export const RoutePlayground: React.FC = () => {
           {/* Collapsible Config Panel */}
           {!configCollapsed && (
             <div className="px-4 pb-4 animate-in slide-in-from-top-2 duration-200">
-              <div className="flex flex-col gap-3">
-                {/* Format Selector */}
-                <div className="flex gap-4">
+              <div className="flex gap-4">
+                {/* Left Column: Format, Streaming, Tools */}
+                <div className="flex flex-col gap-3">
+                  {/* Format Selector */}
                   <FormatSelector
                     value={selectedFormat}
                     onChange={setSelectedFormat}
                     disabled={isLoading}
                   />
+
+                  {/* Streaming & Tools Toggles */}
+                  <div className="flex gap-4">
+                    {/* Streaming Toggle */}
+                    <label className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-colors cursor-pointer ${
+                      enableStream
+                        ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-400'
+                        : 'bg-[#1a1a1a] border-[#262626] text-gray-500 hover:text-gray-300'
+                    }`}>
+                      <input
+                        type="checkbox"
+                        checked={enableStream}
+                        onChange={(e) => setEnableStream(e.target.checked)}
+                        className="w-4 h-4 rounded border-gray-600 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
+                        disabled={isLoading}
+                      />
+                      <span className="text-sm font-medium">流式响应</span>
+                    </label>
+
+                    {/* Tools Toggle */}
+                    <label className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-colors cursor-pointer ${
+                      enableTools
+                        ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400'
+                        : 'bg-[#1a1a1a] border-[#262626] text-gray-500 hover:text-gray-300'
+                    }`}>
+                      <input
+                        type="checkbox"
+                        checked={enableTools}
+                        onChange={(e) => setEnableTools(e.target.checked)}
+                        className="w-4 h-4 rounded border-gray-600 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0"
+                        disabled={isLoading}
+                      />
+                      <span className="text-sm font-medium">工具调用</span>
+                    </label>
+                  </div>
                 </div>
 
-                {/* Streaming & Tools Toggles */}
-                <div className="flex gap-4">
-                  {/* Streaming Toggle */}
-                  <label className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-colors cursor-pointer ${
-                    enableStream
-                      ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-400'
-                      : 'bg-[#1a1a1a] border-[#262626] text-gray-500 hover:text-gray-300'
-                  }`}>
-                    <input
-                      type="checkbox"
-                      checked={enableStream}
-                      onChange={(e) => setEnableStream(e.target.checked)}
-                      className="w-4 h-4 rounded border-gray-600 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
-                      disabled={isLoading}
-                    />
-                    <span className="text-sm font-medium">流式响应</span>
-                  </label>
-
-                  {/* Tools Toggle */}
-                  <label className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-colors cursor-pointer ${
-                    enableTools
-                      ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400'
-                      : 'bg-[#1a1a1a] border-[#262626] text-gray-500 hover:text-gray-300'
-                  }`}>
-                    <input
-                      type="checkbox"
-                      checked={enableTools}
-                      onChange={(e) => setEnableTools(e.target.checked)}
-                      className="w-4 h-4 rounded border-gray-600 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0"
-                      disabled={isLoading}
-                    />
-                    <span className="text-sm font-medium">工具调用</span>
-                  </label>
+                {/* Right Column: API Key & Model */}
+                <div className="flex-1">
+                  <ModelSelector
+                    availableKeys={selectorKeys}
+                    availableModels={availableModels}
+                    patterns={patterns}
+                    value={selectorValue}
+                    onChange={setSelectorValue}
+                    onValidationChange={setIsValid}
+                    disabled={isLoading}
+                  />
                 </div>
-
-                {/* Model Selector */}
-                <ModelSelector
-                  availableKeys={selectorKeys}
-                  availableModels={availableModels}
-                  patterns={patterns}
-                  value={selectorValue}
-                  onChange={setSelectorValue}
-                  onValidationChange={setIsValid}
-                  disabled={isLoading}
-                />
               </div>
             </div>
           )}

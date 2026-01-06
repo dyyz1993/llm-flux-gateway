@@ -101,7 +101,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
         ...lastMessage,
         content,
         tokens: tokens || lastMessage.tokens,
-        toolCalls: toolCalls || lastMessage.toolCalls,
+        // Fixed: Use toolCalls if explicitly provided (even if empty array), otherwise keep existing
+        toolCalls: toolCalls !== undefined ? toolCalls : lastMessage.toolCalls,
         isStreaming: false,
       };
 
