@@ -256,10 +256,27 @@ class MockStore {
     return newKey;
   }
 
-  updateKey(id: string, data: { name?: string; status?: 'active' | 'revoked' }): ApiKey | null {
+  updateKey(id: string, data: { name?: string; status?: 'active' | 'revoked'; routeIds?: string[] }): ApiKey | null {
     const index = this.keys.findIndex(k => k.id === id);
     if (index === -1) return null;
     const existing = this.keys[index]!;
+
+    // Handle route updates
+    let routes = existing.routes;
+    if (data.routeIds !== undefined) {
+      routes = data.routeIds
+        .map(routeId => {
+          const route = this.routes.find(r => r.id === routeId);
+          if (!route) return null;
+          return {
+            routeId: route.id,
+            routeName: route.name,
+            priority: 0,
+          };
+        })
+        .filter((r): r is NonNullable<typeof r> => r !== null);
+    }
+
     this.keys[index] = {
       id: existing.id,
       keyToken: existing.keyToken,
@@ -268,7 +285,7 @@ class MockStore {
       createdAt: existing.createdAt,
       lastUsedAt: existing.lastUsedAt,
       updatedAt: new Date(),
-      routes: existing.routes,
+      routes,
     };
     return { ...this.keys[index]! };
   }

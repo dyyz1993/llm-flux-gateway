@@ -47,6 +47,10 @@ interface AssetsState {
   updateAssetStatus: (id: string, status: 'active' | 'exhausted' | 'suspended') => Promise<boolean>;
   duplicateAsset: (id: string) => Promise<Asset | null>;
   deleteAsset: (id: string) => Promise<boolean>;
+
+  // Import/Export actions
+  exportAssets: () => void;
+  importAssets: (file: File) => Promise<{ success: number; failed: number; errors: string[] }>;
 }
 
 // ============================================
@@ -158,6 +162,97 @@ export const useAssetsStore = create<AssetsState>((set, _get) => ({
       return false;
     }
   },
+
+  // Export all assets to JSON file
+  exportAssets: () => {
+    const assets = _get().assets;
+
+    // Prepare export data (exclude sensitive JOIN fields)
+    const exportData = assets.map((asset) => ({
+      name: asset.name,
+      vendorId: asset.vendorId,
+      apiKey: asset.apiKey,
+      status: asset.status,
+      validFrom: asset.validFrom,
+      validUntil: asset.validUntil,
+      // Include model IDs if available
+      modelIds: asset.models?.map((m) => m.id) || [],
+    }));
+
+    // Create JSON blob
+    const json = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    // Trigger download
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `assets-export-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  },
+
+  // Import assets from JSON file
+  importAssets: async (file) => {
+    set({ loading: true, error: null });
+
+    const errors: string[] = [];
+    let successCount = 0;
+    let failedCount = 0;
+
+    try {
+      // Read file
+      const text = await file.text();
+      const data = JSON.parse(text);
+
+      // Validate array
+      if (!Array.isArray(data)) {
+        throw new Error('Invalid file format: expected an array of assets');
+      }
+
+      // Import each asset
+      for (const item of data) {
+        try {
+          // Validate required fields
+          if (!item.name || !item.vendorId || !item.apiKey) {
+            errors.push(`Skipped: Missing required fields (name, vendorId, apiKey)`);
+            failedCount++;
+            continue;
+          }
+
+          // Create asset
+          const result = await ApiClient.createAsset({
+            name: item.name,
+            vendorId: item.vendorId,
+            apiKey: item.apiKey,
+            validFrom: item.validFrom ? new Date(item.validFrom) : undefined,
+            validUntil: item.validUntil ? new Date(item.validUntil) : undefined,
+            modelIds: item.modelIds || [],
+          });
+
+          if (result.success && result.data!) {
+            successCount++;
+            // Add to store
+            set((state) => ({ assets: [...state.assets, result.data!] }));
+          } else {
+            errors.push(`${item.name}: ${result.error || 'Unknown error'}`);
+            failedCount++;
+          }
+        } catch (err: any) {
+          errors.push(`${item.name}: ${err.message || 'Unknown error'}`);
+          failedCount++;
+        }
+      }
+
+      set({ loading: false });
+      return { success: successCount, failed: failedCount, errors };
+    } catch (err: any) {
+      set({ error: `Failed to parse file: ${err.message}`, loading: false });
+      return { success: successCount, failed: failedCount, errors: [err.message] };
+    }
+  },
 }));
 
 // ============================================
@@ -174,6 +269,8 @@ export const useAssetsActions = () =>
       updateAssetStatus: state.updateAssetStatus,
       duplicateAsset: state.duplicateAsset,
       deleteAsset: state.deleteAsset,
+      exportAssets: state.exportAssets,
+      importAssets: state.importAssets,
     })
   );
 

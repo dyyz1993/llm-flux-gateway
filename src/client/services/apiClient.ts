@@ -147,7 +147,7 @@ export const createKey = async (
  */
 export const updateKey = async (
   id: string,
-  data: { name?: string; status?: 'active' | 'revoked' }
+  data: { name?: string; status?: 'active' | 'revoked'; routeIds?: string[] }
 ): Promise<ApiResponse<ApiKey>> => {
   try {
     if (USE_MOCK_SERVER) {

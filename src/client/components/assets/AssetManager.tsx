@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { Asset, Vendor, VendorModel } from '@shared/types';
 import { useAssetsStore } from '@client/stores/assetsStore';
 import * as ApiClient from '@client/services/apiClient';
-import { Wallet, Copy, Check, Trash2, Plus, Edit2, X, Globe, ChevronRight, ChevronLeft, Zap, Play, Loader2, Clock } from 'lucide-react';
+import { Wallet, Copy, Check, Trash2, Plus, Edit2, X, Globe, ChevronRight, ChevronLeft, Zap, Play, Loader2, Clock, Download, Upload } from 'lucide-react';
 
 type WizardStep = 1 | 2 | 3;
 
@@ -17,12 +17,19 @@ export const AssetManager: React.FC = () => {
   const updateAssetStatus = useAssetsStore((state) => state.updateAssetStatus);
   const duplicateAsset = useAssetsStore((state) => state.duplicateAsset);
   const deleteAsset = useAssetsStore((state) => state.deleteAsset);
+  const exportAssets = useAssetsStore((state) => state.exportAssets);
+  const importAssets = useAssetsStore((state) => state.importAssets);
 
   const [copiedId, setCopiedId] = useState<string | null>(null as any);
   const [isCreating, setIsCreating] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null as any);
   const [editingId, setEditingId] = useState<string | null>(null as any);
   const [editForm, setEditForm] = useState<Partial<Asset>>({});
+
+  // Import/Export state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importResult, setImportResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
+  const [showImportResult, setShowImportResult] = useState(false);
 
   // Model validation state
   const [validatingAssetId, setValidatingAssetId] = useState<string | null>(null as any);
@@ -89,6 +96,28 @@ export const AssetManager: React.FC = () => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleExport = () => {
+    exportAssets();
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImportFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const result = await importAssets(file);
+    setImportResult(result);
+    setShowImportResult(true);
+
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleCreate = () => {
@@ -254,14 +283,41 @@ export const AssetManager: React.FC = () => {
             Manage vendor API credentials and budgets.
           </p>
         </div>
-        <button
-          onClick={handleCreate}
-          disabled={isCreating}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-700 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          {isCreating ? 'Creating...' : 'Add Asset'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExport}
+            disabled={assets.length === 0 || loading}
+            className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:cursor-not-allowed text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+            title="Export all assets to JSON"
+          >
+            <Download className="w-4 h-4" />
+            Export
+          </button>
+          <button
+            onClick={handleImportClick}
+            disabled={loading}
+            className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:cursor-not-allowed text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+            title="Import assets from JSON"
+          >
+            <Upload className="w-4 h-4" />
+            Import
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            onChange={handleImportFileChange}
+            className="hidden"
+          />
+          <button
+            onClick={handleCreate}
+            disabled={isCreating}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-700 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            {isCreating ? 'Creating...' : 'Add Asset'}
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -817,6 +873,41 @@ export const AssetManager: React.FC = () => {
               <div className="text-white font-medium">Validating Models...</div>
               <div className="text-sm text-gray-400 mt-1">This may take a moment</div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import result dialog */}
+      {showImportResult && importResult && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-[#0a0a0a] border border-[#262626] rounded-xl p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold text-white mb-4">Import Results</h3>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400">Successfully imported:</span>
+                <span className="text-green-400 font-medium">{importResult.success}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400">Failed:</span>
+                <span className="text-red-400 font-medium">{importResult.failed}</span>
+              </div>
+              {importResult.errors.length > 0 && (
+                <div className="mt-4">
+                  <div className="text-sm text-gray-400 mb-2">Errors:</div>
+                  <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 max-h-40 overflow-y-auto">
+                    {importResult.errors.map((error, i) => (
+                      <div key={i} className="text-red-400 text-sm py-1">{error}</div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => setShowImportResult(false)}
+              className="mt-6 w-full bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            >
+              Close
+            </button>
           </div>
         </div>
       )}

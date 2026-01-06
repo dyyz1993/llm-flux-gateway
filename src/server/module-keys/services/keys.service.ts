@@ -33,6 +33,7 @@ export interface KeyRouteAssociation {
 export interface UpdateApiKeyInput {
   name?: string;
   status?: ApiKeyStatus;
+  routeIds?: string[]; // Route IDs to associate with this key (will replace existing associations)
 }
 
 // ============================================
@@ -199,17 +200,38 @@ export class KeysService {
       values.push(input.status);
     }
 
-    if (updates.length === 0) return existing;
+    // Update the api_keys table if there are changes
+    if (updates.length > 0) {
+      updates.push('updated_at = ?');
+      const now = Math.floor(Date.now() / 1000);
+      values.push(now);
+      values.push(id);
 
-    updates.push('updated_at = ?');
-    const now = Math.floor(Date.now() / 1000);
-    values.push(now);
-    values.push(id);
+      queryRun(
+        `UPDATE api_keys SET ${updates.join(', ')} WHERE id = ?`,
+        values
+      );
+    }
 
-    queryRun(
-      `UPDATE api_keys SET ${updates.join(', ')} WHERE id = ?`,
-      values
-    );
+    // Handle route associations if provided
+    if (input.routeIds !== undefined) {
+      // Delete existing associations
+      queryRun(
+        `DELETE FROM api_key_routes WHERE api_key_id = ?`,
+        [id]
+      );
+
+      // Add new associations if any
+      if (input.routeIds.length > 0) {
+        const now = Math.floor(Date.now() / 1000);
+        for (let i = 0; i < input.routeIds.length; i++) {
+          queryRun(
+            `INSERT INTO api_key_routes (api_key_id, route_id, priority, created_at) VALUES (?, ?, ?, ?)`,
+            [id, input.routeIds[i], i, now]
+          );
+        }
+      }
+    }
 
     return this.getById(id);
   }

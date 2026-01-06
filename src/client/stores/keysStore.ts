@@ -23,6 +23,7 @@ interface KeysState {
   fetchKeys: () => Promise<void>;
   createKey: (name: string, routeIds?: string[]) => Promise<ApiKey | null>;
   updateKeyStatus: (id: string, status: 'active' | 'revoked') => Promise<boolean>;
+  updateKeyRoutes: (id: string, routeIds: string[]) => Promise<boolean>;
   deleteKey: (id: string) => Promise<boolean>;
 }
 
@@ -91,6 +92,21 @@ export const useKeysStore = create<KeysState>((set, _get) => ({
     }
   },
 
+  updateKeyRoutes: async (id, routeIds) => {
+    set({ loading: true, error: null });
+    const result = await ApiClient.updateKey(id, { routeIds });
+    if (result.success && result.data!) {
+      set((state) => ({
+        keys: state.keys.map((key) => (key.id === id ? result.data! : key)),
+        loading: false,
+      }));
+      return true;
+    } else {
+      set({ error: result.error || 'Failed to update key routes', loading: false });
+      return false;
+    }
+  },
+
   deleteKey: async (id) => {
     set({ loading: true, error: null });
     const result = await ApiClient.deleteKey(id);
@@ -118,6 +134,7 @@ export const useKeysActions = () =>
       fetchKeys: state.fetchKeys,
       createKey: state.createKey,
       updateKeyStatus: state.updateKeyStatus,
+      updateKeyRoutes: state.updateKeyRoutes,
       deleteKey: state.deleteKey,
     })
   );

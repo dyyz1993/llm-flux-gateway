@@ -17,6 +17,7 @@ const createKeySchema = z.object({
 const updateKeySchema = z.object({
   name: z.string().min(1).optional(),
   status: z.enum(['active', 'revoked']).optional(),
+  routeIds: z.array(z.string()).optional(),
 });
 
 // ============================================

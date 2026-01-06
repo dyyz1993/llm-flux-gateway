@@ -4,7 +4,7 @@ import { useKeysStore } from '@client/stores/keysStore';
 import { useRoutesStore } from '@client/stores/routesStore';
 import { useAssetsStore } from '@client/stores/assetsStore';
 import {
-  Key, Copy, Plus, Trash2, Check,
+  Key, Copy, Plus, Trash2, Check, X, Edit2,
   ExternalLink, RotateCcw, Terminal
 } from 'lucide-react';
 
@@ -18,6 +18,7 @@ export const KeyManager: React.FC = () => {
   const fetchKeys = useKeysStore((state) => state.fetchKeys);
   const createKey = useKeysStore((state) => state.createKey);
   const updateKeyStatus = useKeysStore((state) => state.updateKeyStatus);
+  const updateKeyRoutes = useKeysStore((state) => state.updateKeyRoutes);
   const deleteKey = useKeysStore((state) => state.deleteKey);
 
   // Routes for dropdown
@@ -29,6 +30,10 @@ export const KeyManager: React.FC = () => {
 
   const [copiedId, setCopiedId] = useState<string | null>(null as any);
   const [isCreating, setIsCreating] = useState(false);
+
+  // Edit routes state
+  const [editingKey, setEditingKey] = useState<ApiKey | null>(null as any);
+  const [editRouteIds, setEditRouteIds] = useState<string[]>([]);
 
   // Create key form
   const [createForm, setCreateForm] = useState({
@@ -108,6 +113,36 @@ export const KeyManager: React.FC = () => {
     if (!success) {
       alert('Failed to delete key');
     }
+  };
+
+  const handleEditRoutes = (key: ApiKey) => {
+    setEditingKey(key);
+    setEditRouteIds(key.routes?.map(r => r.routeId) || []);
+  };
+
+  const handleSaveRoutes = async () => {
+    if (!editingKey) return;
+
+    const success = await updateKeyRoutes(editingKey.id, editRouteIds);
+    if (success) {
+      setEditingKey(null);
+      setEditRouteIds([]);
+    } else {
+      alert('Failed to update routes');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingKey(null);
+    setEditRouteIds([]);
+  };
+
+  const toggleEditRouteSelection = (routeId: string) => {
+    setEditRouteIds((prev) =>
+      prev.includes(routeId)
+        ? prev.filter((id) => id !== routeId)
+        : [...prev, routeId]
+    );
   };
 
   const toggleRouteSelection = (routeId: string) => {
@@ -396,6 +431,13 @@ export const KeyManager: React.FC = () => {
                       {k.status === 'active' ? (
                         <>
                           <button
+                            onClick={() => handleEditRoutes(k)}
+                            className="p-1.5 hover:bg-indigo-500/10 text-gray-400 hover:text-indigo-500 rounded transition-colors"
+                            title="Edit Routes"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
                             onClick={() => handleRevoke(k.id)}
                             className="p-1.5 hover:bg-amber-500/10 text-gray-400 hover:text-amber-500 rounded transition-colors"
                             title="Revoke"
@@ -425,6 +467,87 @@ export const KeyManager: React.FC = () => {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Edit Routes Dialog */}
+      {editingKey && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-[#0a0a0a] border border-[#262626] rounded-xl p-6 max-w-2xl w-full mx-4">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-xl font-bold text-white">Edit Routes</h3>
+                <p className="text-sm text-gray-400 mt-1">
+                  {editingKey.name} • {formatKeyToken(editingKey.keyToken)}
+                </p>
+              </div>
+              <button
+                onClick={handleCancelEdit}
+                className="p-1 hover:bg-[#262626] rounded transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <label className="text-xs text-gray-500 uppercase font-semibold mb-2 block">
+                Select Routes
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+                {routes.map((route) => {
+                  const isSelected = editRouteIds.includes(route.id);
+                  const isCurrentlyAssociated = editingKey.routes?.some(r => r.routeId === route.id);
+
+                  return (
+                    <button
+                      key={route.id}
+                      type="button"
+                      onClick={() => toggleEditRouteSelection(route.id)}
+                      className={`text-left px-3 py-2 rounded-md border transition-colors ${
+                        isSelected
+                          ? 'bg-indigo-600/20 border-indigo-500/50 text-white'
+                          : 'bg-[#1a1a1a] border-[#333] text-gray-400 hover:border-[#404040]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full ${route.isActive ? 'bg-emerald-500' : 'bg-gray-600'}`} />
+                        <span className="text-sm font-medium">{route.name}</span>
+                        {isCurrentlyAssociated && !isSelected && (
+                          <span className="text-xs text-amber-500">(Will be removed)</span>
+                        )}
+                        {!isCurrentlyAssociated && isSelected && (
+                          <span className="text-xs text-emerald-500">(New)</span>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {route.assetName} • {route.assetVendorDisplayName}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              {editRouteIds.length === 0 && (
+                <p className="text-xs text-amber-500 mt-2">
+                  Warning: Key with no routes will not be able to access any endpoints
+                </p>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={handleCancelEdit}
+                className="px-4 py-2 bg-[#1a1a1a] hover:bg-[#262626] text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveRoutes}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
