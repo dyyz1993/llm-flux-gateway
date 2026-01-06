@@ -42,7 +42,7 @@ npm run build && npm start
 // 流式: 是
 
 {
-  apiKey: 'sk-flux-99308966ac1742948cd149f99507e63d',  // glm-coding-anthropic
+  apiKey: 'sk-flux-your-key-here',  // glm-coding-anthropic
   requestFormat: 'openai',
   stream: true,
   model: 'glm-4-air',

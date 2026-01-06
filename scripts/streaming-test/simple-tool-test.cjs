@@ -45,7 +45,7 @@ const options = {
   headers: {
     'Content-Type': 'application/json',
     'Content-Length': Buffer.byteLength(payload),
-    'Authorization': 'Bearer sk-flux-c24bc70d2f9f4f99bb4973791cabd994'
+    'Authorization': 'Bearer sk-flux-your-key-here'
   }
 };
 

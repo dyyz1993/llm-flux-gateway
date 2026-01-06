@@ -478,7 +478,7 @@ npx tsx scripts/streaming-test/debug-tool-calls.ts
 
 # 测试案例 #7 (Anthropic + 非流式 + tools)
 curl -X POST http://localhost:3000/v1/messages \
-  -H "Authorization: Bearer sk-flux-c24bc70d2f9f4f99bb4973791cabd994" \
+  -H "Authorization: Bearer sk-flux-your-key-here" \
   -d @test-case-7.json
 ```
 

@@ -3,7 +3,7 @@
  * Debug GLM direct API call - Test what format GLM accepts
  */
 
-const GLM_API_KEY = '6440123456789abcdef0123456789abcd'; // This is the codding API key
+const GLM_API_KEY = 'your_api_key_here'; // This is the codding API key
 const GLM_BASE_URL = 'https://open.bigmodel.cn/api/paas/v4';
 
 const TOOLS_ANTHROPIC = [

@@ -31,12 +31,12 @@ const BASE_URL = 'http://localhost:3000';
 const API_KEYS = {
   KEY_A: {
     name: 'codding',
-    key: 'sk-flux-c24bc70d2f9f4f99bb4973791cabd994',
+    key: 'sk-flux-your-key-here',
     backendFormat: 'OpenAI',
   },
   KEY_B: {
     name: 'glm-coding-anthropic',
-    key: 'sk-flux-99308966ac1742948cd149f99507e63d',
+    key: 'sk-flux-your-key-here',
     backendFormat: 'Anthropic',
   },
 };

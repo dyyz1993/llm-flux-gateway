@@ -11,7 +11,7 @@
 ### API Key Used
 - **ID:** `fb4796f9-348d-4300-9a8c-4be2dbc14645`
 - **Name:** `codding`
-- **Full Key:** `sk-flux-c24bc70d2f9f4f99bb4973791cabd994`
+- **Full Key:** `sk-flux-your-key-here`
 
 ### Model Tested
 - **Model:** `glm-4-air`
@@ -21,7 +21,7 @@
 ### Test Request
 ```bash
 curl -X POST http://localhost:3000/v1/chat/completions \
-  -H "Authorization: Bearer sk-flux-c24bc70d2f9f4f99bb4973791cabd994" \
+  -H "Authorization: Bearer sk-flux-your-key-here" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "glm-4-air",

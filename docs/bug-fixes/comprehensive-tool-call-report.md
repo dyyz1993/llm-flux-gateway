@@ -15,7 +15,7 @@
 - **Date**: 2026-01-03
 - **Endpoint**: http://localhost:3000/v1/chat/completions
 - **Model**: glm-4.7 (Zhipu AI / GLM)
-- **API Key**: sk-flux-c24bc70d2f9f4f99bb4973791cabd994
+- **API Key**: sk-flux-your-key-here
 - **Test Script**: `/Users/xuyingzhou/Downloads/llm-flux-gateway/scripts/streaming-test/simple-tool-test.cjs`
 
 ### Test Request

@@ -226,7 +226,7 @@ cd /Users/xuyingzhou/Downloads/llm-flux-gateway
 
 ### Manual Test
 1. Open Playground at http://localhost:3000
-2. Enter API key: `sk-flux-c24bc70d2f9f4f99bb4973791cabd994`
+2. Enter API key: `sk-flux-your-key-here`
 3. Send: "Calculate 123 + 456 using the calculator"
 4. Expected: Tool call UI appears, then result
 
