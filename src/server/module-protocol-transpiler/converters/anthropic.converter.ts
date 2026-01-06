@@ -1530,6 +1530,27 @@ export class AnthropicConverter implements FormatConverter {
 
     // Handle finish reason
     if (finishReason) {
+      // Emit content_block_stop before message_delta (standard Anthropic SSE format)
+      // This should be emitted for each content block that was started
+      if (state?.contentBlockStarted) {
+        events.push(this.formatSSE('content_block_stop', {
+          type: 'content_block_stop',
+          index: 0,
+        }));
+        fieldsConverted++;
+      }
+
+      // Emit content_block_stop for each tool_use block that was started
+      if (state?.toolUseBlockStarted) {
+        for (const [index] of state.toolUseBlockStarted) {
+          events.push(this.formatSSE('content_block_stop', {
+            type: 'content_block_stop',
+            index,
+          }));
+          fieldsConverted++;
+        }
+      }
+
       const stopReasonMap: Record<string, string> = {
         stop: 'end_turn',
         length: 'max_tokens',

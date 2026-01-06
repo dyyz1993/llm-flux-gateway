@@ -73,7 +73,9 @@ export function useAIStream(): StreamResult {
   const abortControllerRef = useRef<AbortController | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const requestIdRef = useRef<number>(0);
+  const globalRequestCounter = useRef(0); // 🔍 DEBUG: Track total requests
 
+  // ========== STREAM FUNCTION ==========
   const stream = useCallback(async (options: StreamOptions) => {
     const {
       apiKey,
@@ -96,6 +98,25 @@ export function useAIStream(): StreamResult {
 
     // 生成新的请求 ID
     const currentRequestId = ++requestIdRef.current;
+    const currentGlobalCount = ++globalRequestCounter.current; // 🔍 DEBUG
+
+    // 🔒 Ensure onComplete is only called once per request
+    let onCompleteCalled = false;
+    const wrappedOnComplete = onComplete ? ((tokens: { prompt: number; completion: number }) => {
+      if (onCompleteCalled) {
+        console.warn(`[useAIStream] ⚠️ onComplete already called for request #${currentGlobalCount}, ignoring!`);
+        return;
+      }
+      onCompleteCalled = true;
+      console.log(`[useAIStream] ✅ onComplete called for request #${currentGlobalCount}`);
+      onComplete(tokens);
+    }) : undefined;
+
+    // 🔍 DEBUG: Log request start
+    console.log(`=================== [useAIStream] STREAM REQUEST START #${currentGlobalCount} ===================`);
+    console.log(`[useAIStream] Request ID: ${currentRequestId}, isRecursive: ${isRecursive}`);
+    console.log(`[useAIStream] Provider: ${provider}, Model: ${model}`);
+    console.log('=========================================================================================');
 
     setIsLoading(true);
     abortControllerRef.current = new AbortController();
@@ -111,7 +132,7 @@ export function useAIStream(): StreamResult {
             tools,
             onChunk,
             onError,
-            onComplete,
+            onComplete: wrappedOnComplete,
             abortSignal: abortControllerRef.current.signal,
           });
           break;
@@ -125,7 +146,7 @@ export function useAIStream(): StreamResult {
             tools,
             onChunk,
             onError,
-            onComplete,
+            onComplete: wrappedOnComplete,
             abortSignal: abortControllerRef.current.signal,
           });
           break;
@@ -139,7 +160,7 @@ export function useAIStream(): StreamResult {
             tools,
             onChunk,
             onError,
-            onComplete,
+            onComplete: wrappedOnComplete,
             abortSignal: abortControllerRef.current.signal,
           });
           break;
@@ -191,6 +212,13 @@ export function useAIStream(): StreamResult {
 
     // 生成新的请求 ID
     const currentRequestId = ++requestIdRef.current;
+    const currentGlobalCount = ++globalRequestCounter.current; // 🔍 DEBUG
+
+    // 🔍 DEBUG: Log request start
+    console.log(`=================== [useAIStream] STREAM REQUEST START #${currentGlobalCount} ===================`);
+    console.log(`[useAIStream] Request ID: ${currentRequestId}, isRecursive: ${isRecursive}`);
+    console.log(`[useAIStream] Provider: ${provider}, Model: ${model}`);
+    console.log('=========================================================================================');
 
     setIsLoading(true);
     abortControllerRef.current = new AbortController();
@@ -323,6 +351,7 @@ async function streamOpenAI(params: {
   // Accumulate tool calls across chunks
   const accumulatedToolCalls = new Map<number, ToolCall>();
   let completed = false; // 🔒 防止 onComplete 重复调用
+  let completionCount = 0; // 🔍 DEBUG: Track how many times completion is triggered
 
   for await (const chunk of stream as any) {
     const content = chunk.choices[0]?.delta?.content;
@@ -360,14 +389,34 @@ async function streamOpenAI(params: {
 
     // Handle completion
     if (chunk.choices[0]?.finish_reason && !completed) {
+      completionCount++;
+      console.log(`[useAIStream] 🔍 Completion trigger #${completionCount}, finish_reason: ${chunk.choices[0]?.finish_reason}`);
+      console.log(`[useAIStream] 🔍 completed flag was: ${completed}`);
+      console.log(`[useAIStream] 🔍 chunk:`, JSON.stringify(chunk, null, 2));
+
       completed = true; // 🔒 设置标志
+      console.log(`[useAIStream] 🔍 completed flag now: ${completed}`);
+
+      // 🔍 DEBUG: Log completion
+      console.log('[useAIStream] OpenAI stream completed with finish_reason:', chunk.choices[0]?.finish_reason);
+      console.log('[useAIStream] Has usage:', !!chunk.usage);
 
       if (chunk.usage && params.onComplete) {
+        console.log('[useAIStream] Calling onComplete with tokens:', chunk.usage);
         params.onComplete({
           prompt: chunk.usage.prompt_tokens || 0,
           completion: chunk.usage.completion_tokens || 0,
         });
+      } else if (params.onComplete) {
+        // 🔒 FIX: Call onComplete even if usage is missing
+        console.log('[useAIStream] Calling onComplete without usage');
+        params.onComplete({
+          prompt: 0,
+          completion: 0,
+        });
       }
+    } else if (chunk.choices[0]?.finish_reason && completed) {
+      console.warn(`[useAIStream] ⚠️ Duplicate finish_reason detected (trigger #${completionCount + 1}), ignoring!`);
     }
   }
 }

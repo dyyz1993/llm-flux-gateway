@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Sparkles, Wrench, Bug, ChevronUp, Settings, Cpu, Key, Bot } from 'lucide-react';
 import { useKeysStore, useRoutesStore, useAssetsStore, useChatStore } from '@client/stores';
 import { useAIStream } from '@client/hooks/useAIStream';
@@ -114,6 +114,11 @@ export const RoutePlayground: React.FC = () => {
   // ========== Hooks ==========
   const { stream, request, isLoading } = useAIStream();
 
+  // ========== Refs ==========
+  // 🔒 Track tool execution depth to prevent infinite recursion
+  const MAX_TOOL_EXECUTION_DEPTH = 3; // Allow up to 3 rounds of tool calls
+  const toolExecutionDepthRef = useRef(0);
+
   // ========== Data Fetching ==========
   useEffect(() => {
     useKeysStore.getState().fetchKeys();
@@ -203,6 +208,9 @@ export const RoutePlayground: React.FC = () => {
       return;
     }
 
+    // 🔒 Reset tool execution depth for new message
+    toolExecutionDepthRef.current = 0;
+
     setError(null);
 
     // Create session if needed
@@ -222,6 +230,10 @@ export const RoutePlayground: React.FC = () => {
     };
 
     // Build message history from session
+    // 🔍 DEBUG: Log session messages before building
+    console.log('[RoutePlayground] currentSession.messages count:', currentSession.messages.length);
+    console.log('[RoutePlayground] currentSession.messages:', JSON.stringify(currentSession.messages, null, 2));
+
     const messages: Message[] = currentSession.messages.map(m => {
       const msg: Message = {
         role: m.role as any,
@@ -304,8 +316,6 @@ export const RoutePlayground: React.FC = () => {
     // Accumulate content for final update
     let accumulatedContent = '';
     let accumulatedToolCalls: ToolCall[] = [];
-    // Store the tool calls from the first round to display in the final assistant message
-    let toolCallsToDisplay: ToolCall[] = [];
     // 🔒 防止 onComplete 重复调用
     const isCompletingRef = { current: false };
 
@@ -313,6 +323,13 @@ export const RoutePlayground: React.FC = () => {
     const makeStreamingRequest = async (requestMessages: Message[], isRecursive = false) => {
       // Always use the user-selected format for consistency
       const provider = selectedFormat;
+
+      // 🔍 DEBUG: Log request messages structure
+      console.log('=================== [RoutePlayground] MAKE STREAMING REQUEST ===================');
+      console.log(`[RoutePlayground] isRecursive: ${isRecursive}`);
+      console.log(`[RoutePlayground] Total messages: ${requestMessages.length}`);
+      console.log('[RoutePlayground] Messages:', JSON.stringify(requestMessages, null, 2));
+      console.log('===============================================================================');
 
       await stream({
         apiKey: selectedKey.keyToken,
@@ -348,24 +365,47 @@ export const RoutePlayground: React.FC = () => {
         onComplete: async (tokens) => {
           // 🔒 防止重复调用
           if (isCompletingRef.current) {
-            console.warn('[RoutePlayground] onComplete already called, ignoring');
+            console.warn('[RoutePlayground] ⚠️ onComplete already called, ignoring duplicate call!');
             return;
           }
           isCompletingRef.current = true;
+
+          // 🔍 DEBUG: Log onComplete call
+          console.log('=================== [RoutePlayground] onComplete CALLED ===================');
+          console.log('[RoutePlayground] accumulatedToolCalls:', accumulatedToolCalls);
+          console.log('[RoutePlayground] accumulatedContent:', accumulatedContent);
+          console.log('===========================================================================');
 
           // 🔍 DEBUG: Log accumulatedToolCalls state
           console.log('[RoutePlayground] onComplete called, accumulatedToolCalls:', accumulatedToolCalls);
 
           try {
-            // Check if there are tool calls to execute
-            if (accumulatedToolCalls.length > 0) {
-              console.log('[RoutePlayground] Tool calls detected, executing...', accumulatedToolCalls);
+            // 🔒 FIX: Validate tool calls before executing
+            // GLM sometimes returns tool_calls with content (invalid format)
+            // Only execute if tool_calls are valid (non-empty arguments)
+            const validToolCalls = accumulatedToolCalls.filter(tc => {
+              const hasValidArgs = tc.function.arguments && tc.function.arguments.trim().length > 0;
+              const contentIsEmpty = !accumulatedContent || accumulatedContent.trim().length === 0;
+              const isValid = hasValidArgs && contentIsEmpty;
+              if (!isValid && accumulatedToolCalls.length > 0) {
+                console.warn('[RoutePlayground] ⚠️ Ignoring invalid tool_calls:', {
+                  hasArgs: hasValidArgs,
+                  contentEmpty: contentIsEmpty,
+                  toolCall: tc
+                });
+              }
+              return isValid;
+            });
+
+            // Check if there are valid tool calls to execute
+            if (validToolCalls.length > 0) {
+              console.log('[RoutePlayground] Tool calls detected, executing...', validToolCalls);
 
               // ⭐ FIX: Persist tool calls to the first assistant message before creating second one
-              chatStore.updateLastMessage(accumulatedContent, undefined, accumulatedToolCalls);
+              chatStore.updateLastMessage(accumulatedContent, undefined, validToolCalls);
 
             // Execute tools
-            const toolResults = await ToolExecutionService.executeToolCalls(accumulatedToolCalls);
+            const toolResults = await ToolExecutionService.executeToolCalls(validToolCalls);
             console.log('[RoutePlayground] Tool results:', toolResults);
 
             // Add tool result messages to store
@@ -380,13 +420,33 @@ export const RoutePlayground: React.FC = () => {
               } as ChatMessage);
             }
 
+            // 🔒 Increment depth FIRST, then check
+            toolExecutionDepthRef.current += 1;
+            const currentDepth = toolExecutionDepthRef.current;
+
+            if (currentDepth > MAX_TOOL_EXECUTION_DEPTH) {
+              console.error('[RoutePlayground] Max tool execution depth reached, aborting');
+              chatStore.updateLastMessage(
+                accumulatedContent + '\n\n[Error: Maximum tool execution depth exceeded]',
+                undefined,
+                []
+              );
+              setStreamingContent('');
+              setStreamingToolCalls([]);
+              toolExecutionDepthRef.current = 0; // Reset depth
+              return;
+            }
+
+            console.log(`[RoutePlayground] Tool execution depth: ${currentDepth}/${MAX_TOOL_EXECUTION_DEPTH}`);
+
             // Prepare messages for second round
+            // Use the full chat history (OpenAI standard)
             const messagesWithToolResults = [...requestMessages];
             // Add assistant message with tool calls
             messagesWithToolResults.push({
               role: Role.ASSISTANT,
               content: accumulatedContent || '',
-              tool_calls: accumulatedToolCalls,
+              tool_calls: validToolCalls,
             });
             // Add tool result messages
             messagesWithToolResults.push(...toolResults);
@@ -416,18 +476,34 @@ export const RoutePlayground: React.FC = () => {
               // Make second request with tool results
               await makeStreamingRequest(messagesWithToolResults, true); // 🔒 递归调用
             } else {
-              // No tool calls in this response
+              // No valid tool calls in this response
+              // This could be:
+              // 1. A normal response without any tool calls
+              // 2. A final response after tool execution
+              // 3. GLM returning invalid tool_calls with content (bug)
+
               // Check if this is the final response after tool execution
-              // (toolCallsToDisplay would have been set in the first round)
-              if (toolCallsToDisplay.length > 0) {
+              // by checking if depth > 0 (meaning we've executed tools before)
+              if (toolExecutionDepthRef.current > 0) {
                 // This is the final response after tool execution
                 // Clear tool calls from display since they belong to the previous message
                 console.log('[RoutePlayground] Final response after tool execution, clearing tool calls display');
                 chatStore.updateLastMessage(accumulatedContent, tokens, []); // Empty array for final response
-                toolCallsToDisplay = [];
+                // 🔒 Reset depth after successful completion
+                console.log(`[RoutePlayground] Resetting tool execution depth from ${toolExecutionDepthRef.current} to 0`);
+                toolExecutionDepthRef.current = 0;
               } else {
                 // This is a normal response without any tool calls
-                chatStore.updateLastMessage(accumulatedContent, tokens, accumulatedToolCalls);
+                // Or GLM returned invalid tool_calls with content
+                if (accumulatedToolCalls.length > 0 && accumulatedContent) {
+                  // GLM bug: it returned both content and tool_calls
+                  // Ignore the tool_calls and only show content
+                  console.warn('[RoutePlayground] GLM returned both content and tool_calls, ignoring tool_calls');
+                  chatStore.updateLastMessage(accumulatedContent, tokens, []);
+                } else {
+                  // Normal response
+                  chatStore.updateLastMessage(accumulatedContent, tokens, accumulatedToolCalls);
+                }
               }
               setStreamingContent('');
               setStreamingToolCalls([]);
@@ -486,15 +562,30 @@ export const RoutePlayground: React.FC = () => {
       // 🔍 DEBUG: Log accumulatedToolCalls state
       console.log('[RoutePlayground Non-Streaming] accumulatedToolCalls:', accumulatedToolCalls);
 
-      // Check if there are tool calls to execute
-      if (accumulatedToolCalls.length > 0) {
-        console.log('[RoutePlayground Non-Streaming] Tool calls detected:', accumulatedToolCalls);
+      // 🔒 FIX: Validate tool calls before executing (same fix as streaming)
+      const validToolCalls = accumulatedToolCalls.filter(tc => {
+        const hasValidArgs = tc.function.arguments && tc.function.arguments.trim().length > 0;
+        const contentIsEmpty = !accumulatedContent || accumulatedContent.trim().length === 0;
+        const isValid = hasValidArgs && contentIsEmpty;
+        if (!isValid && accumulatedToolCalls.length > 0) {
+          console.warn('[RoutePlayground Non-Streaming] ⚠️ Ignoring invalid tool_calls:', {
+            hasArgs: hasValidArgs,
+            contentEmpty: contentIsEmpty,
+            toolCall: tc
+          });
+        }
+        return isValid;
+      });
+
+      // Check if there are valid tool calls to execute
+      if (validToolCalls.length > 0) {
+        console.log('[RoutePlayground Non-Streaming] Tool calls detected:', validToolCalls);
 
         // Update with first response containing tool calls
-        chatStore.updateLastMessage(accumulatedContent, undefined, accumulatedToolCalls);
+        chatStore.updateLastMessage(accumulatedContent, undefined, validToolCalls);
 
         // Execute tools
-        const toolResults = await ToolExecutionService.executeToolCalls(accumulatedToolCalls);
+        const toolResults = await ToolExecutionService.executeToolCalls(validToolCalls);
         console.log('[RoutePlayground Non-Streaming] Tool results:', toolResults);
 
         // Add tool result messages to store
@@ -509,13 +600,33 @@ export const RoutePlayground: React.FC = () => {
           } as ChatMessage);
         }
 
+        // 🔒 Increment depth FIRST, then check
+        toolExecutionDepthRef.current += 1;
+        const currentDepth = toolExecutionDepthRef.current;
+
+        if (currentDepth > MAX_TOOL_EXECUTION_DEPTH) {
+          console.error('[RoutePlayground Non-Streaming] Max tool execution depth reached, aborting');
+          chatStore.updateLastMessage(
+            accumulatedContent + '\n\n[Error: Maximum tool execution depth exceeded]',
+            undefined,
+            []
+          );
+          setStreamingContent('');
+          setStreamingToolCalls([]);
+          toolExecutionDepthRef.current = 0; // Reset depth
+          return;
+        }
+
+        console.log(`[RoutePlayground Non-Streaming] Tool execution depth: ${currentDepth}/${MAX_TOOL_EXECUTION_DEPTH}`);
+
         // Prepare messages for second round
+        // Use the full chat history (OpenAI standard)
         const messagesWithToolResults = [...requestMessages];
         // Add assistant message with tool calls
         messagesWithToolResults.push({
           role: Role.ASSISTANT,
           content: accumulatedContent || '',
-          tool_calls: accumulatedToolCalls,
+          tool_calls: validToolCalls,
         });
         // Add tool result messages
         messagesWithToolResults.push(...toolResults);
@@ -535,10 +646,26 @@ export const RoutePlayground: React.FC = () => {
         // Make second request with tool results
         await makeNonStreamingRequest(messagesWithToolResults, true); // 🔒 递归调用
       } else {
-        console.log('[RoutePlayground Non-Streaming] No tool calls, finalizing with tokens:', tokens);
-        // No tool calls in this response - always clear tool calls display
-        // (Either this is a normal response without tools, or the final response after tool execution)
-        chatStore.updateLastMessage(accumulatedContent, tokens, []); // Empty array to clear tool calls display
+        console.log('[RoutePlayground Non-Streaming] No valid tool calls, finalizing with tokens:', tokens);
+        // No valid tool calls - could be final response or GLM bug
+        if (toolExecutionDepthRef.current > 0) {
+          // Final response after tool execution
+          chatStore.updateLastMessage(accumulatedContent, tokens, []);
+          // 🔒 Reset depth after successful completion
+          console.log(`[RoutePlayground Non-Streaming] Resetting tool execution depth from ${toolExecutionDepthRef.current} to 0`);
+          toolExecutionDepthRef.current = 0;
+        } else {
+          // Normal response or GLM bug
+          if (accumulatedToolCalls.length > 0 && accumulatedContent) {
+            // GLM bug: it returned both content and tool_calls
+            console.warn('[RoutePlayground Non-Streaming] GLM returned both content and tool_calls, ignoring tool_calls');
+            chatStore.updateLastMessage(accumulatedContent, tokens, []);
+          } else {
+            // Normal response
+            chatStore.updateLastMessage(accumulatedContent, tokens, accumulatedToolCalls);
+          }
+        }
+
         setStreamingContent('');
         setStreamingToolCalls([]);
       }
