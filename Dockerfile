@@ -21,9 +21,8 @@ RUN npm install --ignore-scripts
 COPY . .
 RUN npm run build
 
-# 清理开发依赖，但保留 drizzle-kit（用于运行时 schema 同步）
-RUN npm prune --omit=dev --ignore-scripts && \
-    npm install drizzle-kit --ignore-scripts
+# 清理开发依赖
+RUN npm prune --omit=dev --ignore-scripts
 
 # 运行阶段
 FROM base AS runner
@@ -38,9 +37,6 @@ ENV PORT=3000
 COPY --from=builder /app/node_modules ./node_modules
 # 复制 package.json
 COPY package*.json ./
-# 复制 drizzle 配置和 schema（用于运行时数据库同步）
-COPY drizzle.config.ts ./
-COPY src/server/shared/schema.ts ./src/server/shared/schema.ts
 # 复制构建产物
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/dist-server ./dist-server

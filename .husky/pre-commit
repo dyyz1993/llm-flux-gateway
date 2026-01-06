@@ -1,5 +1,4 @@
 #!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
 
 echo "🔍 Running type check (src/ only)..."
 # 只检查 src/ 目录的类型错误（Phase 1 临时措施）

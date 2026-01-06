@@ -20,9 +20,8 @@ fi
 # 确保 data 目录存在
 mkdir -p /app/data
 
-# 同步数据库 schema（自动创建/更新表结构）
-echo "正在同步数据库 schema..."
-npx drizzle-kit push || echo "警告: 数据库同步失败，将继续启动"
+# 数据库表创建和迁移由 initDatabase() 在应用启动时自动处理
+# 无需 drizzle-kit push，因为它需要 better-sqlite3 原生绑定
 
 # 启动应用
 exec npm start
