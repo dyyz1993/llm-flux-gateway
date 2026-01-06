@@ -17,5 +17,12 @@ if [ ! -f /app/config/vendors.yaml ]; then
   cp /app/config.dist/vendors.yaml /app/config/vendors.yaml
 fi
 
+# 确保 data 目录存在
+mkdir -p /app/data
+
+# 同步数据库 schema（自动创建/更新表结构）
+echo "正在同步数据库 schema..."
+npx drizzle-kit push || echo "警告: 数据库同步失败，将继续启动"
+
 # 启动应用
 exec npm start
