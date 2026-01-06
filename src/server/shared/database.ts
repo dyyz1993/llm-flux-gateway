@@ -131,8 +131,11 @@ export function initDatabase() {
     tool_count INTEGER DEFAULT 0,
     overwritten_model TEXT,
     overwritten_fields TEXT,
+    overwritten_attributes TEXT,
     timestamp INTEGER NOT NULL,
     is_favorited INTEGER NOT NULL DEFAULT 0,
+    original_response TEXT,
+    original_response_format TEXT,
     FOREIGN KEY (api_key_id) REFERENCES api_keys(id) ON DELETE CASCADE,
     FOREIGN KEY (route_id) REFERENCES routes(id) ON DELETE SET NULL
   );`);
@@ -272,6 +275,7 @@ export function initDatabase() {
     const columns = sqlite.prepare("PRAGMA table_info(request_logs)").all() as any[];
     const hasOriginalResponseColumn = columns.some((col: any) => col.name === 'original_response');
     const hasOriginalResponseFormatColumn = columns.some((col: any) => col.name === 'original_response_format');
+    const hasOverwrittenAttributesColumn = columns.some((col: any) => col.name === 'overwritten_attributes');
 
     if (!hasOriginalResponseColumn) {
       console.log('[Database] Adding original_response column to request_logs...');
@@ -284,6 +288,12 @@ export function initDatabase() {
       sqlite.exec(`ALTER TABLE request_logs ADD COLUMN original_response_format TEXT;`);
       sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_request_logs_original_format ON request_logs(original_response_format);`);
       console.log('[Database] Migration completed: original_response_format column added to request_logs');
+    }
+
+    if (!hasOverwrittenAttributesColumn) {
+      console.log('[Database] Adding overwritten_attributes column to request_logs...');
+      sqlite.exec(`ALTER TABLE request_logs ADD COLUMN overwritten_attributes TEXT;`);
+      console.log('[Database] Migration completed: overwritten_attributes column added to request_logs');
     }
   } catch (error) {
     console.error('[Database] Migration failed:', error);
