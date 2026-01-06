@@ -359,6 +359,14 @@ async function streamOpenAI(params: {
     if (chunk.choices[0]?.finish_reason && !completed) {
       completed = true; // 🔒 设置标志
 
+      // 🔧 FIX: Ensure final tool calls are included in the last onChunk call
+      // This is critical because if the last chunk has no new content/tool_calls,
+      // the accumulated tool calls won't be passed to the callback
+      const finalToolCalls = Array.from(accumulatedToolCalls.values());
+      if (finalToolCalls.length > 0) {
+        params.onChunk('', toToolCallsArray(finalToolCalls));
+      }
+
       if (chunk.usage && params.onComplete) {
         params.onComplete({
           prompt: chunk.usage.prompt_tokens || 0,
@@ -512,6 +520,13 @@ async function streamAnthropicNative(params: {
           // Handle message_delta (completion)
           if (currentEvent === 'message_delta' && parsed.delta?.stop_reason && !completed && params.onComplete) {
             completed = true; // 🔒 设置标志
+
+            // 🔧 FIX: Ensure final tool calls are included before completion
+            const finalToolCalls = Array.from(accumulatedToolCalls.values());
+            if (finalToolCalls.length > 0) {
+              params.onChunk('', toToolCallsArray(finalToolCalls));
+            }
+
             params.onComplete({
               prompt: parsed.usage?.input_tokens || 0,
               completion: parsed.usage?.output_tokens || 0,
@@ -608,6 +623,13 @@ async function streamAnthropicSDK(params: {
     } else if (chunk.type === 'message_delta') {
       if (chunk.delta?.stop_reason === 'end_turn' && !completed && chunk.usage && params.onComplete) {
         completed = true; // 🔒 设置标志
+
+        // 🔧 FIX: Ensure final tool calls are included before completion
+        const finalToolCalls = Array.from(accumulatedToolCalls.values());
+        if (finalToolCalls.length > 0) {
+          params.onChunk('', toToolCallsArray(finalToolCalls));
+        }
+
         params.onComplete({
           prompt: chunk.usage.input_tokens || 0,
           completion: chunk.usage.output_tokens || 0,
