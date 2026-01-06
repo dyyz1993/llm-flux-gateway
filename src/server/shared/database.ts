@@ -70,13 +70,15 @@ export function initDatabase() {
     success INTEGER NOT NULL,
     response TEXT,
     error TEXT,
+    latency_ms INTEGER,
+    validated_at INTEGER,
     created_at INTEGER NOT NULL,
     FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE
   );`);
 
   sqlite.exec(`CREATE TABLE IF NOT EXISTS routes (
     id TEXT PRIMARY KEY,
-    route_name TEXT NOT NULL,
+    name TEXT NOT NULL,
     asset_id TEXT NOT NULL,
     overrides TEXT NOT NULL DEFAULT '[]',
     is_active INTEGER NOT NULL DEFAULT 1,
@@ -84,6 +86,7 @@ export function initDatabase() {
     request_format TEXT NOT NULL DEFAULT 'openai',
     response_format TEXT NOT NULL DEFAULT 'openai',
     created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
     FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE
   );`);
 
@@ -203,6 +206,51 @@ export function initDatabase() {
     // Create indexes for format columns to improve query performance
     sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_routes_request_format ON routes(request_format);`);
     sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_routes_response_format ON routes(response_format);`);
+  } catch (error) {
+    console.error('[Database] Migration failed:', error);
+  }
+
+  // Migration: Add updated_at column and handle legacy route_name in routes table
+  try {
+    const columns = sqlite.prepare("PRAGMA table_info(routes)").all() as any[];
+    const hasUpdatedAtColumn = columns.some((col: any) => col.name === 'updated_at');
+    const hasRouteNameColumn = columns.some((col: any) => col.name === 'route_name');
+    const hasNameColumn = columns.some((col: any) => col.name === 'name');
+
+    // Handle legacy route_name column
+    if (hasRouteNameColumn && !hasNameColumn) {
+      console.log('[Database] Detected legacy route_name column, adding new name column...');
+      sqlite.exec(`ALTER TABLE routes ADD COLUMN name TEXT;`);
+      sqlite.exec(`UPDATE routes SET name = route_name WHERE name IS NULL;`);
+      console.log('[Database] Migration completed: copied route_name to name');
+    }
+
+    if (!hasUpdatedAtColumn) {
+      console.log('[Database] Adding updated_at column to routes...');
+      sqlite.exec(`ALTER TABLE routes ADD COLUMN updated_at INTEGER NOT NULL DEFAULT ${Date.now()};`);
+      console.log('[Database] Migration completed: updated_at column added to routes');
+    }
+  } catch (error) {
+    console.error('[Database] Migration failed:', error);
+  }
+
+  // Migration: Add latency_ms and validated_at columns to asset_model_validations if not exists
+  try {
+    const columns = sqlite.prepare("PRAGMA table_info(asset_model_validations)").all() as any[];
+    const hasLatencyMsColumn = columns.some((col: any) => col.name === 'latency_ms');
+    const hasValidatedAtColumn = columns.some((col: any) => col.name === 'validated_at');
+
+    if (!hasLatencyMsColumn) {
+      console.log('[Database] Adding latency_ms column to asset_model_validations...');
+      sqlite.exec(`ALTER TABLE asset_model_validations ADD COLUMN latency_ms INTEGER;`);
+      console.log('[Database] Migration completed: latency_ms column added to asset_model_validations');
+    }
+
+    if (!hasValidatedAtColumn) {
+      console.log('[Database] Adding validated_at column to asset_model_validations...');
+      sqlite.exec(`ALTER TABLE asset_model_validations ADD COLUMN validated_at INTEGER;`);
+      console.log('[Database] Migration completed: validated_at column added to asset_model_validations');
+    }
   } catch (error) {
     console.error('[Database] Migration failed:', error);
   }

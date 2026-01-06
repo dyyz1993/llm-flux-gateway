@@ -167,6 +167,24 @@ export type NewAssetModel = typeof assetModelsTable.$inferInsert;
 export type AssetModel = typeof assetModelsTable.$inferSelect;
 
 // ============================================
+// asset_model_validations - Model Validation Results
+// ============================================
+export const assetModelValidationsTable = sqliteTable('asset_model_validations', {
+  id: text('id').primaryKey(),
+  assetId: text('asset_id').notNull().references(() => assetsTable.id, { onDelete: 'cascade' }),
+  modelId: text('model_id').notNull(),
+  success: integer('success', { mode: 'boolean' }).notNull(),
+  response: text('response'),
+  error: text('error'),
+  latencyMs: integer('latency_ms'),
+  validatedAt: integer('validated_at', { mode: 'timestamp' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+});
+
+export type NewAssetModelValidation = typeof assetModelValidationsTable.$inferInsert;
+export type AssetModelValidation = typeof assetModelValidationsTable.$inferSelect;
+
+// ============================================
 // routes - Route Configuration
 // ============================================
 export const routesTable = sqliteTable('routes', {
