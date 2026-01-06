@@ -1,5 +1,0 @@
-{
-  "name": "LLM Flux Gateway",
-  "description": "High-performance LLM proxy dashboard for routing, key management, property rewriting, and deep observability of AI traffic.",
-  "requestFramePermissions": []
-}
