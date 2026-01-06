@@ -321,6 +321,11 @@ export const RoutePlayground: React.FC = () => {
         provider,
         tools: enableTools ? Object.values(TOOL_TEMPLATES) : undefined,
         onChunk: (content, toolCalls) => {
+          // 🔍 DEBUG: Log onChunk calls
+          if (toolCalls && toolCalls.length > 0) {
+            console.log('[RoutePlayground] onChunk called with toolCalls:', toolCalls);
+          }
+
           // Accumulate content
           if (content) {
             accumulatedContent += content;
@@ -346,6 +351,9 @@ export const RoutePlayground: React.FC = () => {
             return;
           }
           isCompletingRef.current = true;
+
+          // 🔍 DEBUG: Log accumulatedToolCalls state
+          console.log('[RoutePlayground] onComplete called, accumulatedToolCalls:', accumulatedToolCalls);
 
           try {
             // Check if there are tool calls to execute
@@ -458,12 +466,16 @@ export const RoutePlayground: React.FC = () => {
         contentLength: result.content?.length || 0,
         toolCallsCount: result.toolCalls?.length || 0,
         hasTokens: !!result.tokens,
+        toolCalls: result.toolCalls, // 🔍 DEBUG: Log actual toolCalls
       });
 
       // Update with the final result
       let accumulatedContent = result.content || '';
       let accumulatedToolCalls = result.toolCalls || [];
       const tokens = result.tokens;
+
+      // 🔍 DEBUG: Log accumulatedToolCalls state
+      console.log('[RoutePlayground Non-Streaming] accumulatedToolCalls:', accumulatedToolCalls);
 
       // Check if there are tool calls to execute
       if (accumulatedToolCalls.length > 0) {
