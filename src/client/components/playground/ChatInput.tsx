@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Loader2, Terminal, CheckCircle } from 'lucide-react';
 import { QuickPrompts } from './QuickPrompts';
 import { copyToClipboard } from '@client/utils/clipboard';
+import { getApiBaseUrl } from '@client/services/apiClient';
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -74,7 +75,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, disable
       content: m.content,
     }));
 
-    const curlCommand = `curl -X POST http://localhost:3000/v1/chat/completions \\
+    const curlCommand = `curl -X POST ${getApiBaseUrl()}/v1/chat/completions \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -d '{

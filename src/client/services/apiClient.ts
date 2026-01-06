@@ -13,7 +13,7 @@ const USE_MOCK_SERVER = false;
  * 优先从 window.env 读取（由 Docker 运行时注入），
  * 其次使用编译时环境变量，最后默认 localhost
  */
-const getApiBaseUrl = () => {
+export const getApiBaseUrl = () => {
   // @ts-ignore - window.env 是动态注入的
   if (window.env && typeof window.env.VITE_API_BASE_URL === 'string') {
     // @ts-ignore

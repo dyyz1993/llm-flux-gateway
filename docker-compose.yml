@@ -1,6 +1,10 @@
 services:
   gateway:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-dyyz1993}/llm-flux-gateway:latest
+    # 使用本地构建而不是预构建镜像
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: llm-flux-gateway:local
     container_name: llm-flux-gateway
     restart: always
     ports:
@@ -15,15 +19,13 @@ services:
       # Admin Authentication (IMPORTANT: Change these!)
       # ============================================
       - ADMIN_USERNAME=admin
-      - ADMIN_PASSWORD=changeme
+      - ADMIN_PASSWORD=your_secure_password_here
       - MAX_LOGIN_ATTEMPTS=5
       - LOGIN_BLOCK_MINUTES=5
       - SESSION_EXPIRE_DAYS=7
     volumes:
       - ./data:/app/data
       - ./config:/app/config
-    # 如果需要自动创建数据目录，可以添加以下命令
-    # command: ["sh", "-c", "mkdir -p /app/data && npm start"]
 
 volumes:
   data:
