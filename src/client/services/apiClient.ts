@@ -210,8 +210,6 @@ export const createRoute = async (data: {
   overrides?: any[];
   configType?: 'yaml' | 'json';
   priority?: number;
-  requestFormat?: 'openai' | 'anthropic' | 'gemini';
-  responseFormat?: 'openai' | 'anthropic' | 'gemini';
 }): Promise<ApiResponse<RouteConfig>> => {
   try {
     return await apiRequest<RouteConfig>('/api/routes', {
@@ -235,8 +233,6 @@ export const updateRoute = async (
     overrides?: any[];
     configType?: 'yaml' | 'json';
     priority?: number;
-    requestFormat?: 'openai' | 'anthropic' | 'gemini';
-    responseFormat?: 'openai' | 'anthropic' | 'gemini';
   }
 ): Promise<ApiResponse<RouteConfig>> => {
   try {

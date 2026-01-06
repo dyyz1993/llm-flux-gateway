@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { RouteConfig } from '@shared/types';
 import { useRoutesStore } from '@client/stores/routesStore';
 import { useAssetsStore } from '@client/stores/assetsStore';
-import { Plus, Trash2, Save, Edit3, ArrowRight, Server, FileJson, Globe, Check, ChevronRight as ArrowRightIcon, Info } from 'lucide-react';
+import { Plus, Trash2, Save, Edit3, ArrowRight, Server, FileJson, Globe, Check, ChevronRight as ArrowRightIcon } from 'lucide-react';
 import { YamlOverrideEditor } from './YamlOverrideEditor';
 
 export const RouteManager: React.FC = () => {
@@ -26,8 +26,6 @@ export const RouteManager: React.FC = () => {
   const [createForm, setCreateForm] = useState({
     name: '',
     assetId: '',
-    requestFormat: 'openai' as 'openai' | 'anthropic' | 'gemini',
-    responseFormat: 'openai' as 'openai' | 'anthropic' | 'gemini',
   });
 
   // Success state for onboarding flow
@@ -73,8 +71,6 @@ export const RouteManager: React.FC = () => {
       setCreateForm({
         name: '', // Let user enter name
         assetId: newAssetId,
-        requestFormat: 'openai',
-        responseFormat: 'openai',
       });
       // Clear after using
       sessionStorage.removeItem('newAssetId');
@@ -88,8 +84,6 @@ export const RouteManager: React.FC = () => {
     const result = await createRoute({
       name: createForm.name,
       assetId: createForm.assetId,
-      requestFormat: createForm.requestFormat,
-      responseFormat: createForm.responseFormat,
     });
 
     if (result) {
@@ -97,8 +91,6 @@ export const RouteManager: React.FC = () => {
       setCreateForm({
         name: '',
         assetId: '',
-        requestFormat: 'openai',
-        responseFormat: 'openai',
       });
     } else {
       alert('Failed to create route');
@@ -112,8 +104,6 @@ export const RouteManager: React.FC = () => {
       name: route.name,
       assetId: route.assetId,
       overrides: route.overrides,
-      ...(route as any).requestFormat && { requestFormat: (route as any).requestFormat },
-      ...(route as any).responseFormat && { responseFormat: (route as any).responseFormat },
     } as any);
   };
 
@@ -124,8 +114,6 @@ export const RouteManager: React.FC = () => {
       name: editForm.name,
       assetId: editForm.assetId,
       overrides: editForm.overrides,
-      // requestFormat: editForm.requestFormat,
-      // responseFormat: editForm.responseFormat,
     } as any);
 
     if (success) {
@@ -238,50 +226,6 @@ export const RouteManager: React.FC = () => {
                 </option>
               ))}
             </select>
-          </div>
-
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className="text-xs text-gray-500 uppercase font-semibold mb-1.5 flex items-center gap-1.5">
-                Request Format
-                <span className="group relative">
-                  <Info className="w-3 h-3 text-gray-600 cursor-help" />
-                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 px-2 py-1 bg-gray-800 text-gray-300 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                    Format to convert incoming requests to
-                  </span>
-                </span>
-              </label>
-              <select
-                value={createForm.requestFormat}
-                onChange={(e) => setCreateForm({ ...createForm, requestFormat: e.target.value as 'openai' | 'anthropic' | 'gemini' })}
-                className="w-full bg-[#1a1a1a] border border-[#333] text-white text-sm px-3 py-2 rounded-md focus:border-indigo-500 focus:outline-none"
-              >
-                <option value="openai">OpenAI Format</option>
-                <option value="anthropic">Anthropic Format</option>
-                <option value="gemini">Gemini Format</option>
-              </select>
-            </div>
-
-            <div className="flex-1">
-              <label className="text-xs text-gray-500 uppercase font-semibold mb-1.5 flex items-center gap-1.5">
-                Response Format
-                <span className="group relative">
-                  <Info className="w-3 h-3 text-gray-600 cursor-help" />
-                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 px-2 py-1 bg-gray-800 text-gray-300 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                    Format to convert responses back to
-                  </span>
-                </span>
-              </label>
-              <select
-                value={createForm.responseFormat}
-                onChange={(e) => setCreateForm({ ...createForm, responseFormat: e.target.value as 'openai' | 'anthropic' | 'gemini' })}
-                className="w-full bg-[#1a1a1a] border border-[#333] text-white text-sm px-3 py-2 rounded-md focus:border-indigo-500 focus:outline-none"
-              >
-                <option value="openai">OpenAI Format</option>
-                <option value="anthropic">Anthropic Format</option>
-                <option value="gemini">Gemini Format</option>
-              </select>
-            </div>
           </div>
 
           <div className="flex justify-end">
@@ -422,50 +366,6 @@ export const RouteManager: React.FC = () => {
                           ) : (
                             <div className="mt-1 text-red-400 text-sm">Asset not found</div>
                           )}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Format Configuration */}
-                    <div>
-                      <label className="text-xs text-gray-500 uppercase font-semibold mb-2 block">Format Conversion</label>
-                      {editingId === route.id ? (
-                        <div className="space-y-2">
-                          <div>
-                            <label className="text-xs text-gray-600 mb-1 block">Request Format</label>
-                            <select
-                              value={(editForm as any).requestFormat || (route as any).requestFormat as any || 'openai'}
-                              onChange={(e) => setEditForm({ ...editForm, requestFormat: e.target.value } as any)}
-                              className="w-full bg-[#1a1a1a] border border-[#333] text-white text-sm px-3 py-2 rounded-md focus:border-indigo-500 focus:outline-none"
-                            >
-                              <option value="openai">OpenAI</option>
-                              <option value="anthropic">Anthropic</option>
-                              <option value="gemini">Gemini</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="text-xs text-gray-600 mb-1 block">Response Format</label>
-                            <select
-                              value={(editForm as any).responseFormat || (route as any).responseFormat as any || 'openai'}
-                              onChange={(e) => setEditForm({ ...editForm, responseFormat: e.target.value } as any)}
-                              className="w-full bg-[#1a1a1a] border border-[#333] text-white text-sm px-3 py-2 rounded-md focus:border-indigo-500 focus:outline-none"
-                            >
-                              <option value="openai">OpenAI</option>
-                              <option value="anthropic">Anthropic</option>
-                              <option value="gemini">Gemini</option>
-                            </select>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="bg-[#1a1a1a] border border-[#333] px-3 py-2 rounded-md space-y-1.5">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-gray-500">Request:</span>
-                            <span className="text-indigo-400 font-mono">{(route as any).requestFormat as any || 'openai'}</span>
-                          </div>
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-gray-500">Response:</span>
-                            <span className="text-emerald-400 font-mono">{(route as any).responseFormat as any || 'openai'}</span>
-                          </div>
                         </div>
                       )}
                     </div>

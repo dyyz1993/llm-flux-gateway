@@ -30,8 +30,6 @@ interface RoutesState {
     overrides?: any[];
     configType?: 'yaml' | 'json';
     priority?: number;
-    requestFormat?: 'openai' | 'anthropic' | 'gemini';
-    responseFormat?: 'openai' | 'anthropic' | 'gemini';
   }) => Promise<RouteConfig | null>;
   updateRouteData: (id: string, data: {
     name?: string;
@@ -40,8 +38,6 @@ interface RoutesState {
     overrides?: any[];
     configType?: 'yaml' | 'json';
     priority?: number;
-    requestFormat?: 'openai' | 'anthropic' | 'gemini';
-    responseFormat?: 'openai' | 'anthropic' | 'gemini';
   }) => Promise<boolean>;
   toggleRouteActive: (id: string) => Promise<boolean>;
   deleteRoute: (id: string) => Promise<boolean>;
