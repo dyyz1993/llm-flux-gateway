@@ -122,6 +122,7 @@ export function initDatabase() {
     response_content TEXT,
     request_params TEXT,
     response_params TEXT,
+    response_tool_calls TEXT,
     cached_tokens INTEGER DEFAULT 0,
     cache_read_tokens INTEGER DEFAULT 0,
     cache_write_tokens INTEGER DEFAULT 0,
@@ -276,6 +277,7 @@ export function initDatabase() {
     const hasOriginalResponseColumn = columns.some((col: any) => col.name === 'original_response');
     const hasOriginalResponseFormatColumn = columns.some((col: any) => col.name === 'original_response_format');
     const hasOverwrittenAttributesColumn = columns.some((col: any) => col.name === 'overwritten_attributes');
+    const hasResponseToolCallsColumn = columns.some((col: any) => col.name === 'response_tool_calls');
 
     if (!hasOriginalResponseColumn) {
       console.log('[Database] Adding original_response column to request_logs...');
@@ -294,6 +296,12 @@ export function initDatabase() {
       console.log('[Database] Adding overwritten_attributes column to request_logs...');
       sqlite.exec(`ALTER TABLE request_logs ADD COLUMN overwritten_attributes TEXT;`);
       console.log('[Database] Migration completed: overwritten_attributes column added to request_logs');
+    }
+
+    if (!hasResponseToolCallsColumn) {
+      console.log('[Database] Adding response_tool_calls column to request_logs...');
+      sqlite.exec(`ALTER TABLE request_logs ADD COLUMN response_tool_calls TEXT;`);
+      console.log('[Database] Migration completed: response_tool_calls column added to request_logs');
     }
   } catch (error) {
     console.error('[Database] Migration failed:', error);
