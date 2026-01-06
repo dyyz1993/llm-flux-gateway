@@ -94,10 +94,10 @@ export class RoutesService {
 
     const routes = rows.map((row) => this.mapRowToRoute(row));
 
-    // Fetch models for each route's asset
+    // Fetch models for each route's asset (use DISTINCT to deduplicate)
     for (const route of routes) {
       const modelRows = queryAll<any>(`
-        SELECT model_id
+        SELECT DISTINCT model_id
         FROM asset_models
         WHERE asset_id = ?
       `, [route.assetId]);
@@ -137,9 +137,9 @@ export class RoutesService {
 
     const route = this.mapRowToRoute(row);
 
-    // Fetch models for the route's asset
+    // Fetch models for the route's asset (use DISTINCT to deduplicate)
     const modelRows = queryAll<any>(`
-      SELECT model_id
+      SELECT DISTINCT model_id
       FROM asset_models
       WHERE asset_id = ?
     `, [route.assetId]);
@@ -177,10 +177,10 @@ export class RoutesService {
 
     const routes = rows.map((row) => this.mapRowToRoute(row));
 
-    // Fetch models for each route's asset
+    // Fetch models for each route's asset (use DISTINCT to deduplicate)
     for (const route of routes) {
       const modelRows = queryAll<any>(`
-        SELECT model_id
+        SELECT DISTINCT model_id
         FROM asset_models
         WHERE asset_id = ?
       `, [route.assetId]);
@@ -314,12 +314,12 @@ export class RoutesService {
       id: row.id,
       name: row.name,
       assetId: row.assetId,
-      isActive: row.is_active === 1,
+      isActive: row.isActive === 1,  // Fixed: use aliased name from SQL query
       overrides: this.parseOverrides(row.overrides),
-      configType: row.config_type as ConfigType,
+      configType: row.configType as ConfigType,
       priority: row.priority,
-      createdAt: new Date(row.created_at),
-      updatedAt: new Date(row.updated_at),
+      createdAt: new Date(row.createdAt),
+      updatedAt: new Date(row.updatedAt),
       assetName: row.assetName,
       assetVendorDisplayName: row.assetVendorDisplayName,
       assetBaseUrl: row.assetBaseUrl,

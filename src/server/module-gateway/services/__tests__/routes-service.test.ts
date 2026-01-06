@@ -25,12 +25,12 @@ describe('RoutesService', () => {
     id: 'test-route-id',
     name: 'Test Route',
     assetId: 'asset-123',
-    is_active: 1,
+    isActive: 1,  // Use aliased name (is_active AS isActive)
     overrides: JSON.stringify([{ match: 'gpt-*', model: 'gpt-4' }]),
-    config_type: 'yaml',
+    configType: 'yaml',  // Use aliased name (config_type AS configType)
     priority: 0,
-    created_at: 1609459200,
-    updated_at: 1609459200,
+    createdAt: 1609459200,  // Use aliased name (created_at AS createdAt)
+    updatedAt: 1609459200,  // Use aliased name (updated_at AS updatedAt)
     // JOIN fields from asset (camelCase as returned by SQL with AS aliases)
     assetName: 'Test Asset',
     assetVendorDisplayName: 'OpenAI',
@@ -122,9 +122,9 @@ describe('RoutesService', () => {
         ...mockDbRow,
         name: 'New Route',
         assetId: 'test-asset',
-        is_active: 1,
+        isActive: 1,  // Use aliased name
         overrides: '[]',
-        config_type: 'yaml',
+        configType: 'yaml',  // Use aliased name
         priority: 0,
       });
       mockQueryAll.mockReturnValue([]); // For models query
@@ -158,9 +158,9 @@ describe('RoutesService', () => {
       mockQueryFirst.mockReturnValue({
         ...mockDbRow,
         name: 'Custom Route',
-        is_active: 0,
+        isActive: 0,  // Use aliased name
         overrides: JSON.stringify([{ match: 'custom-*', model: 'custom-model' }]),
-        config_type: 'json',
+        configType: 'json',  // Use aliased name
         priority: 10,
         assetId: 'test-asset',
       });
@@ -261,7 +261,7 @@ describe('RoutesService', () => {
     });
 
     it('should toggle active status from false to true', async () => {
-      const inactiveRow = { ...mockDbRow, is_active: 0 };
+      const inactiveRow = { ...mockDbRow, isActive: 0 };
       mockQueryFirst.mockReturnValue(inactiveRow);
       mockQueryRun.mockReturnValue({ changes: 1 } as any);
 

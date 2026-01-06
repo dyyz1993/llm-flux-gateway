@@ -181,7 +181,8 @@
       "Bash(while read file)",
       "Bash(do sed -i '' \"/import.*expectSuccess/d\" \"$file\")",
       "Bash(sort:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Skill(investigating-bugs)"
     ]
   },
   "sandbox": {

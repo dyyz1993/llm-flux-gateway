@@ -99,7 +99,7 @@ export const RoutePlayground: React.FC = () => {
   });
   const [isValid, setIsValid] = useState<boolean>(false);
   const [enableStream, setEnableStream] = useState(true); // Enable streaming by default
-  const [enableTools] = useState(false); // Enable tools (function calling)
+  const [enableTools, setEnableTools] = useState(false); // Enable tools (function calling)
   const [, setStreamingContent] = useState(''); // Real-time streaming content
   const [, setStreamingToolCalls] = useState<ToolCall[]>([]); // Real-time streaming tool calls
   const [error, setError] = useState<string | null>(null as any);
@@ -608,13 +608,50 @@ export const RoutePlayground: React.FC = () => {
           {/* Collapsible Config Panel */}
           {!configCollapsed && (
             <div className="px-4 pb-4 animate-in slide-in-from-top-2 duration-200">
-              <div className="flex gap-4">
+              <div className="flex flex-col gap-3">
                 {/* Format Selector */}
-                <FormatSelector
-                  value={selectedFormat}
-                  onChange={setSelectedFormat}
-                  disabled={isLoading}
-                />
+                <div className="flex gap-4">
+                  <FormatSelector
+                    value={selectedFormat}
+                    onChange={setSelectedFormat}
+                    disabled={isLoading}
+                  />
+                </div>
+
+                {/* Streaming & Tools Toggles */}
+                <div className="flex gap-4">
+                  {/* Streaming Toggle */}
+                  <label className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-colors cursor-pointer ${
+                    enableStream
+                      ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-400'
+                      : 'bg-[#1a1a1a] border-[#262626] text-gray-500 hover:text-gray-300'
+                  }`}>
+                    <input
+                      type="checkbox"
+                      checked={enableStream}
+                      onChange={(e) => setEnableStream(e.target.checked)}
+                      className="w-4 h-4 rounded border-gray-600 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
+                      disabled={isLoading}
+                    />
+                    <span className="text-sm font-medium">流式响应</span>
+                  </label>
+
+                  {/* Tools Toggle */}
+                  <label className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-colors cursor-pointer ${
+                    enableTools
+                      ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400'
+                      : 'bg-[#1a1a1a] border-[#262626] text-gray-500 hover:text-gray-300'
+                  }`}>
+                    <input
+                      type="checkbox"
+                      checked={enableTools}
+                      onChange={(e) => setEnableTools(e.target.checked)}
+                      className="w-4 h-4 rounded border-gray-600 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0"
+                      disabled={isLoading}
+                    />
+                    <span className="text-sm font-medium">工具调用</span>
+                  </label>
+                </div>
 
                 {/* Model Selector */}
                 <ModelSelector
@@ -626,22 +663,6 @@ export const RoutePlayground: React.FC = () => {
                   onValidationChange={setIsValid}
                   disabled={isLoading}
                 />
-
-                {/* Streaming Toggle */}
-                <label className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-colors cursor-pointer ${
-                  enableStream
-                    ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-400'
-                    : 'bg-[#1a1a1a] border-[#262626] text-gray-500 hover:text-gray-300'
-                }`}>
-                  <input
-                    type="checkbox"
-                    checked={enableStream}
-                    onChange={(e) => setEnableStream(e.target.checked)}
-                    className="w-4 h-4 rounded border-gray-600 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
-                    disabled={isLoading}
-                  />
-                  <span className="text-sm font-medium">流式响应</span>
-                </label>
               </div>
             </div>
           )}

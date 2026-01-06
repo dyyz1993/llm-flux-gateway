@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { queryAll, queryFirst, queryRun } from '../../shared/database';
+import { inferFormatFromVendorTemplate } from '../../module-gateway/utils/format-inferer';
+import { ApiFormat } from '../../module-protocol-transpiler';
 
 export interface ModelValidationStatus {
   success: boolean;
@@ -55,6 +57,7 @@ export interface AssetWithVendor extends Omit<Asset, 'vendorId' | 'status' | 'va
   vendorName: string;
   vendorDisplayName: string;
   vendorBaseUrl: string;
+  vendorEndpoint: string;
   models?: ModelInfo[];
 }
 
@@ -76,7 +79,8 @@ export class AssetsService {
         a.updated_at as updatedAt,
         v.name as vendorName,
         v.display_name as vendorDisplayName,
-        v.base_url as vendorBaseUrl
+        v.base_url as vendorBaseUrl,
+        v.endpoint as vendorEndpoint
       FROM assets a
       INNER JOIN vendor_templates v ON a.vendor_id = v.id
       ORDER BY a.created_at DESC
@@ -109,7 +113,8 @@ export class AssetsService {
         a.updated_at as updatedAt,
         v.name as vendorName,
         v.display_name as vendorDisplayName,
-        v.base_url as vendorBaseUrl
+        v.base_url as vendorBaseUrl,
+        v.endpoint as vendorEndpoint
       FROM assets a
       INNER JOIN vendor_templates v ON a.vendor_id = v.id
       WHERE a.id = ?
@@ -140,7 +145,8 @@ export class AssetsService {
         a.updated_at as updatedAt,
         v.name as vendorName,
         v.display_name as vendorDisplayName,
-        v.base_url as vendorBaseUrl
+        v.base_url as vendorBaseUrl,
+        v.endpoint as vendorEndpoint
       FROM assets a
       INNER JOIN vendor_templates v ON a.vendor_id = v.id
       WHERE a.status = 'active'
@@ -168,7 +174,8 @@ export class AssetsService {
         vm.display_name as displayName,
         vm.description
       FROM asset_models am
-      INNER JOIN vendor_models vm ON am.model_id = vm.model_id
+      INNER JOIN assets a ON am.asset_id = a.id
+      INNER JOIN vendor_models vm ON am.model_id = vm.model_id AND a.vendor_id = vm.vendor_id
       WHERE am.asset_id = ?
     `, [assetId]);
 
@@ -464,6 +471,133 @@ export class AssetsService {
   }
 
   /**
+   * Build a vendor-specific request for Quick Test
+   * Returns the request body and headers for the detected format
+   */
+  private buildVendorRequest(
+    asset: AssetWithVendor,
+    modelId: string
+  ): { body: Record<string, unknown>; headers: Record<string, string>; endpoint: string } {
+    // Detect the format from vendor template
+    const format = inferFormatFromVendorTemplate({
+      baseUrl: asset.vendorBaseUrl,
+      endpoint: asset.vendorEndpoint,
+    });
+
+    const baseUrl = asset.vendorBaseUrl.replace(/\/$/, '');
+    const endpoint = asset.vendorEndpoint;
+
+    // Common headers
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    // Build request body based on format
+    let body: Record<string, unknown>;
+
+    switch (format) {
+      case ApiFormat.ANTHROPIC:
+        // Anthropic format
+        // https://docs.anthropic.com/claude/reference/messages_post
+        body = {
+          model: modelId,
+          max_tokens: 10,
+          messages: [
+            { role: 'user', content: 'hi' }
+          ],
+        };
+        // Anthropic uses different auth header
+        headers['x-api-key'] = asset.apiKey;
+        headers['anthropic-version'] = '2023-06-01';
+        break;
+
+      case ApiFormat.GEMINI:
+        // Gemini format
+        // https://ai.google.dev/gemini-api/docs
+        body = {
+          contents: [
+            { parts: [{ text: 'hi' }] }
+          ],
+          generationConfig: {
+            maxOutputTokens: 10,
+            temperature: 0.7,
+          },
+        };
+        // Gemini uses API key as query parameter
+        headers['Authorization'] = `Bearer ${asset.apiKey}`;
+        break;
+
+      case ApiFormat.OPENAI:
+      default:
+        // OpenAI format (default)
+        body = {
+          model: modelId,
+          messages: [
+            { role: 'user', content: 'hi' }
+          ],
+          max_tokens: 10,
+        };
+        headers['Authorization'] = `Bearer ${asset.apiKey}`;
+        break;
+    }
+
+    return { body, headers, endpoint: `${baseUrl}${endpoint}` };
+  }
+
+  /**
+   * Parse vendor response to extract content
+   * Handles different response formats from different vendors
+   */
+  private parseVendorResponse(data: unknown, format: ApiFormat): string {
+    if (!data || typeof data !== 'object') {
+      return '(empty response)';
+    }
+
+    const response = data as Record<string, unknown>;
+
+    switch (format) {
+      case ApiFormat.ANTHROPIC:
+        // Anthropic format: content is an array of blocks
+        if (response.content && Array.isArray(response.content)) {
+          let text = '';
+          for (const block of response.content) {
+            if (block && typeof block === 'object' && block.type === 'text') {
+              text += block.text || '';
+            }
+          }
+          return text || '(empty response)';
+        }
+        return '(empty response)';
+
+      case ApiFormat.GEMINI:
+        // Gemini format: candidates[0].content.parts[0].text
+        if (response.candidates && Array.isArray(response.candidates) && response.candidates[0]) {
+          const candidate = response.candidates[0] as Record<string, unknown>;
+          if (candidate.content && typeof candidate.content === 'object') {
+            const content = candidate.content as Record<string, unknown>;
+            if (content.parts && Array.isArray(content.parts) && content.parts[0]) {
+              const part = content.parts[0] as Record<string, unknown>;
+              return (part.text as string) || '(empty response)';
+            }
+          }
+        }
+        return '(empty response)';
+
+      case ApiFormat.OPENAI:
+      default:
+        // OpenAI format: choices[0].message.content
+        if (response.choices && Array.isArray(response.choices) && response.choices[0]) {
+          const choice = response.choices[0] as Record<string, unknown>;
+          if (choice.message && typeof choice.message === 'object') {
+            const message = choice.message as Record<string, unknown>;
+            return (message.content as string) || '(empty response)';
+          }
+        }
+        return '(empty response)';
+    }
+  }
+
+  /**
    * Validate each model associated with an asset by sending a test chat completion
    */
   async validateModels(id: string): Promise<{
@@ -481,8 +615,8 @@ export class AssetsService {
       throw new Error('Asset not found');
     }
 
-    if (!asset.vendorBaseUrl) {
-      throw new Error('Vendor base URL not configured. Please check vendor configuration.');
+    if (!asset.vendorBaseUrl || !asset.vendorEndpoint) {
+      throw new Error('Vendor base URL or endpoint not configured. Please check vendor configuration.');
     }
 
     const models = await this.getAssetModels(id);
@@ -490,32 +624,28 @@ export class AssetsService {
       return { results: [] };
     }
 
-    // baseUrl already includes version path (e.g., /v1, /v4, /v1beta)
-    // Just append /chat/completions
-    const baseUrl = asset.vendorBaseUrl.replace(/\/$/, '');
-    const apiUrl = `${baseUrl}/chat/completions`;
-    const apiKey = asset.apiKey;
+    // Detect the format once for all models (same vendor)
+    const format = inferFormatFromVendorTemplate({
+      baseUrl: asset.vendorBaseUrl,
+      endpoint: asset.vendorEndpoint,
+    });
 
-    console.log(`[Assets] Validating models for asset ${id}, apiUrl: ${apiUrl}`);
+    console.log(`[Assets] Validating models for asset ${id}, format: ${format}, endpoint: ${asset.vendorEndpoint}`);
 
     const results = await Promise.all(
       models.map(async (model) => {
         const startTime = Date.now();
 
         try {
-          const response = await fetch(apiUrl, {
+          // Build vendor-specific request
+          const { body, headers, endpoint } = this.buildVendorRequest(asset, model.modelId);
+
+          console.log(`[Assets] Testing model ${model.modelId} with format ${format}`);
+
+          const response = await fetch(endpoint, {
             method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${apiKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: model.modelId,
-              messages: [
-                { role: 'user', content: 'hi' }
-              ],
-              max_tokens: 10,
-            }),
+            headers,
+            body: JSON.stringify(body),
             signal: AbortSignal.timeout(30000), // 30 second timeout per model
           });
 
@@ -533,7 +663,7 @@ export class AssetsService {
           }
 
           const data = await response.json();
-          const responseText = data.choices?.[0]?.message?.content || '(empty response)';
+          const responseText = this.parseVendorResponse(data, format);
 
           return {
             modelId: model.modelId,
@@ -583,6 +713,7 @@ export class AssetsService {
       vendorName: row.vendorName,
       vendorDisplayName: row.vendorDisplayName,
       vendorBaseUrl: row.vendorBaseUrl,
+      vendorEndpoint: row.vendorEndpoint,
     };
   }
 }
