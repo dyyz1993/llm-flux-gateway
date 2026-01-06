@@ -391,10 +391,17 @@ export const RoutePlayground: React.FC = () => {
             // Add tool result messages
             messagesWithToolResults.push(...toolResults);
 
+            // 🔍 DEBUG: Log messages for second request
+            console.log('[RoutePlayground] Second request messages:', JSON.stringify(messagesWithToolResults, null, 2));
+
               // Reset for second round
               accumulatedContent = '';
               accumulatedToolCalls = [];
               isCompletingRef.current = false; // 🔒 重置标志，为第二次请求
+
+              console.log('=================== [RoutePlayground] PREPARING SECOND REQUEST ===================');
+              console.log('[RoutePlayground] messagesWithToolResults:', JSON.stringify(messagesWithToolResults, null, 2));
+              console.log('====================================================================');
 
               // Add new assistant placeholder for final response
               const finalAssistantMessage: ChatMessage = {
