@@ -37,6 +37,7 @@ export function initDatabase() {
     description TEXT,
     status TEXT NOT NULL DEFAULT 'active',
     created_at INTEGER NOT NULL,
+    UNIQUE(vendor_id, model_id),  -- ✅ 添加唯一约束
     FOREIGN KEY (vendor_id) REFERENCES vendor_templates(id)
   );`);
 
@@ -82,6 +83,7 @@ export function initDatabase() {
     asset_id TEXT NOT NULL,
     overrides TEXT NOT NULL DEFAULT '[]',
     is_active INTEGER NOT NULL DEFAULT 1,
+    config_type TEXT NOT NULL DEFAULT 'yaml',
     priority INTEGER NOT NULL DEFAULT 0,
     request_format TEXT NOT NULL DEFAULT 'openai',
     response_format TEXT NOT NULL DEFAULT 'openai',
@@ -216,6 +218,7 @@ export function initDatabase() {
     const hasUpdatedAtColumn = columns.some((col: any) => col.name === 'updated_at');
     const hasRouteNameColumn = columns.some((col: any) => col.name === 'route_name');
     const hasNameColumn = columns.some((col: any) => col.name === 'name');
+    const hasConfigTypeColumn = columns.some((col: any) => col.name === 'config_type');
 
     // Handle legacy route_name column
     if (hasRouteNameColumn && !hasNameColumn) {
@@ -229,6 +232,12 @@ export function initDatabase() {
       console.log('[Database] Adding updated_at column to routes...');
       sqlite.exec(`ALTER TABLE routes ADD COLUMN updated_at INTEGER NOT NULL DEFAULT ${Date.now()};`);
       console.log('[Database] Migration completed: updated_at column added to routes');
+    }
+
+    if (!hasConfigTypeColumn) {
+      console.log('[Database] Adding config_type column to routes...');
+      sqlite.exec(`ALTER TABLE routes ADD COLUMN config_type TEXT NOT NULL DEFAULT 'yaml';`);
+      console.log('[Database] Migration completed: config_type column added to routes');
     }
   } catch (error) {
     console.error('[Database] Migration failed:', error);
@@ -272,6 +281,36 @@ export function initDatabase() {
       sqlite.exec(`ALTER TABLE request_logs ADD COLUMN original_response_format TEXT;`);
       sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_request_logs_original_format ON request_logs(original_response_format);`);
       console.log('[Database] Migration completed: original_response_format column added to request_logs');
+    }
+  } catch (error) {
+    console.error('[Database] Migration failed:', error);
+  }
+
+  // Migration: Remove duplicate vendor_models and add unique constraint logic
+  try {
+    // Check for duplicates
+    const duplicates = sqlite.prepare(`
+      SELECT vendor_id, model_id, COUNT(*) as count
+      FROM vendor_models
+      GROUP BY vendor_id, model_id
+      HAVING count > 1
+    `).all() as any[];
+
+    if (duplicates.length > 0) {
+      console.log(`[Database] Found ${duplicates.length} duplicate model entries, cleaning up...`);
+
+      // Delete duplicates, keeping the oldest (smallest id)
+      sqlite.exec(`
+        DELETE FROM vendor_models
+        WHERE id NOT IN (
+          SELECT MIN(id)
+          FROM vendor_models
+          GROUP BY vendor_id, model_id
+        )
+      `);
+
+      const deletedCount = sqlite.prepare('SELECT changes() as count').get() as any;
+      console.log(`[Database] Migration completed: removed ${deletedCount.count} duplicate vendor_models`);
     }
   } catch (error) {
     console.error('[Database] Migration failed:', error);

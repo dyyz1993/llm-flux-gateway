@@ -259,8 +259,8 @@ export class AssetsService {
       } else {
         // Insert new validation
         queryRun(`
-          INSERT INTO asset_model_validations (id, asset_id, model_id, success, response, error, latency_ms, validated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO asset_model_validations (id, asset_id, model_id, success, response, error, latency_ms, validated_at, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
           randomUUID(),
           assetId,
@@ -269,6 +269,7 @@ export class AssetsService {
           result.response || null,
           result.error || null,
           result.latencyMs || null,
+          now,
           now,
         ]);
       }
