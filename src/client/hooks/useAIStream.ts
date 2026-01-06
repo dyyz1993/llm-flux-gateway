@@ -30,6 +30,7 @@ interface StreamOptions {
       parameters: Record<string, unknown>;
     };
   }>;
+  isRecursive?: boolean; // 🔒 是否为递归调用（内部工具执行）
   onChunk: (content: string, toolCalls?: Array<{
     id: string;
     type: 'function';
@@ -81,13 +82,14 @@ export function useAIStream(): StreamResult {
       provider = 'openai',
       baseURL = window.location.origin + '/v1',
       tools,
+      isRecursive = false, // 🔒 默认为非递归
       onChunk,
       onError,
       onComplete,
     } = options;
 
-    // 🔒 防止并发：如果有正在进行的请求，取消它
-    if (isLoading || abortControllerRef.current) {
+    // 🔒 防止并发：如果有正在进行的请求，取消它（但递归调用除外）
+    if (!isRecursive && (isLoading || abortControllerRef.current)) {
       console.warn('[useAIStream] Cancelling previous request due to new request');
       abortControllerRef.current?.abort();
     }
@@ -177,11 +179,12 @@ export function useAIStream(): StreamResult {
       provider = 'openai',
       baseURL = window.location.origin + '/v1',
       tools,
+      isRecursive = false, // 🔒 默认为非递归
       onError,
     } = options;
 
-    // 🔒 防止并发：如果有正在进行的请求，取消它
-    if (isLoading || abortControllerRef.current) {
+    // 🔒 防止并发：如果有正在进行的请求，取消它（但递归调用除外）
+    if (!isRecursive && (isLoading || abortControllerRef.current)) {
       console.warn('[useAIStream] Cancelling previous request due to new request');
       abortControllerRef.current?.abort();
     }

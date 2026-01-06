@@ -310,7 +310,7 @@ export const RoutePlayground: React.FC = () => {
     const isCompletingRef = { current: false };
 
     // Helper function to make a streaming request
-    const makeStreamingRequest = async (requestMessages: Message[]) => {
+    const makeStreamingRequest = async (requestMessages: Message[], isRecursive = false) => {
       // Always use the user-selected format for consistency
       const provider = selectedFormat;
 
@@ -320,6 +320,7 @@ export const RoutePlayground: React.FC = () => {
         messages: requestMessages,
         provider,
         tools: enableTools ? Object.values(TOOL_TEMPLATES) : undefined,
+        isRecursive: isRecursive, // 🔒 传递递归标志
         onChunk: (content, toolCalls) => {
           // 🔍 DEBUG: Log onChunk calls
           if (toolCalls && toolCalls.length > 0) {
@@ -406,7 +407,7 @@ export const RoutePlayground: React.FC = () => {
               chatStore.addMessage(finalAssistantMessage);
 
               // Make second request with tool results
-              await makeStreamingRequest(messagesWithToolResults);
+              await makeStreamingRequest(messagesWithToolResults, true); // 🔒 递归调用
             } else {
               // No tool calls in this response
               // Check if this is the final response after tool execution
@@ -443,7 +444,7 @@ export const RoutePlayground: React.FC = () => {
   };
 
   // Helper function to make a non-streaming request
-  const makeNonStreamingRequest = async (requestMessages: Message[]) => {
+  const makeNonStreamingRequest = async (requestMessages: Message[], isRecursive = false) => {
     try {
       const provider = selectedFormat;
 
@@ -455,6 +456,7 @@ export const RoutePlayground: React.FC = () => {
         messages: requestMessages,
         provider,
         tools: enableTools ? Object.values(TOOL_TEMPLATES) : undefined,
+        isRecursive, // 🔒 传递递归标志
         onError: (err) => {
           console.error('[RoutePlayground Non-Streaming] Request error:', err);
           setError(err);
@@ -524,7 +526,7 @@ export const RoutePlayground: React.FC = () => {
         chatStore.addMessage(finalAssistantMessage);
 
         // Make second request with tool results
-        await makeNonStreamingRequest(messagesWithToolResults);
+        await makeNonStreamingRequest(messagesWithToolResults, true); // 🔒 递归调用
       } else {
         console.log('[RoutePlayground Non-Streaming] No tool calls, finalizing with tokens:', tokens);
         // No tool calls in this response - always clear tool calls display
