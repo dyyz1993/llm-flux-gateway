@@ -231,7 +231,7 @@ export const KeyManager: React.FC = () => {
                   <span className="text-xs text-gray-500 uppercase font-semibold">Curl Example</span>
                 </div>
                 <code className="text-xs text-gray-300 font-mono block whitespace-pre-wrap bg-[#1a1a1a] p-3 rounded border border-[#333]">
-{`curl -X POST ${getApiBaseUrl()}/v1/chat/completions \\
+{`curl -X POST ${getApiBaseUrl() || window.location.origin}/v1/chat/completions \\
   -H "Authorization: Bearer ${createdKey.keyToken}" \\
   -H "Content-Type: application/json" \\
   -d '{

@@ -75,7 +75,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, disable
       content: m.content,
     }));
 
-    const curlCommand = `curl -X POST ${getApiBaseUrl()}/v1/chat/completions \\
+    const curlCommand = `curl -X POST ${getApiBaseUrl() || window.location.origin}/v1/chat/completions \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -d '{
