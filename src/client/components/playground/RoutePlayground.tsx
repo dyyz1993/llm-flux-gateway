@@ -16,6 +16,24 @@ import type { ApiKey, RouteConfig, Asset, Message, ChatMessage, ToolCall } from 
 import { Role } from '@shared/types';
 
 /**
+ * Generate a unique ID (UUID v4-like)
+ * Falls back to a custom implementation if crypto.randomUUID is not available
+ */
+function generateUniqueId(): string {
+  // Check if crypto.randomUUID is available (requires secure context)
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+
+  // Fallback: generate a UUID v4-compatible string
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+/**
  * Helper function to compute available models and patterns for a given key
  */
 function computeKeyModels(
@@ -223,7 +241,7 @@ export const RoutePlayground: React.FC = () => {
 
     // Add user message
     const userMessage: ChatMessage = {
-      id: crypto.randomUUID(),
+      id: generateUniqueId(),
       role: 'user',
       content,
       timestamp: Date.now(),
@@ -302,7 +320,7 @@ export const RoutePlayground: React.FC = () => {
 
     // Add assistant placeholder
     const assistantMessage: ChatMessage = {
-      id: crypto.randomUUID(),
+      id: generateUniqueId(),
       role: 'assistant',
       content: '',
       timestamp: Date.now(),
@@ -411,7 +429,7 @@ export const RoutePlayground: React.FC = () => {
             // Add tool result messages to store
             for (const toolResult of toolResults) {
               chatStore.addMessage({
-                id: crypto.randomUUID(),
+                id: generateUniqueId(),
                 role: 'tool',
                 content: toolResult.content,
                 name: toolResult.name,
@@ -465,7 +483,7 @@ export const RoutePlayground: React.FC = () => {
 
               // Add new assistant placeholder for final response
               const finalAssistantMessage: ChatMessage = {
-                id: crypto.randomUUID(),
+                id: generateUniqueId(),
                 role: 'assistant',
                 content: '',
                 timestamp: Date.now(),
@@ -591,7 +609,7 @@ export const RoutePlayground: React.FC = () => {
         // Add tool result messages to store
         for (const toolResult of toolResults) {
           chatStore.addMessage({
-            id: crypto.randomUUID(),
+            id: generateUniqueId(),
             role: 'tool',
             content: toolResult.content,
             name: toolResult.name,
@@ -635,7 +653,7 @@ export const RoutePlayground: React.FC = () => {
 
         // Add new assistant placeholder for final response
         const finalAssistantMessage: ChatMessage = {
-          id: crypto.randomUUID(),
+          id: generateUniqueId(),
           role: 'assistant',
           content: '',
           timestamp: Date.now(),

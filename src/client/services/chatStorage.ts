@@ -5,6 +5,24 @@ const MAX_SESSIONS = 50;
 const MAX_MESSAGES_PER_SESSION = 500;
 
 /**
+ * Generate a unique ID (UUID v4-like)
+ * Falls back to a custom implementation if crypto.randomUUID is not available
+ */
+function generateUniqueId(): string {
+  // Check if crypto.randomUUID is available (requires secure context)
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+
+  // Fallback: generate a UUID v4-compatible string
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+/**
  * LocalStorage service for chat session persistence
  */
 export class ChatStorageService {
@@ -36,7 +54,7 @@ export class ChatStorageService {
    */
   static createSession(title: string, model: string, keyId: string): ChatSession {
     const session: ChatSession = {
-      id: crypto.randomUUID(),
+      id: generateUniqueId(),
       title,
       messages: [],
       createdAt: Date.now(),
