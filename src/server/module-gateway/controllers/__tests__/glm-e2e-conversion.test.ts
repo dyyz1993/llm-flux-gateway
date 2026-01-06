@@ -2,10 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { OpenAIConverter } from '../../../module-protocol-transpiler/converters/openai.converter';
 
 describe('GLM to OpenAI E2E Conversion', () => {
-  it('should convert GLM response to OpenAI API format with snake_case', () => {
+  it('should convert GLM tool-only response with null content', () => {
     const converter = new OpenAIConverter();
 
-    // Step 1: Simulate GLM upstream response (mixed format)
+    // Step 1: Simulate GLM upstream response with tool calls only (no text)
     const glmResponse = {
       id: 'msg_123',
       object: 'chat.completion',
@@ -17,7 +17,6 @@ describe('GLM to OpenAI E2E Conversion', () => {
           message: {
             role: 'assistant',
             content: [
-              { type: 'text', text: 'Hello!' },
               { type: 'tool_use', id: 'call_123', name: 'weather', input: { city: 'Beijing' } }
             ],
             tool_calls: [
@@ -31,7 +30,7 @@ describe('GLM to OpenAI E2E Conversion', () => {
               }
             ]
           },
-          finish_reason: 'stop'
+          finish_reason: 'tool_calls'
         }
       ],
       usage: {
@@ -50,8 +49,8 @@ describe('GLM to OpenAI E2E Conversion', () => {
     expect(internalResponse.usage?.promptTokens).toBe(10);
     expect(internalResponse.usage?.completionTokens).toBe(20);
     expect(internalResponse.usage?.totalTokens).toBe(30);
-    // Content array should be converted to string
-    expect(internalResponse.choices[0]?.message.content).toBe('Hello!');
+    // ✅ Content should be null for tool-only responses
+    expect(internalResponse.choices[0]?.message.content).toBeNull();
     // Tool calls should be extracted
     expect(internalResponse.choices[0]?.message.toolCalls).toHaveLength(1);
     expect(internalResponse.choices[0]?.message.toolCalls?.[0]?.id).toBe('call_123');
@@ -78,8 +77,11 @@ describe('GLM to OpenAI E2E Conversion', () => {
     expect(finalResponse.choices[0].message.tool_calls).toHaveLength(1);
     expect(finalResponse.choices[0].message.tool_calls[0].id).toBe('call_123');
 
+    // ✅ CRITICAL: content should be null for tool-only responses (OpenAI standard)
+    expect(finalResponse.choices[0].message.content).toBeNull();
+
     // finish_reason should be snake_case
-    expect(finalResponse.choices[0].finish_reason).toBe('stop');
+    expect(finalResponse.choices[0].finish_reason).toBe('tool_calls');
     expect(finalResponse.choices[0].finishReason).toBeUndefined();
   });
 });

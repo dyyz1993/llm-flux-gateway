@@ -238,12 +238,15 @@ export class OpenAIConverter implements FormatConverter {
         message: {
           ...choice.message,
           // If content is an array, extract and join text from TextContentBlock
+          // ⭐ CRITICAL: Return null instead of empty string for tool-only responses (OpenAI standard)
           content: Array.isArray(choice.message.content)
-            ? (choice.message.content as InternalContentBlock[])
-                .filter((block): block is TextContentBlock => block.type === 'text')
-                .map(block => block.text)
-                .join('')
-            : choice.message.content
+            ? (() => {
+                const textBlocks = (choice.message.content as InternalContentBlock[])
+                  .filter((block): block is TextContentBlock => block.type === 'text')
+                  .map(block => block.text);
+                return textBlocks.length > 0 ? textBlocks.join('') : null;
+              })()
+            : (choice.message.content === '' ? null : choice.message.content)  // Only convert empty string to null
         }
       }))
     };

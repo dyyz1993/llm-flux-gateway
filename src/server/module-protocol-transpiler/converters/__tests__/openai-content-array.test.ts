@@ -252,8 +252,8 @@ describe('OpenAIConverter - Content Array Handling', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         const data = result.data!;
-        // Content should be empty string when no text blocks exist
-        expect(data.choices[0].message.content).toBe('');
+        // ✅ Content should be null for tool-only responses (OpenAI standard)
+        expect(data.choices[0].message.content).toBeNull();
         // tool_calls should still be present
         expect(data.choices[0].message.tool_calls).toHaveLength(1);
       }
@@ -390,7 +390,8 @@ describe('OpenAIConverter - Content Array Handling', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         const data = result.data!;
-        expect(data.choices[0].message.content).toBe('');
+        // ✅ Empty string/empty array should be converted to null (OpenAI standard)
+        expect(data.choices[0].message.content).toBeNull();
       }
     });
   });
@@ -423,7 +424,8 @@ describe('OpenAIConverter - Content Array Handling', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         const data = result.data!;
-        expect(data.choices[0].message.content).toBe('');
+        // ✅ Empty string/empty array should be converted to null (OpenAI standard)
+        expect(data.choices[0].message.content).toBeNull();
       }
     });
 
@@ -484,8 +486,8 @@ describe('OpenAIConverter - Content Array Handling', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         const data = result.data!;
-        // Content should be empty (no text blocks)
-        expect(data.choices[0].message.content).toBe('');
+        // ✅ Content should be null for tool-only responses (OpenAI standard)
+        expect(data.choices[0].message.content).toBeNull();
         // tool_calls should be preserved
         expect(data.choices[0].message.tool_calls).toHaveLength(2);
       }
