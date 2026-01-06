@@ -575,33 +575,32 @@ async function handleGatewayRequest(
 
       // Step 9: Convert upstream response (target format) back to client format
 
-      // Get the source converter to directly extract Internal Format
-      // ⭐ FIX: Don't use transpile() because it returns final target format, not Internal Format
-      const sourceConverter = (protocolTranspiler as any).converters?.get(targetFormat);
-      let internalResponseResult: any;
-
-      if (sourceConverter && typeof sourceConverter.convertResponseToInternal === 'function') {
-        // Direct conversion: vendor format → Internal Format (camelCase)
-        internalResponseResult = sourceConverter.convertResponseToInternal(upstreamResponse);
-      } else {
-        // Fallback: try using transpile (will return target format, not ideal)
-        internalResponseResult = protocolTranspiler.transpile(
-          upstreamResponse,
-          targetFormat,
-          'openai'
-        );
-      }
+      // ⭐ FIX: Use transpile with alias resolution (e.g., 'glm' → 'openai')
+      // This ensures GLM format is properly handled by OpenAI converter
+      const internalResponseResult = protocolTranspiler.transpile(
+        upstreamResponse,
+        targetFormat,    // GLM (will resolve to 'openai' converter)
+        'openai'         // Internal format (camelCase)
+      );
 
       let finalResponse: any;
       let finalResponseResult: any;
 
       if (internalResponseResult.success) {
-        // Second, convert internal format to client format
-        finalResponseResult = protocolTranspiler.transpile(
-          internalResponseResult.data!,
-          'openai',        // Internal format
-          sourceFormat     // Client format
-        );
+        // ⭐ CRITICAL FIX: Use converter directly to avoid fast-path
+        // transpile(internalFormat, 'openai', 'openai') would skip normalization!
+        // We need: camelCase (internal) → snake_case (OpenAI API format)
+        const openaiConverter = (protocolTranspiler as any).converters?.get('openai');
+        if (openaiConverter && typeof openaiConverter.convertResponseFromInternal === 'function') {
+          finalResponseResult = openaiConverter.convertResponseFromInternal(internalResponseResult.data!);
+        } else {
+          // Fallback: use transpile (may not normalize fields if source === target)
+          finalResponseResult = protocolTranspiler.transpile(
+            internalResponseResult.data!,
+            'openai',
+            sourceFormat
+          );
+        }
 
         if (!finalResponseResult.success) {
           console.warn('[Gateway] Response conversion errors:', finalResponseResult.errors);

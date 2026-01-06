@@ -13,9 +13,10 @@ export interface VendorTemplateForInference {
  *
  * Rules:
  * 1. Anthropic: endpoint is /messages OR baseUrl contains 'anthropic'
- * 2. OpenAI: endpoint is /chat/completions (default)
+ * 2. GLM/Zhipu: baseUrl contains 'bigmodel' or 'zhipu'
  * 3. Gemini: endpoint contains 'generateContent' or baseUrl contains 'generativelanguage'
- * 4. Default: OpenAI
+ * 4. OpenAI: endpoint is /chat/completions (default)
+ * 5. Default: OpenAI
  */
 export function inferFormatFromVendorTemplate(
   vendor: VendorTemplateForInference
@@ -28,6 +29,13 @@ export function inferFormatFromVendorTemplate(
   // Anthropic uses /messages endpoint
   if (lowerEndpoint === '/messages' || lowerBaseUrl.includes('anthropic')) {
     return ApiFormat.ANTHROPIC;
+  }
+
+  // Check for GLM/Zhipu format
+  // GLM uses OpenAI-compatible /chat/completions but returns mixed format
+  // We need to detect this early to handle special cases
+  if (lowerBaseUrl.includes('bigmodel') || lowerBaseUrl.includes('zhipu')) {
+    return 'glm' as ApiFormat;  // GLM format (OpenAI-compatible with mixed field names)
   }
 
   // Check for Gemini format
@@ -48,7 +56,12 @@ export function inferFormatFromVendorTemplate(
 /**
  * Get format name from ApiFormat enum
  */
-export function getFormatName(format: ApiFormat): string {
+export function getFormatName(format: ApiFormat | string): string {
+  if (typeof format === 'string') {
+    if (format === 'glm') return 'glm';
+    return format;
+  }
+
   switch (format) {
     case ApiFormat.OPENAI:
       return 'openai';
@@ -59,6 +72,7 @@ export function getFormatName(format: ApiFormat): string {
     case ApiFormat.GEMINI:
       return 'gemini';
     default:
+      if ((format as unknown) === 'glm') return 'glm';
       return 'openai';
   }
 }
@@ -66,7 +80,7 @@ export function getFormatName(format: ApiFormat): string {
 /**
  * Get ApiFormat from string name
  */
-export function parseFormatName(formatName: string): ApiFormat {
+export function parseFormatName(formatName: string): ApiFormat | string {
   switch (formatName) {
     case 'openai':
       return ApiFormat.OPENAI;
@@ -76,6 +90,8 @@ export function parseFormatName(formatName: string): ApiFormat {
       return ApiFormat.ANTHROPIC;
     case 'gemini':
       return ApiFormat.GEMINI;
+    case 'glm':
+      return 'glm';  // GLM format
     default:
       return ApiFormat.OPENAI;
   }

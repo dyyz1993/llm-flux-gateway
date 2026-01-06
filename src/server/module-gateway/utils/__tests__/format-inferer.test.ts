@@ -73,7 +73,9 @@ describe('format-inferer', () => {
         baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
         endpoint: '/chat/completions',
       };
-      expect(inferFormatFromVendorTemplate(vendor)).toBe(ApiFormat.OPENAI);
+      // GLM/Zhipu is now detected as a separate format (not OpenAI)
+      // because it returns mixed format responses that need special handling
+      expect(inferFormatFromVendorTemplate(vendor)).toBe('glm');
     });
   });
 

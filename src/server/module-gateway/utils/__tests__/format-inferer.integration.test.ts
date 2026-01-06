@@ -33,7 +33,8 @@ describe('format-inferer integration', () => {
         baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
         endpoint: '/chat/completions',
       };
-      expect(inferFormatFromVendorTemplate(zhipu)).toBe(ApiFormat.OPENAI);
+      // GLM/Zhipu returns mixed format that needs special handling
+      expect(inferFormatFromVendorTemplate(zhipu)).toBe('glm');
     });
 
     it('should correctly infer Zhipu AI Anthropic-compatible format', () => {

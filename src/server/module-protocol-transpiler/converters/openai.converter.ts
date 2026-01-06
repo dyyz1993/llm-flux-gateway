@@ -21,6 +21,7 @@ import type {
   InternalStreamChunk,
   InternalContentBlock,
   TextContentBlock,
+  InternalToolCall,
 } from '../interfaces/internal-format';
 import type {
   FormatConverter,
@@ -159,21 +160,50 @@ export class OpenAIConverter implements FormatConverter {
     // ⭐ FIX: Normalize snake_case to camelCase for internal format
     const normalizedResponse = normalizeToCamelCase(resp, true) as InternalResponse;
 
-    // 🔧 DEFENSIVE FALLBACK: Ensure toolCalls is extracted even if normalizeToCamelCase missed it
-    // This handles edge cases with GLM and other vendors that return mixed formats
+    // 🔧 GLM/MIXED FORMAT HANDLING: Handle vendors that return mixed formats
+    // GLM and some vendors return content arrays with tool_use blocks
     if (normalizedResponse.choices && normalizedResponse.choices.length > 0) {
-      const message = normalizedResponse.choices[0]!.message;
+      const choice = normalizedResponse.choices[0]!;
+      const originalMessage = resp.choices?.[0]?.message;
 
-      // If toolCalls is missing or empty, try to extract from original response
-      if (!message.toolCalls || message.toolCalls.length === 0) {
-        const originalMessage = resp.choices?.[0]?.message;
-        if (originalMessage) {
-          // Try multiple field naming conventions
+      if (originalMessage) {
+        // Handle content array format (Anthropic/GLM style)
+        if (Array.isArray(originalMessage.content)) {
+          const textBlocks: string[] = [];
+          const toolCalls: InternalToolCall[] = [];
+
+          for (const block of originalMessage.content) {
+            if (block.type === 'text') {
+              textBlocks.push(block.text || '');
+            } else if (block.type === 'tool_use') {
+              // Convert Anthropic/GLM tool_use to OpenAI tool_call format
+              const toolCall: InternalToolCall = {
+                id: block.id || `call_${Date.now()}`,
+                type: 'function',
+                function: {
+                  name: block.name,
+                  arguments: typeof block.input === 'string' ? block.input : JSON.stringify(block.input || {}),
+                },
+              };
+              toolCalls.push(toolCall);
+            }
+          }
+
+          // Update message with extracted content and tool calls
+          choice.message.content = textBlocks.length > 0 ? textBlocks.join('') : '' as any;
+          if (toolCalls.length > 0) {
+            choice.message.toolCalls = toolCalls;
+          }
+        }
+
+        // 🔧 DEFENSIVE FALLBACK: Ensure toolCalls is extracted even if normalizeToCamelCase missed it
+        // This handles edge cases with GLM and other vendors that return mixed formats
+        if (!choice.message.toolCalls || choice.message.toolCalls.length === 0) {
+          // Try multiple field naming conventions (snake_case vs camelCase)
           const toolCallsData = originalMessage.tool_calls || originalMessage.toolCalls;
 
           if (toolCallsData && Array.isArray(toolCallsData) && toolCallsData.length > 0) {
-            message.toolCalls = toolCallsData;
-            console.warn('[OpenAIConverter] Extracted tool_calls via defensive fallback:', toolCallsData.length);
+            choice.message.toolCalls = toolCallsData;
           }
         }
       }

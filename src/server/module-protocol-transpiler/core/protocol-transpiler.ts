@@ -23,6 +23,21 @@ export class ProtocolTranspiler {
   private customMappings = new Map<string, Record<string, string>>();
 
   /**
+   * Format aliases - maps vendor format to its canonical converter
+   * GLM format uses OpenAI converter with special handling for mixed format
+   */
+  private static readonly FORMAT_ALIASES: Record<string, string> = {
+    'glm': 'openai',
+  };
+
+  /**
+   * Resolve vendor type to its canonical type (e.g., 'glm' → 'openai')
+   */
+  private resolveVendorType(vendor: VendorType): VendorType {
+    return (ProtocolTranspiler.FORMAT_ALIASES[vendor] || vendor) as VendorType;
+  }
+
+  /**
    * Register a format converter
    *
    * @param converter - Format converter instance
@@ -83,8 +98,13 @@ export class ProtocolTranspiler {
   ): TranspileResult<T> {
     const startTime = Date.now();
 
-    // Fast path: same vendor
-    if (fromVendor === toVendor) {
+    // Resolve vendor type aliases (e.g., 'glm' → 'openai')
+    const resolvedFromVendor = this.resolveVendorType(fromVendor);
+    const resolvedToVendor = this.resolveVendorType(toVendor);
+
+    // Fast path: same vendor (only if no alias was involved)
+    // If aliases were involved (e.g., glm → openai), we need to convert
+    if (fromVendor === toVendor && resolvedFromVendor === resolvedToVendor) {
       return success(sourceData as T, {
         fromVendor,
         toVendor,
@@ -96,7 +116,7 @@ export class ProtocolTranspiler {
     }
 
     // Get source converter
-    const sourceConverter = this.converters.get(fromVendor);
+    const sourceConverter = this.converters.get(resolvedFromVendor);
     if (!sourceConverter) {
       return failure([createError(
         'root',
@@ -106,7 +126,7 @@ export class ProtocolTranspiler {
     }
 
     // Get target converter
-    const targetConverter = this.converters.get(toVendor);
+    const targetConverter = this.converters.get(resolvedToVendor);
     if (!targetConverter) {
       return failure([createError(
         'root',
@@ -210,6 +230,10 @@ export class ProtocolTranspiler {
   ): TranspileResult<InternalStreamChunk> {
     const startTime = Date.now();
 
+    // Resolve vendor type aliases (e.g., 'glm' → 'openai')
+    const resolvedFromVendor = this.resolveVendorType(fromVendor);
+    const resolvedToVendor = this.resolveVendorType(toVendor);
+
     /**
      * Check if an object is a complete InternalStreamChunk with all required properties
      * This is used to detect when we can skip conversion (full internal format object)
@@ -242,7 +266,7 @@ export class ProtocolTranspiler {
 
     // Special case: if source is already a complete InternalStreamChunk object and target is OpenAI (internal format)
     // This happens when gateway wants to convert InternalStreamChunk back to SSE format
-    if (fromVendor === 'openai' && toVendor === 'openai' && isCompleteInternalStreamChunk(sourceChunk)) {
+    if (resolvedFromVendor === 'openai' && resolvedToVendor === 'openai' && isCompleteInternalStreamChunk(sourceChunk)) {
       const internalChunk = sourceChunk as InternalStreamChunk;
 
       // Skip empty chunks
@@ -258,7 +282,7 @@ export class ProtocolTranspiler {
       }
 
       // Convert internal format to SSE format string
-      const targetConverter = this.converters.get(toVendor);
+      const targetConverter = this.converters.get(resolvedToVendor);
       if (targetConverter && targetConverter.convertStreamChunkFromInternal) {
         const targetResult = targetConverter.convertStreamChunkFromInternal(internalChunk);
         if (!targetResult.success) {
@@ -291,7 +315,7 @@ export class ProtocolTranspiler {
     }
 
     // Get source converter
-    const sourceConverter = this.converters.get(fromVendor);
+    const sourceConverter = this.converters.get(resolvedFromVendor);
     if (!sourceConverter || !sourceConverter.convertStreamChunkToInternal) {
       return failure([createError(
         'root',
@@ -301,7 +325,7 @@ export class ProtocolTranspiler {
     }
 
     // Get target converter
-    const targetConverter = this.converters.get(toVendor);
+    const targetConverter = this.converters.get(resolvedToVendor);
     if (!targetConverter || !targetConverter.convertStreamChunkFromInternal) {
       return failure([createError(
         'root',
@@ -314,7 +338,7 @@ export class ProtocolTranspiler {
       // Special case: if source is OpenAI (internal format) and already a complete InternalStreamChunk object
       // This happens when upstreamService.parseStreamWith returns InternalStreamChunk objects
       // We check for completeness to avoid skipping conversion for partial objects
-      if (fromVendor === 'openai' && isCompleteInternalStreamChunk(sourceChunk)) {
+      if (resolvedFromVendor === 'openai' && isCompleteInternalStreamChunk(sourceChunk)) {
         // Source is already complete InternalStreamChunk - skip conversion
         const internalChunk = sourceChunk as InternalStreamChunk;
 
@@ -398,7 +422,7 @@ export class ProtocolTranspiler {
 
       // Check if target is OpenAI (internal format)
       // If so, return the internal format directly without SSE conversion
-      if (toVendor === 'openai') {
+      if (resolvedToVendor === 'openai') {
         // Return InternalStreamChunk object directly
         return success(internalResult.data!, {
           fromVendor,

@@ -492,3 +492,172 @@ describe('OpenAIConverter - Content Array Handling', () => {
     });
   });
 });
+
+describe('OpenAIConverter - GLM Mixed Format (convertResponseToInternal)', () => {
+  const converter = new OpenAIConverter();
+
+  describe('convertResponseToInternal - GLM Format Handling', () => {
+    it('should convert GLM response with tool_use content array to Internal format', () => {
+      const glmResponse = {
+        id: 'msg_2026010702051725c8baf07895474e',
+        object: 'chat.completion',
+        created: 1767722719,
+        model: 'glm-4-air',
+        choices: [{
+          index: 0,
+          message: {
+            role: 'assistant',
+            content: [
+              {
+                type: 'tool_use',
+                id: 'call_2026010702051725c8baf07895474e_0',
+                name: 'calculator',
+                input: {
+                  expression: '234 * 567 + 891'
+                }
+              }
+            ]
+          },
+          finish_reason: 'tool_calls'
+        }],
+        usage: {
+          prompt_tokens: 1671,
+          completion_tokens: 18,
+          total_tokens: 1689
+        }
+      };
+
+      const result = converter.convertResponseToInternal(glmResponse);
+
+      expect(result.success).toBe(true);
+      const internal = result.data!;
+
+      // Verify tool_use was converted to tool_calls
+      expect(internal.choices[0]?.message.toolCalls).toBeDefined();
+      expect(internal.choices[0]?.message.toolCalls).toHaveLength(1);
+      expect(internal.choices[0]?.message.toolCalls?.[0]?.id).toBe('call_2026010702051725c8baf07895474e_0');
+      expect(internal.choices[0]?.message.toolCalls?.[0]?.type).toBe('function');
+      expect(internal.choices[0]?.message.toolCalls?.[0]?.function?.name).toBe('calculator');
+
+      // Verify usage was converted to camelCase
+      expect(internal.usage?.promptTokens).toBe(1671);
+      expect(internal.usage?.completionTokens).toBe(18);
+      expect(internal.usage?.totalTokens).toBe(1689);
+    });
+
+    it('should handle GLM response with mixed text and tool_use blocks', () => {
+      const glmResponse = {
+        id: 'msg_glm001',
+        object: 'chat.completion',
+        created: 1767722719,
+        model: 'glm-4-flash',
+        choices: [{
+          index: 0,
+          message: {
+            role: 'assistant',
+            content: [
+              { type: 'text', text: 'Let me calculate that for you.' },
+              {
+                type: 'tool_use',
+                id: 'call_xyz',
+                name: 'calculator',
+                input: { expression: '2 + 2' }
+              }
+            ]
+          },
+          finish_reason: 'tool_calls'
+        }],
+        usage: {
+          prompt_tokens: 50,
+          completion_tokens: 25,
+          total_tokens: 75
+        }
+      };
+
+      const result = converter.convertResponseToInternal(glmResponse);
+
+      expect(result.success).toBe(true);
+      const internal = result.data!;
+
+      // Verify text was extracted
+      expect(internal.choices[0]?.message.content).toBe('Let me calculate that for you.');
+
+      // Verify tool_use was converted to tool_calls
+      expect(internal.choices[0]?.message.toolCalls).toHaveLength(1);
+      expect(internal.choices[0]?.message.toolCalls?.[0]?.function?.name).toBe('calculator');
+    });
+
+    it('should handle GLM response with camelCase usage fields', () => {
+      const glmResponse = {
+        id: 'msg_glm002',
+        object: 'chat.completion',
+        created: 1767722719,
+        model: 'glm-4-air',
+        choices: [{
+          index: 0,
+          message: {
+            role: 'assistant',
+            content: 'Hello'
+          },
+          finish_reason: 'stop'
+        }],
+        usage: {
+          promptTokens: 100,  // camelCase
+          completionTokens: 50,
+          totalTokens: 150
+        }
+      };
+
+      const result = converter.convertResponseToInternal(glmResponse);
+
+      expect(result.success).toBe(true);
+      const internal = result.data!;
+
+      // Verify usage fields are preserved (already camelCase)
+      expect(internal.usage?.promptTokens).toBe(100);
+      expect(internal.usage?.completionTokens).toBe(50);
+      expect(internal.usage?.totalTokens).toBe(150);
+    });
+
+    it('should handle GLM response with standard tool_calls (snake_case)', () => {
+      const glmResponse = {
+        id: 'msg_glm003',
+        object: 'chat.completion',
+        created: 1767722719,
+        model: 'glm-4-air',
+        choices: [{
+          index: 0,
+          message: {
+            role: 'assistant',
+            content: null,
+            tool_calls: [
+              {
+                id: 'call_abc',
+                type: 'function',
+                function: {
+                  name: 'test_function',
+                  arguments: '{}'
+                }
+              }
+            ]
+          },
+          finish_reason: 'tool_calls'
+        }],
+        usage: {
+          prompt_tokens: 100,
+          completion_tokens: 20,
+          total_tokens: 120
+        }
+      };
+
+      const result = converter.convertResponseToInternal(glmResponse);
+
+      expect(result.success).toBe(true);
+      const internal = result.data!;
+
+      // Verify tool_calls were extracted
+      expect(internal.choices[0]?.message.toolCalls).toHaveLength(1);
+      expect(internal.choices[0]?.message.toolCalls?.[0]?.id).toBe('call_abc');
+    });
+  });
+});
