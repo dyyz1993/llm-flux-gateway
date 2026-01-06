@@ -9,14 +9,16 @@ import {
   Key,
   Settings,
   Hexagon,
+  LogOut,
 } from 'lucide-react';
 
 interface SidebarProps {
   currentView: string;
   setCurrentView: (view: string) => void;
+  onLogout?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, onLogout }) => {
   const navItems = [
     { id: 'dashboard', label: 'Analytics', icon: LayoutDashboard },
     { id: 'routes', label: 'Route Flux', icon: Waypoints },
@@ -61,7 +63,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView })
         })}
       </nav>
 
-      <div className="p-4 border-t border-[#262626]">
+      <div className="p-4 border-t border-[#262626] space-y-3">
         <div className="bg-[#111] rounded-lg p-3">
           <p className="text-xs text-gray-500 mb-1">Service Status</p>
           <div className="flex items-center gap-2">
@@ -69,6 +71,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView })
             <span className="text-sm font-mono text-emerald-500">Operational</span>
           </div>
         </div>
+
+        {onLogout && (
+          <button
+            onClick={onLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-400 hover:bg-red-500/10 hover:text-red-400 border border-transparent hover:border-red-500/20 transition-all duration-200"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign Out
+          </button>
+        )}
       </div>
     </div>
   );

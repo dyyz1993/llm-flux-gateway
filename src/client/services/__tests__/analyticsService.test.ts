@@ -36,10 +36,35 @@ global.fetch = vi.fn();
 
 const mockFetch = vi.mocked(global.fetch);
 
+// Mock localStorage
+const localStorageMock = {
+  getItem: vi.fn(),
+  setItem: vi.fn(),
+  removeItem: vi.fn(),
+  clear: vi.fn(),
+};
+global.localStorage = localStorageMock as any;
+
 describe('Analytics Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Mock admin token
+    localStorageMock.getItem.mockReturnValue('mock-admin-token');
   });
+
+  // Helper to match fetch calls with Authorization header
+  const expectFetchCall = (url: string, method: string = 'GET') => {
+    expect(mockFetch).toHaveBeenCalledWith(
+      url,
+      expect.objectContaining({
+        method,
+        headers: expect.objectContaining({
+          'Authorization': 'Bearer mock-admin-token',
+          'Content-Type': 'application/json',
+        }),
+      })
+    );
+  };
 
   const mockOverviewStats: OverviewStats = {
     totalRequests: 55,
@@ -172,7 +197,7 @@ describe('Analytics Service', () => {
 
       const result = await getOverviewStats();
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/analytics/overview');
+      expectFetchCall('/api/analytics/overview');
       expect(result).toEqual(mockOverviewStats);
     });
 
@@ -207,7 +232,7 @@ describe('Analytics Service', () => {
 
       const result = await getModelStats();
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/analytics/models');
+      expectFetchCall('/api/analytics/models');
       expect(result).toEqual(mockModelStats);
     });
 
@@ -236,7 +261,7 @@ describe('Analytics Service', () => {
 
       const result = await getKeyStats();
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/analytics/keys');
+      expectFetchCall('/api/analytics/keys');
       expect(result).toEqual(mockKeyStats);
     });
 
@@ -265,7 +290,7 @@ describe('Analytics Service', () => {
 
       const result = await getAssetStats();
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/analytics/assets');
+      expectFetchCall('/api/analytics/assets');
       expect(result).toEqual(mockAssetStats);
     });
 
@@ -294,7 +319,7 @@ describe('Analytics Service', () => {
 
       const result = await getTTFBStats();
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/analytics/ttfb');
+      expectFetchCall('/api/analytics/ttfb');
       expect(result).toEqual(mockTTFBStats);
     });
 
@@ -323,7 +348,7 @@ describe('Analytics Service', () => {
 
       const result = await getCacheStats();
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/analytics/cache');
+      expectFetchCall('/api/analytics/cache');
       expect(result).toEqual(mockCacheStats);
     });
 
@@ -352,7 +377,7 @@ describe('Analytics Service', () => {
 
       const result = await getErrorStats();
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/analytics/errors');
+      expectFetchCall('/api/analytics/errors');
       expect(result).toEqual(mockErrorStats);
     });
 
@@ -381,7 +406,7 @@ describe('Analytics Service', () => {
 
       const result = await getTimeSeriesStats();
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/analytics/timeseries?days=7');
+      expectFetchCall('/api/analytics/timeseries?days=7');
       expect(result).toEqual(mockTimeSeriesStats);
     });
 
@@ -396,7 +421,7 @@ describe('Analytics Service', () => {
 
       await getTimeSeriesStats(30);
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/analytics/timeseries?days=30');
+      expectFetchCall('/api/analytics/timeseries?days=30');
     });
 
     it('should handle API error response', async () => {
@@ -424,7 +449,7 @@ describe('Analytics Service', () => {
 
       const result = await getRequestLogs({});
 
-      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/api/logs/all'));
+      expectFetchCall(expect.stringContaining('/api/logs/all'));
       expect(result).toEqual([mockRequestLog]);
     });
 
@@ -484,7 +509,7 @@ describe('Analytics Service', () => {
 
       const result = await getRequestLogById('log-001');
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/logs/log-001');
+      expectFetchCall('/api/logs/log-001');
       expect(result).toEqual(mockRequestLog);
     });
 
@@ -513,9 +538,7 @@ describe('Analytics Service', () => {
 
       const result = await toggleLogFavorite('log-001');
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/logs/log-001/favorite', {
-        method: 'POST',
-      });
+      expectFetchCall('/api/logs/log-001/favorite', 'POST');
       expect(result).toEqual({ isFavorited: true });
     });
 
@@ -544,7 +567,7 @@ describe('Analytics Service', () => {
 
       const result = await getFavoriteLogs(50);
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/logs/favorites?limit=50');
+      expectFetchCall('/api/logs/favorites?limit=50');
       expect(result).toEqual([mockRequestLog]);
     });
 
@@ -559,7 +582,7 @@ describe('Analytics Service', () => {
 
       await getFavoriteLogs();
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/logs/favorites?limit=100');
+      expectFetchCall('/api/logs/favorites?limit=100');
     });
 
     it('should handle API error response', async () => {
@@ -607,7 +630,7 @@ describe('Analytics Service', () => {
 
       const result = await getLogsStats();
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/logs/stats');
+      expectFetchCall('/api/logs/stats');
       expect(result).toEqual(mockStats);
     });
 

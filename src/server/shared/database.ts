@@ -354,6 +354,31 @@ export function initDatabase() {
   );`);
   sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_system_config_category ON system_config(category);`);
 
+  // ============================================
+  // admin_sessions - Admin Authentication Sessions
+  // ============================================
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS admin_sessions (
+    id TEXT PRIMARY KEY,
+    token TEXT UNIQUE NOT NULL,
+    created_at INTEGER NOT NULL,
+    expires_at INTEGER NOT NULL
+  );`);
+  sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_admin_sessions_token ON admin_sessions(token);`);
+  sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_admin_sessions_expires ON admin_sessions(expires_at);`);
+
+  // ============================================
+  // login_attempts - Login Failure Tracking (Anti-Brute Force)
+  // ============================================
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS login_attempts (
+    id TEXT PRIMARY KEY,
+    ip TEXT NOT NULL,
+    attempts INTEGER NOT NULL DEFAULT 1,
+    last_attempt INTEGER NOT NULL,
+    blocked_until INTEGER DEFAULT NULL
+  );`);
+  sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_login_attempts_ip ON login_attempts(ip);`);
+  sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_login_attempts_blocked ON login_attempts(blocked_until);`);
+
   console.log(`[Database] Initialized: ${DATABASE_PATH}`);
 }
 

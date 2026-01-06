@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, Database, Shield, Activity, RefreshCw } from 'lucide-react';
+import { adminGet, adminPut } from '@client/services/adminApi';
 
 interface SystemConfig {
   key: string;
@@ -37,8 +38,7 @@ export const SystemSettings: React.FC = () => {
   const fetchConfigs = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/system/config');
-      const data = await response.json();
+      const data = await adminGet<{ success: boolean; data?: SystemConfig[] }>('/api/system/config');
       if (data.success) {
         setConfigs(data.data!);
       }
@@ -78,13 +78,7 @@ export const SystemSettings: React.FC = () => {
     setSaveSuccess(false);
 
     try {
-      const response = await fetch(`/api/system/config/${key}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ value, dataType }),
-      });
-
-      const data = await response.json();
+      const data = await adminPut<{ success: boolean; error?: string }>(`/api/system/config/${key}`, { value, dataType });
       if (data.success) {
         // Update local state
         setConfigs((prev) =>

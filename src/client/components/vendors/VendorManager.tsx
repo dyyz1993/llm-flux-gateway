@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { RefreshCw, Download, Upload, CheckCircle, XCircle, Server, Zap, FileEdit, X, Save } from 'lucide-react';
 import type { Vendor } from '@shared/types';
 import { CodeEditor } from '@client/components/shared/CodeEditor';
+import { adminGet, adminPut, adminPost } from '@client/services/adminApi';
 
 // Simplified YAML generator
 const generateYaml = (vendors: Vendor[]): string => {
@@ -76,8 +77,7 @@ export const VendorManager: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/vendors');
-      const data = await res.json();
+      const data = await adminGet<{ success: boolean; data?: Vendor[]; error?: string }>('/api/vendors');
       if (data.success) {
         setVendors(data.data!);
       } else {
@@ -93,8 +93,7 @@ export const VendorManager: React.FC = () => {
   // Load YAML content
   const loadYaml = async () => {
     try {
-      const res = await fetch('/api/vendors/yaml');
-      const data = await res.json();
+      const data = await adminGet<{ success: boolean; data?: { content: string }; error?: string }>('/api/vendors/yaml');
       if (data.success) {
         setYamlContent(data.data!.content);
         setShowEditor(true);
@@ -112,12 +111,7 @@ export const VendorManager: React.FC = () => {
     setError(null);
     setSaveSuccess(false);
     try {
-      const res = await fetch('/api/vendors/yaml', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: yamlContent }),
-      });
-      const data = await res.json();
+      const data = await adminPut<{ success: boolean; error?: string }>('/api/vendors/yaml', { content: yamlContent });
       if (data.success) {
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 3000);
@@ -137,8 +131,7 @@ export const VendorManager: React.FC = () => {
     setError(null);
     setSyncResult(null);
     try {
-      const res = await fetch('/api/vendors/sync', { method: 'POST' });
-      const data = await res.json();
+      const data = await adminPost<{ success: boolean; data?: { created: number; updated: number; deleted: number; models: number }; error?: string }>('/api/vendors/sync', {});
       if (data.success) {
         setSyncResult(data.data!);
         await fetchVendors(); // Refresh vendor list

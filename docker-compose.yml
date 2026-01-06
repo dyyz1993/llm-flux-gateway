@@ -11,6 +11,14 @@ services:
       - VITE_API_BASE_URL=
       # 在这里添加你的 API 密钥或其他环境变量
       # - GEMINI_API_KEY=your_api_key_here
+      # ============================================
+      # Admin Authentication (IMPORTANT: Change these!)
+      # ============================================
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=changeme
+      - MAX_LOGIN_ATTEMPTS=5
+      - LOGIN_BLOCK_MINUTES=5
+      - SESSION_EXPIRE_DAYS=7
     volumes:
       - ./data:/app/data
       - ./config:/app/config

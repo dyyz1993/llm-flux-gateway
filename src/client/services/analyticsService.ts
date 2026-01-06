@@ -4,6 +4,7 @@
  * Fetches request logs and analytics data from the backend API
  */
 
+import { adminGet, adminPost, adminDelete } from './adminApi';
 import type {
   RequestLog,
   OverviewStats,
@@ -32,21 +33,35 @@ export interface AnalyticsStats {
 /**
  * Helper function to handle API responses
  */
-async function handleApiResponse<T>(response: Response): Promise<T> {
-  const data = await response.json();
-
-  if (!data.success) {
-    throw new Error(data.error || 'API request failed');
+async function handleApiResponse<T>(response: { success: boolean; data?: T; error?: string }): Promise<T> {
+  if (!response.success) {
+    throw new Error(response.error || 'API request failed');
   }
 
-  return data.data!;
+  return response.data as T;
+}
+
+/**
+ * Helper to get data from response, with fallback for null
+ */
+async function getDataFromArrayResponse<T>(response: { success: boolean; data?: T; error?: string }): Promise<T> {
+  if (!response.success) {
+    throw new Error(response.error || 'API request failed');
+  }
+
+  // For array types, if data is null, return empty array
+  if (response.data === null) {
+    return [] as T;
+  }
+
+  return response.data as T;
 }
 
 /**
  * Get overview statistics
  */
 export async function getOverviewStats(): Promise<OverviewStats> {
-  const response = await fetch('/api/analytics/overview');
+  const response = await adminGet<{ success: boolean; data?: OverviewStats }>('/api/analytics/overview');
   return handleApiResponse<OverviewStats>(response);
 }
 
@@ -54,7 +69,7 @@ export async function getOverviewStats(): Promise<OverviewStats> {
  * Get model statistics
  */
 export async function getModelStats(): Promise<ModelStats[]> {
-  const response = await fetch('/api/analytics/models');
+  const response = await adminGet<{ success: boolean; data?: ModelStats[] }>('/api/analytics/models');
   return handleApiResponse<ModelStats[]>(response);
 }
 
@@ -62,7 +77,7 @@ export async function getModelStats(): Promise<ModelStats[]> {
  * Get API Key statistics
  */
 export async function getKeyStats(): Promise<KeyStats[]> {
-  const response = await fetch('/api/analytics/keys');
+  const response = await adminGet<{ success: boolean; data?: KeyStats[] }>('/api/analytics/keys');
   return handleApiResponse<KeyStats[]>(response);
 }
 
@@ -70,7 +85,7 @@ export async function getKeyStats(): Promise<KeyStats[]> {
  * Get asset statistics
  */
 export async function getAssetStats(): Promise<AssetStats[]> {
-  const response = await fetch('/api/analytics/assets');
+  const response = await adminGet<{ success: boolean; data?: AssetStats[] }>('/api/analytics/assets');
   return handleApiResponse<AssetStats[]>(response);
 }
 
@@ -78,7 +93,7 @@ export async function getAssetStats(): Promise<AssetStats[]> {
  * Get TTFB statistics
  */
 export async function getTTFBStats(): Promise<TTFBStats> {
-  const response = await fetch('/api/analytics/ttfb');
+  const response = await adminGet<{ success: boolean; data?: TTFBStats }>('/api/analytics/ttfb');
   return handleApiResponse<TTFBStats>(response);
 }
 
@@ -86,7 +101,7 @@ export async function getTTFBStats(): Promise<TTFBStats> {
  * Get cache statistics
  */
 export async function getCacheStats(): Promise<CacheStats> {
-  const response = await fetch('/api/analytics/cache');
+  const response = await adminGet<{ success: boolean; data?: CacheStats }>('/api/analytics/cache');
   return handleApiResponse<CacheStats>(response);
 }
 
@@ -94,7 +109,7 @@ export async function getCacheStats(): Promise<CacheStats> {
  * Get error statistics
  */
 export async function getErrorStats(): Promise<ErrorStats> {
-  const response = await fetch('/api/analytics/errors');
+  const response = await adminGet<{ success: boolean; data?: ErrorStats }>('/api/analytics/errors');
   return handleApiResponse<ErrorStats>(response);
 }
 
@@ -103,7 +118,7 @@ export async function getErrorStats(): Promise<ErrorStats> {
  * @param days - Number of days to look back (default: 7)
  */
 export async function getTimeSeriesStats(days: number = 7): Promise<TimeSeriesStats[]> {
-  const response = await fetch(`/api/analytics/timeseries?days=${days}`);
+  const response = await adminGet<{ success: boolean; data?: TimeSeriesStats[] }>(`/api/analytics/timeseries?days=${days}`);
   return handleApiResponse<TimeSeriesStats[]>(response);
 }
 
@@ -134,45 +149,24 @@ export async function getRequestLogs(options: {
     ? `/api/logs?${params.toString()}`
     : `/api/logs/all?${params.toString()}`;
 
-  const response = await fetch(url);
-  const data = await response.json();
-
-  if (!data.success) {
-    throw new Error(data.error || 'Failed to get request logs');
-  }
-
-  return data.data! || [];
+  const response = await adminGet<{ success: boolean; data?: RequestLog[] }>(url);
+  return getDataFromArrayResponse<RequestLog[]>(response);
 }
 
 /**
  * Toggle favorite status of a log
  */
 export async function toggleLogFavorite(logId: string): Promise<{ isFavorited: boolean }> {
-  const response = await fetch(`/api/logs/${logId}/favorite`, {
-    method: 'POST',
-  });
-
-  const data = await response.json();
-
-  if (!data.success) {
-    throw new Error(data.error || 'Failed to toggle favorite');
-  }
-
-  return data.data!;
+  const response = await adminPost<{ success: boolean; data?: { isFavorited: boolean } }>(`/api/logs/${logId}/favorite`, {});
+  return handleApiResponse(response);
 }
 
 /**
  * Get all favorited logs
  */
 export async function getFavoriteLogs(limit = 100): Promise<RequestLog[]> {
-  const response = await fetch(`/api/logs/favorites?limit=${limit}`);
-  const data = await response.json();
-
-  if (!data.success) {
-    throw new Error(data.error || 'Failed to get favorite logs');
-  }
-
-  return data.data! || [];
+  const response = await adminGet<{ success: boolean; data?: RequestLog[] }>(`/api/logs/favorites?limit=${limit}`);
+  return getDataFromArrayResponse<RequestLog[]>(response);
 }
 
 /**
@@ -183,42 +177,22 @@ export async function getLogsStats(): Promise<{
   favoritedCount: number;
   regularCount: number;
 }> {
-  const response = await fetch('/api/logs/stats');
-  const data = await response.json();
-
-  if (!data.success) {
-    throw new Error(data.error || 'Failed to get stats');
-  }
-
-  return data.data!;
+  const response = await adminGet<{ success: boolean; data?: { totalCount: number; favoritedCount: number; regularCount: number } }>('/api/logs/stats');
+  return handleApiResponse<{ totalCount: number; favoritedCount: number; regularCount: number }>(response);
 }
 
 /**
  * Clear all non-favorited logs
  */
 export async function clearAllNonFavoritedLogs(): Promise<{ deletedCount: number }> {
-  const response = await fetch('/api/logs/clear-all', {
-    method: 'DELETE',
-  });
-  const data = await response.json();
-
-  if (!data.success) {
-    throw new Error(data.error || 'Failed to clear logs');
-  }
-
-  return data.data!;
+  const response = await adminDelete<{ success: boolean; data?: { deletedCount: number } }>('/api/logs/clear-all');
+  return handleApiResponse<{ deletedCount: number }>(response);
 }
 
 /**
  * Get a specific request log by ID
  */
 export async function getRequestLogById(logId: string): Promise<RequestLog> {
-  const response = await fetch(`/api/logs/${logId}`);
-  const data = await response.json();
-
-  if (!data.success) {
-    throw new Error(data.error || 'Failed to get log');
-  }
-
-  return data.data!;
+  const response = await adminGet<{ success: boolean; data?: RequestLog }>(`/api/logs/${logId}`);
+  return handleApiResponse<RequestLog>(response);
 }

@@ -1,5 +1,6 @@
 import { ApiKey, RouteConfig, RequestLog, Asset, Vendor, VendorModel } from '@shared/types';
 import { mockStore } from './mockStore';
+import { getAdminToken } from './adminApi';
 
 // ============================================
 // Configuration
@@ -19,8 +20,8 @@ const getApiBaseUrl = () => {
     return window.env.VITE_API_BASE_URL;
   }
   // 生产环境打包后，如果没有注入 window.env，默认使用相对路径 ""
-  return import.meta.env.VITE_API_BASE_URL !== undefined 
-    ? import.meta.env.VITE_API_BASE_URL 
+  return import.meta.env.VITE_API_BASE_URL !== undefined
+    ? import.meta.env.VITE_API_BASE_URL
     : (import.meta.env.MODE === 'production' ? '' : 'http://localhost:3000');
 };
 
@@ -57,13 +58,28 @@ async function apiRequest<T>(
 ): Promise<ApiResponse<T>> {
   try {
     const url = `${API_BASE_URL}${endpoint}`;
+
+    // Get admin token and add to headers
+    const token = getAdminToken();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...options.headers as Record<string, string>,
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
       ...options,
+      headers,
     });
+
+    // Handle 401 Unauthorized - redirect to login
+    if (response.status === 401) {
+      window.location.hash = '#/login';
+      return { success: false, error: 'Session expired' };
+    }
 
     const data = await response.json();
 
