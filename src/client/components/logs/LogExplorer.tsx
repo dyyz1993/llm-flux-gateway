@@ -987,6 +987,12 @@ const OriginalResponseViewer: React.FC<{
   const handleFetchProtocolLog = async () => {
     if (!requestId) return;
 
+    // Toggle: if already shown with content, hide it
+    if (showProtocolLog && protocolLogContent) {
+      setShowProtocolLog(false);
+      return;
+    }
+
     setProtocolLogLoading(true);
     setProtocolLogError(null);
 
