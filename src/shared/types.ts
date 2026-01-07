@@ -45,11 +45,11 @@ export interface Message {
 
 export interface RequestParams {
   temperature?: number;
-  max_tokens?: number;
-  top_p?: number;
-  top_k?: number;
-  frequency_penalty?: number;
-  presence_penalty?: number;
+  maxTokens?: number;
+  topP?: number;
+  topK?: number;
+  frequencyPenalty?: number;
+  presencePenalty?: number;
   n?: number;
   stop?: string[];
   stream?: boolean;
@@ -57,9 +57,9 @@ export interface RequestParams {
 }
 
 export interface ResponseParams {
-  finish_reason?: 'stop' | 'length' | 'content_filter' | 'tool_calls';
+  finishReason?: 'stop' | 'length' | 'content_filter' | 'tool_calls';
   model?: string;
-  system_fingerprint?: string;
+  systemFingerprint?: string;
   id?: string;
   created?: number;
 }

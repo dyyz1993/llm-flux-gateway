@@ -102,9 +102,9 @@ export class ProtocolTranspiler {
     const resolvedFromVendor = this.resolveVendorType(fromVendor);
     const resolvedToVendor = this.resolveVendorType(toVendor);
 
-    // Fast path: same vendor (only if no alias was involved)
-    // If aliases were involved (e.g., glm → openai), we need to convert
-    if (fromVendor === toVendor && resolvedFromVendor === resolvedToVendor) {
+    // Fast path: if same vendor, return as-is (no conversion needed)
+    // This handles cases where data is already in the correct format
+    if (fromVendor === toVendor) {
       return success(sourceData as T, {
         fromVendor,
         toVendor,
@@ -146,11 +146,13 @@ export class ProtocolTranspiler {
       if (isRequest) {
         // Request conversion: source → Internal → target
         const internalResult = sourceConverter.convertRequestToInternal(sourceData);
+
         if (!internalResult.success) {
           return internalResult as TranspileResult<T>;
         }
 
         const targetResult = targetConverter.convertRequestFromInternal(internalResult.data!);
+
         if (!targetResult.success) {
           return targetResult as TranspileResult<T>;
         }
@@ -508,6 +510,7 @@ export class ProtocolTranspiler {
 
     return false;
   }
+
 }
 
 /**

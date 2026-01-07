@@ -337,6 +337,91 @@ export function initDatabase() {
     console.error('[Database] Migration failed:', error);
   }
 
+  // Migration: Migrate temperature column to request_params
+  // This ensures all existing temperature data is preserved in request_params JSON
+  try {
+    // Step 1: Check if we need to migrate (logs with temperature but no request_params)
+    const needsMigration = sqlite.prepare(`
+      SELECT COUNT(*) as count
+      FROM request_logs
+      WHERE temperature IS NOT NULL
+        AND temperature != ''
+        AND (request_params IS NULL OR request_params = 'null' OR request_params = '')
+    `).get() as any;
+
+    if (needsMigration.count > 0) {
+      console.log(`[Database] Migrating ${needsMigration.count} logs: temperature → request_params...`);
+
+      // Migrate logs that have temperature but no request_params
+      sqlite.exec(`
+        UPDATE request_logs
+        SET request_params = json_object('temperature', CAST(temperature AS REAL))
+        WHERE temperature IS NOT NULL
+          AND temperature != ''
+          AND (request_params IS NULL OR request_params = 'null' OR request_params = '')
+      `);
+
+      console.log('[Database] Migration step 1 completed: created request_params for logs with temperature');
+    }
+
+    // Step 2: Merge temperature into existing request_params (if not already present)
+    const needsMerge = sqlite.prepare(`
+      SELECT COUNT(*) as count
+      FROM request_logs
+      WHERE temperature IS NOT NULL
+        AND temperature != ''
+        AND request_params IS NOT NULL
+        AND request_params != 'null'
+        AND request_params != ''
+        AND json_extract(request_params, '$.temperature') IS NULL
+    `).get() as any;
+
+    if (needsMerge.count > 0) {
+      console.log(`[Database] Merging temperature into request_params for ${needsMerge.count} logs...`);
+
+      sqlite.exec(`
+        UPDATE request_logs
+        SET request_params = json_patch(
+          COALESCE(request_params, '{}'),
+          json_object('temperature', CAST(temperature AS REAL))
+        )
+        WHERE temperature IS NOT NULL
+          AND temperature != ''
+          AND request_params IS NOT NULL
+          AND request_params != 'null'
+          AND request_params != ''
+          AND json_extract(request_params, '$.temperature') IS NULL
+      `);
+
+      console.log('[Database] Migration step 2 completed: merged temperature into existing request_params');
+    }
+
+    // Step 3: Verify migration
+    if (needsMigration.count > 0 || needsMerge.count > 0) {
+      const stats = sqlite.prepare(`
+        SELECT
+          COUNT(*) as total_logs,
+          SUM(CASE WHEN temperature IS NOT NULL AND temperature != '' THEN 1 ELSE 0 END) as logs_with_temperature,
+          SUM(CASE WHEN request_params IS NOT NULL AND request_params != 'null' AND request_params != '' THEN 1 ELSE 0 END) as logs_with_request_params,
+          SUM(CASE WHEN json_extract(request_params, '$.temperature') IS NOT NULL THEN 1 ELSE 0 END) as logs_with_temperature_in_params
+        FROM request_logs
+      `).get() as any;
+
+      console.log('[Database] Migration stats:', {
+        totalLogs: stats.total_logs,
+        logsWithTemperature: stats.logs_with_temperature,
+        logsWithRequestParams: stats.logs_with_request_params,
+        logsWithTemperatureInParams: stats.logs_with_temperature_in_params,
+      });
+
+      console.log('[Database] Migration completed: temperature → request_params');
+      console.log('[Database] Note: The temperature column is kept for backward compatibility');
+      console.log('[Database]       Future versions can remove it after verifying the migration');
+    }
+  } catch (error) {
+    console.error('[Database] Migration failed:', error);
+  }
+
   // Create favorited index (if not already created by migration)
   sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_request_logs_favorited ON request_logs(is_favorited);`);
 

@@ -84,11 +84,24 @@ async function handleGatewayRequest(
   });
 
   // Step 1: Convert source format to internal (OpenAI) format
-  const internalRequestResult = protocolTranspiler.transpile(
-    body,
-    sourceFormat,
-    'openai'  // Internal format is OpenAI
-  );
+  // ⭐ CRITICAL FIX: Use converter directly to avoid double conversion
+  // When sourceFormat === 'openai' and targetFormat === 'openai',
+  // transpile() would do: snake_case → camelCase → snake_case
+  // We want: snake_case → camelCase (Internal Format) only
+  const sourceConverter = (protocolTranspiler as any).converters?.get(sourceFormat === 'glm' ? 'openai' : sourceFormat);
+  let internalRequestResult;
+
+  if (sourceConverter && typeof sourceConverter.convertRequestToInternal === 'function') {
+    // Use converter directly for single-step conversion
+    internalRequestResult = sourceConverter.convertRequestToInternal(body);
+  } else {
+    // Fallback to transpile for different vendors
+    internalRequestResult = protocolTranspiler.transpile(
+      body,
+      sourceFormat,
+      'openai'  // Internal format is OpenAI
+    );
+  }
 
   // Log Step 1: Client format → Internal format
   transformationLogger.logStep1_ClientToInternal(
@@ -215,6 +228,10 @@ async function handleGatewayRequest(
   );
 
   // Step 7: Create log entry
+  // Extract all request parameters except core fields (model, messages, tools, stream)
+  // These will be stored in request_params JSON field
+  const { tools: requestToolsValue, ...requestParams } = rest;
+
   const logId = await requestLogService.createLog({
     id: requestId, // Use the same requestId as protocol transformation logs
     apiKeyId,
@@ -223,8 +240,9 @@ async function handleGatewayRequest(
     finalModel: rewriteResult.rewrittenRequest.model,
     messages,
     overwrittenAttributes: rewriteResult.overwrittenAttributes,
-    requestTools: rest.tools,
-    temperature: rest.temperature,
+    requestTools: requestToolsValue,
+    // ⭐ FIX: Store all parameters (temperature, maxTokens, topP, etc.) in request_params
+    requestParams,
     baseUrl: upstreamRequest.url,
   });
 

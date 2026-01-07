@@ -180,6 +180,7 @@ export class OpenAIConverter implements FormatConverter {
               const toolCall: InternalToolCall = {
                 id: block.id || `call_${Date.now()}`,
                 type: 'function',
+                index: toolCalls.length,  // ⭐ FIX: Add index field
                 function: {
                   name: block.name,
                   arguments: typeof block.input === 'string' ? block.input : JSON.stringify(block.input || {}),
@@ -204,7 +205,11 @@ export class OpenAIConverter implements FormatConverter {
           const toolCallsData = originalMessage.tool_calls || originalMessage.toolCalls;
 
           if (toolCallsData && Array.isArray(toolCallsData) && toolCallsData.length > 0) {
-            choice.message.toolCalls = toolCallsData;
+            // ⭐ FIX: Add index field to toolCalls if missing
+            choice.message.toolCalls = toolCallsData.map((tc: InternalToolCall, idx: number) => ({
+              ...tc,
+              index: tc.index ?? idx,
+            }));
           }
         }
       }
@@ -246,7 +251,14 @@ export class OpenAIConverter implements FormatConverter {
                   .map(block => block.text);
                 return textBlocks.length > 0 ? textBlocks.join('') : null;
               })()
-            : (choice.message.content === '' ? null : choice.message.content)  // Only convert empty string to null
+            : (choice.message.content === '' ? null : choice.message.content),  // Only convert empty string to null
+          // ⭐ FIX: Add index field to tool_calls if missing
+          ...(choice.message.toolCalls && {
+            toolCalls: choice.message.toolCalls.map((tc, idx) => ({
+              ...tc,
+              index: tc.index ?? idx,  // If no index, use array index
+            })),
+          }),
         }
       }))
     };

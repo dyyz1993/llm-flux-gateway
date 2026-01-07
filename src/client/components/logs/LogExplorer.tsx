@@ -2031,10 +2031,42 @@ export const LogExplorer: React.FC = () => {
                     <div className="space-y-4">
                         {/* Config Grid */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                            <div className="bg-[#1a1a1a] p-2.5 rounded border border-[#333] flex justify-between items-center">
-                                <span className="text-xs text-gray-400">Temperature</span>
-                                <span className="text-xs font-mono text-white">{selectedLog.temperature ?? (selectedLog.requestParams?.temperature ?? 0.7)}</span>
-                            </div>
+                            {selectedLog.requestParams?.temperature !== undefined && (
+                                <div className="bg-[#1a1a1a] p-2.5 rounded border border-[#333] flex justify-between items-center">
+                                    <span className="text-xs text-gray-400">Temperature</span>
+                                    <span className="text-xs font-mono text-white">{selectedLog.requestParams.temperature}</span>
+                                </div>
+                            )}
+                            {selectedLog.requestParams?.maxTokens !== undefined && (
+                                <div className="bg-[#1a1a1a] p-2.5 rounded border border-[#333] flex justify-between items-center">
+                                    <span className="text-xs text-gray-400">Max Tokens</span>
+                                    <span className="text-xs font-mono text-white">{selectedLog.requestParams.maxTokens}</span>
+                                </div>
+                            )}
+                            {selectedLog.requestParams?.topP !== undefined && (
+                                <div className="bg-[#1a1a1a] p-2.5 rounded border border-[#333] flex justify-between items-center">
+                                    <span className="text-xs text-gray-400">Top P</span>
+                                    <span className="text-xs font-mono text-white">{selectedLog.requestParams.topP}</span>
+                                </div>
+                            )}
+                            {selectedLog.requestParams?.topK !== undefined && (
+                                <div className="bg-[#1a1a1a] p-2.5 rounded border border-[#333] flex justify-between items-center">
+                                    <span className="text-xs text-gray-400">Top K</span>
+                                    <span className="text-xs font-mono text-white">{selectedLog.requestParams.topK}</span>
+                                </div>
+                            )}
+                            {selectedLog.requestParams?.frequencyPenalty !== undefined && selectedLog.requestParams.frequencyPenalty !== 0 && (
+                                <div className="bg-[#1a1a1a] p-2.5 rounded border border-[#333] flex justify-between items-center">
+                                    <span className="text-xs text-gray-400">Freq Penalty</span>
+                                    <span className="text-xs font-mono text-white">{selectedLog.requestParams.frequencyPenalty}</span>
+                                </div>
+                            )}
+                            {selectedLog.requestParams?.presencePenalty !== undefined && selectedLog.requestParams.presencePenalty !== 0 && (
+                                <div className="bg-[#1a1a1a] p-2.5 rounded border border-[#333] flex justify-between items-center">
+                                    <span className="text-xs text-gray-400">Pres Penalty</span>
+                                    <span className="text-xs font-mono text-white">{selectedLog.requestParams.presencePenalty}</span>
+                                </div>
+                            )}
                             <div className="bg-[#1a1a1a] p-2.5 rounded border border-[#333] flex justify-between items-center">
                                 <span className="text-xs text-gray-400">Messages</span>
                                 <span className="text-xs font-mono text-white">{selectedLog.messageCount}</span>
@@ -2105,10 +2137,10 @@ export const LogExplorer: React.FC = () => {
                         <div className="mb-4 bg-[#1a1a1a] border border-[#333] rounded-lg p-3">
                             <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">Response Metadata</h4>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                {selectedLog.responseParams.finish_reason && (
+                                {selectedLog.responseParams.finishReason && (
                                     <div className="flex justify-between items-center">
                                         <span className="text-xs text-gray-400">Finish Reason</span>
-                                        <span className="text-xs font-mono text-white">{selectedLog.responseParams.finish_reason}</span>
+                                        <span className="text-xs font-mono text-white">{selectedLog.responseParams.finishReason}</span>
                                     </div>
                                 )}
                                 {selectedLog.responseParams.model && (
@@ -2117,10 +2149,10 @@ export const LogExplorer: React.FC = () => {
                                         <span className="text-xs font-mono text-indigo-400 truncate" title={selectedLog.responseParams.model}>{selectedLog.responseParams.model}</span>
                                     </div>
                                 )}
-                                {selectedLog.responseParams.system_fingerprint && (
+                                {selectedLog.responseParams.systemFingerprint && (
                                     <div className="flex justify-between items-center">
                                         <span className="text-xs text-gray-400">System FP</span>
-                                        <span className="text-xs font-mono text-gray-500 truncate" title={selectedLog.responseParams.system_fingerprint}>{selectedLog.responseParams.system_fingerprint!.slice(0, 8)}</span>
+                                        <span className="text-xs font-mono text-gray-500 truncate" title={selectedLog.responseParams.systemFingerprint}>{selectedLog.responseParams.systemFingerprint!.slice(0, 8)}</span>
                                     </div>
                                 )}
                                 {selectedLog.responseParams.id && (
@@ -2165,7 +2197,7 @@ export const LogExplorer: React.FC = () => {
                               className="text-sm text-gray-200 leading-relaxed border-l-2 border-emerald-500/20 pl-4"
                             />
                         </div>
-                    ) : selectedLog.responseParams?.finish_reason === 'tool_calls' ? (
+                    ) : selectedLog.responseParams?.finishReason === 'tool_calls' ? (
                         (() => {
                             // First, try to use the responseToolCalls field from database
                             const toolCallsFromDb = selectedLog.responseToolCalls;
@@ -2203,7 +2235,7 @@ export const LogExplorer: React.FC = () => {
                                 copyData.tool_calls = toolCallsToShow;
                             }
                             if (Object.keys(copyData).length === 0) {
-                                copyData = { finish_reason: 'tool_calls', note: 'No tool calls data captured' };
+                                copyData = { finishReason: 'tool_calls', note: 'No tool calls data captured' };
                             }
                             const copyJson = JSON.stringify(copyData, null, 2);
 
@@ -2289,7 +2321,7 @@ export const LogExplorer: React.FC = () => {
                                             <div className="flex items-center justify-center gap-2 mb-3">
                                                 <Terminal className="w-6 h-6 text-gray-600" />
                                                 <p className="text-sm text-gray-500">
-                                                    Tool calls requested (finish_reason: tool_calls)
+                                                    Tool calls requested (finishReason: tool_calls)
                                                 </p>
                                             </div>
                                             <p className="text-xs text-gray-600 mt-2">

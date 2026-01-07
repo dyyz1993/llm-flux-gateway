@@ -37,6 +37,7 @@ build
 # Testing
 coverage
 .nyc_output
+src/server/module-gateway/controllers/__tests__/glm-snake-case-output.test.ts
 
 # Misc
 .cache
@@ -48,3 +49,4 @@ data/*.db*
 *.db-shm
 *.db-wal
 docker.env
+dist-server
