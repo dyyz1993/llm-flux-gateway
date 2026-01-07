@@ -18,13 +18,21 @@ interface AdminSession {
  * Returns 401 if token is invalid or expired.
  */
 export async function adminAuthMiddleware(c: Context, next: Next): Promise<void | Response> {
+  // Try to get token from Authorization header first, then from URL query param
   const authHeader = c.req.header('Authorization');
+  let token: string | null = null;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.substring(7); // Remove 'Bearer ' prefix
+  } else {
+    // Fallback: try to get token from URL query parameter (for SSE/EventSource)
+    token = c.req.query('token') || null;
+  }
+
+  if (!token) {
     return c.json({ success: false, error: 'Unauthorized' }, 401);
   }
 
-  const token = authHeader.substring(7); // Remove 'Bearer ' prefix
   const now = Math.floor(Date.now() / 1000);
 
   // Look up the session in database

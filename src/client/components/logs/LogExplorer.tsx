@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { getRequestLogs, toggleLogFavorite, clearAllNonFavoritedLogs, getFavoriteLogs } from '@client/services/analyticsService';
 import { realtimeLogsService } from '@client/services/realtimeLogsService';
-import { fetchVendors, fetchProtocolLog } from '@client/services/apiClient';
+import { fetchVendors, fetchProtocolLog, fetchKeys } from '@client/services/apiClient';
 import { RequestLog, Role, Message, ToolDefinition, ApiKey, ToolCall, Vendor } from '@shared/types';
 import { TOOL_TEMPLATES } from '@client/components/playground/toolTemplates';
 import { ResponseParser, type ParsedResponse } from '@shared/response-parser';
@@ -1471,9 +1471,8 @@ export const LogExplorer: React.FC = () => {
 
   // Load API Keys on mount
   useEffect(() => {
-    fetch('/api/keys')
-      .then(res => res.json())
-      .then(data => setApiKeys(data.data! || []))
+    fetchKeys()
+      .then(result => setApiKeys(result.data! || []))
       .catch(err => console.error('[LogExplorer] Failed to load API keys:', err));
   }, []);
 

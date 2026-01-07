@@ -5,6 +5,7 @@
  */
 
 import { RequestLog } from '@shared/types';
+import { getAdminToken } from './adminApi';
 
 // 事件监听器类型
 type LogEventListener = (log: RequestLog) => void;
@@ -27,6 +28,12 @@ class RealtimeLogsService {
     const url = new URL('/api/logs/stream', window.location.origin);
     if (apiKeyId) {
       url.searchParams.set('apiKeyId', apiKeyId);
+    }
+
+    // 添加 token 到 URL (EventSource 不支持自定义 headers)
+    const token = getAdminToken();
+    if (token) {
+      url.searchParams.set('token', token);
     }
 
     console.log('[RealtimeLogs] Connecting to:', url.toString());

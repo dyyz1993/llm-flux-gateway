@@ -1,6 +1,6 @@
 import { ApiKey, RouteConfig, RequestLog, Asset, Vendor, VendorModel } from '@shared/types';
 import { mockStore } from './mockStore';
-import { getAdminToken } from './adminApi';
+import { getAdminToken, clearAdminToken } from './adminApi';
 
 // ============================================
 // Configuration
@@ -77,6 +77,7 @@ async function apiRequest<T>(
 
     // Handle 401 Unauthorized - redirect to login
     if (response.status === 401) {
+      clearAdminToken();
       window.location.hash = '#/login';
       return { success: false, error: 'Session expired' };
     }
