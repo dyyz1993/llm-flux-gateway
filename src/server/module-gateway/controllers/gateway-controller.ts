@@ -88,7 +88,13 @@ async function handleGatewayRequest(
   // When sourceFormat === 'openai' and targetFormat === 'openai',
   // transpile() would do: snake_case → camelCase → snake_case
   // We want: snake_case → camelCase (Internal Format) only
-  const sourceConverter = (protocolTranspiler as any).converters?.get(sourceFormat === 'glm' ? 'openai' : sourceFormat);
+  //
+  // Note: GLM uses alias mapping in protocol-transpiler (glm → openai)
+  // sourceFormat here is determined by the endpoint URL:
+  // - /v1/chat/completions → 'openai'
+  // - /v1/messages → 'anthropic'
+  // - /v1/models/*:generateContent → 'gemini'
+  const sourceConverter = (protocolTranspiler as any).converters?.get(sourceFormat);
   let internalRequestResult;
 
   if (sourceConverter && typeof sourceConverter.convertRequestToInternal === 'function') {
@@ -273,6 +279,11 @@ async function handleGatewayRequest(
         // Debug mode disabled for production
       // const debugMode = process.env.DEBUG === '1'; // Check if debug mode is enabled
 
+        // ⭐ FIX: Collect all raw SSE chunks for complete logging
+        // This allows reconstructing the full streaming response from logs
+        // Declared outside try block to be accessible in finally block
+        const rawSSEChunks: string[] = [];
+
         try {
           // Create a separate stream request to capture raw SSE
           // We need to capture raw SSE before it's parsed
@@ -289,6 +300,7 @@ async function handleGatewayRequest(
           for await (const rawSSE of rawSSEStream) {
             receivedChunks++;  // Count all chunks from upstream
             currentRawSSE = rawSSE; // Store current raw SSE
+            rawSSEChunks.push(rawSSE); // ✅ Collect all raw SSE data
 
             // Extract data from SSE line
             const dataMatch = rawSSE.match(/^data:\s*(.+)\s*$/);
@@ -378,10 +390,19 @@ async function handleGatewayRequest(
                     // Create new entry with index tracking separately
                     accumulatedToolCalls.set(index, newCall);
                   } else if (newCall.function?.arguments) {
-                    if (existing.function?.arguments) {
-                      existing.function.arguments += newCall.function.arguments;
+                    // ✅ FIX: Use 'in' operator to check if arguments property exists
+                    // Empty string "" is falsy, but we still want to append to it
+                    // Also preserve name field from existing call
+                    const existingFunc = existing.function; // Type is guaranteed to be defined here
+                    if ('arguments' in existingFunc) {
+                      existingFunc.arguments += newCall.function.arguments;
                     } else {
-                      existing.function = newCall.function;
+                      // ✅ Only assign arguments, preserve existing name field
+                      (existingFunc as { arguments: string }).arguments = newCall.function.arguments;
+                    }
+                    // ✅ Preserve name if newCall has it (for completeness)
+                    if (newCall.function?.name && !existingFunc.name) {
+                      existingFunc.name = newCall.function.name;
                     }
                   }
                 });
@@ -563,12 +584,28 @@ async function handleGatewayRequest(
             cacheWriteTokens: 0,
             responseParams: Object.keys(responseParams).length > 0 ? responseParams : undefined,
             responseToolCalls: toolCallsArray,
-            // Capture original response metadata for streaming
+            // ⭐ FIX: Capture complete original SSE for streaming
+            // This allows reconstructing the full streaming response from logs for debugging
             originalResponse: JSON.stringify({
               streamed: true,
               chunkCount,
+              receivedChunks,
+              emptyChunks,
+              conversionErrors,
               targetFormat,
-              // Note: Full streaming response is captured in responseContent
+              // ✅ Store complete raw SSE stream (can be large)
+              rawSSE: rawSSEChunks.join('\n'),
+              // ✅ Store reconstructed response from accumulated data
+              reconstructed: {
+                content: contentBlocks.length > 0 ? contentBlocks : accumulatedText,
+                toolCalls: toolCallsArray,
+                usage: {
+                  promptTokens,
+                  completionTokens,
+                  totalTokens: promptTokens + completionTokens,
+                },
+                finishReason: responseParams.finish_reason,
+              },
             }),
             originalResponseFormat: targetFormat as RouteConfigFormat,
           });
@@ -593,31 +630,56 @@ async function handleGatewayRequest(
 
       // Step 9: Convert upstream response (target format) back to client format
 
-      // ⭐ FIX: Use transpile with alias resolution (e.g., 'glm' → 'openai')
-      // This ensures GLM format is properly handled by OpenAI converter
-      const internalResponseResult = protocolTranspiler.transpile(
-        upstreamResponse,
-        targetFormat,    // GLM (will resolve to 'openai' converter)
-        'openai'         // Internal format (camelCase)
-      );
+      // ⭐ CRITICAL FIX: Convert to Internal Format first (camelCase)
+      // Use converter directly to bypass transpile's fast-path and ensure proper normalization
+      const targetConverter = (protocolTranspiler as any).converters?.get(targetFormat);
+      let internalResponseResult;
+
+      if (targetConverter && typeof targetConverter.convertResponseToInternal === 'function') {
+        // Direct converter call - ensures full normalization including nested objects
+        internalResponseResult = targetConverter.convertResponseToInternal(upstreamResponse);
+      } else {
+        // Fallback: try to find converter through alias resolution
+        internalResponseResult = protocolTranspiler.transpile(
+          upstreamResponse,
+          targetFormat,
+          'openai'  // Request Internal Format (camelCase)
+        );
+      }
 
       let finalResponse: any;
       let finalResponseResult: any;
 
       if (internalResponseResult.success) {
-        // ⭐ CRITICAL FIX: Use converter directly to avoid fast-path
-        // transpile(internalFormat, 'openai', 'openai') would skip normalization!
-        // We need: camelCase (internal) → snake_case (OpenAI API format)
-        const openaiConverter = (protocolTranspiler as any).converters?.get('openai');
-        if (openaiConverter && typeof openaiConverter.convertResponseFromInternal === 'function') {
-          finalResponseResult = openaiConverter.convertResponseFromInternal(internalResponseResult.data!);
+        // Now convert from Internal Format to client format
+        // ⭐ CRITICAL FIX: Use sourceFormat converter to preserve user's expected format
+        // - If user sent Anthropic format, return Anthropic format
+        // - If user sent OpenAI format, return OpenAI format
+        // - This ensures format consistency: request format = response format
+
+        console.log('[Gateway] Response format selection:', {
+          sourceFormat,
+          requestId,
+          targetFormat,
+          'Selected converter': sourceFormat,
+        });
+
+        const clientConverter = (protocolTranspiler as any).converters?.get(sourceFormat);
+        if (clientConverter && typeof clientConverter.convertResponseFromInternal === 'function') {
+          finalResponseResult = clientConverter.convertResponseFromInternal(internalResponseResult.data!);
         } else {
-          // Fallback: use transpile (may not normalize fields if source === target)
-          finalResponseResult = protocolTranspiler.transpile(
-            internalResponseResult.data!,
-            'openai',
-            sourceFormat
-          );
+          // Fallback: try openai converter if sourceFormat converter is not available
+          const openaiConverter = (protocolTranspiler as any).converters?.get('openai');
+          if (openaiConverter && typeof openaiConverter.convertResponseFromInternal === 'function') {
+            finalResponseResult = openaiConverter.convertResponseFromInternal(internalResponseResult.data!);
+          } else {
+            // Last resort: use transpile (may not normalize fields if source === target)
+            finalResponseResult = protocolTranspiler.transpile(
+              internalResponseResult.data!,
+              'openai',
+              sourceFormat
+            );
+          }
         }
 
         if (!finalResponseResult.success) {

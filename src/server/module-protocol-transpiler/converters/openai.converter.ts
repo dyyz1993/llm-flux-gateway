@@ -153,10 +153,6 @@ export class OpenAIConverter implements FormatConverter {
       return failure([createError('choices', 'Missing or invalid field: choices', 'MISSING_REQUIRED_FIELD' as const)]);
     }
 
-    if (!resp.usage) {
-      return failure([createError('usage', 'Missing required field: usage', 'MISSING_REQUIRED_FIELD' as const)]);
-    }
-
     // ⭐ FIX: Normalize snake_case to camelCase for internal format
     const normalizedResponse = normalizeToCamelCase(resp, true) as InternalResponse;
 
