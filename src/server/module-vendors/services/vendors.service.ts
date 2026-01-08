@@ -1,7 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { queryAll, queryFirst, queryRun } from '@server/shared/database';
-import { randomUUID } from 'node:crypto';
 import type { VendorsYamlSimple } from '@shared/types';
 import yaml from 'js-yaml';
 
@@ -40,8 +39,16 @@ export class VendorsService {
    */
   private parseYaml(content: string): VendorsYamlSimple {
     try {
+      // Helper to strip comments and trim values
+      const clean = (val: any): string => {
+        if (val === null || val === undefined) return '';
+        const s = val.toString();
+        // 强制截断第一个 # 之前的内容，并去除首尾空格
+        const hashIndex = s.indexOf('#');
+        return (hashIndex !== -1 ? s.substring(0, hashIndex) : s).trim();
+      };
+
       // Pre-process: Replace backticks with double quotes to support user's template-string style
-      // but keep standard YAML compliance.
       const preProcessed = content.replace(/`([^`]*)`/g, '"$1"');
       
       const parsed = yaml.load(preProcessed) as VendorsYamlSimple;
@@ -53,11 +60,13 @@ export class VendorsService {
       // Ensure consistent formatting and default values
       const vendors = parsed.vendors.map(v => ({
         ...v,
-        name: v.name?.toString().trim() || '',
-        baseUrl: v.baseUrl?.toString().trim() || '',
-        endpoint: v.endpoint?.toString().trim() || '/chat/completions',
-        iconUrl: v.iconUrl?.toString().trim(),
-        models: Array.isArray(v.models) ? v.models.map(m => m.toString().trim()) : []
+        name: clean(v.name),
+        baseUrl: clean(v.baseUrl),
+        endpoint: clean(v.endpoint) || '/chat/completions',
+        iconUrl: clean(v.iconUrl) || undefined,
+        models: Array.isArray(v.models) 
+          ? v.models.map(m => clean(m)).filter(m => m !== '') 
+          : []
       }));
 
       return { vendors };
@@ -155,38 +164,25 @@ export class VendorsService {
     const config = await this.loadFromYaml();
     const now = Date.now();
 
-    let createdVendors = 0;
-    let updatedVendors = 0;
-    let deletedVendors = 0;
-    let totalModels = 0;
+    // ---------------------------------------------------------
+    // 彻底清理原有数据，解决远程服务器可能存在的“带注释脏 ID”问题
+    // 临时关闭外键检查，允许清空被其他表引用的基础数据
+    // ---------------------------------------------------------
+    queryRun('PRAGMA foreign_keys = OFF');
+    try {
+      queryRun('DELETE FROM vendor_models');
+      queryRun('DELETE FROM vendor_templates');
 
-    for (const vendorConfig of config.vendors) {
-      // Generate id from name (lowercase, replace spaces with hyphens)
-      const id = vendorConfig.name.toLowerCase().replace(/\s+/g, '-');
+      let createdVendors = 0;
+      let updatedVendors = 0;
+      let deletedVendors = 0;
+      let totalModels = 0;
 
-      // Check if vendor exists
-      const existing = queryFirst<any>(`
-        SELECT id FROM vendor_templates WHERE id = ?
-      `, [id]);
+      for (const vendorConfig of config.vendors) {
+        // Generate id from name (lowercase, replace spaces with hyphens)
+        const id = vendorConfig.name.toLowerCase().replace(/\s+/g, '-');
 
-      if (existing) {
-        // Update existing vendor
-        queryRun(`
-          UPDATE vendor_templates
-          SET name = ?, display_name = ?, base_url = ?, endpoint = ?, icon_url = ?, status = ?
-          WHERE id = ?
-        `, [
-          vendorConfig.name,
-          vendorConfig.name, // displayName = name
-          vendorConfig.baseUrl,
-          vendorConfig.endpoint || '/chat/completions',
-          vendorConfig.iconUrl || null,
-          'active', // Default status
-          id,
-        ]);
-        updatedVendors++;
-      } else {
-        // Create new vendor
+        // Create new vendor (since we cleared all, it's always an insert now)
         queryRun(`
           INSERT INTO vendor_templates (id, name, display_name, base_url, endpoint, icon_url, status, created_at)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -201,39 +197,39 @@ export class VendorsService {
           now,
         ]);
         createdVendors++;
+
+        // Sync models for this vendor
+        for (const modelId of vendorConfig.models) {
+          // 使用确定性 ID 代替随机 UUID：vendorId:modelId
+          // 这样只要 YAML 不变，物理 ID 就永远不变，避免关联失效
+          const deterministicModelId = `${id}:${modelId}`;
+          
+          queryRun(`
+            INSERT INTO vendor_models (id, vendor_id, model_id, display_name, description, status, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+          `, [
+            deterministicModelId,
+            id,
+            modelId, // 原始 modelId (如 gpt-4)
+            modelId, // displayName = modelId
+            null,    // No description in simplified format
+            'active', // Default status
+            now,
+          ]);
+          totalModels++;
+        }
       }
 
-      // Sync models for this vendor
-      // First, delete all existing models for this vendor
-      queryRun(`
-        DELETE FROM vendor_models WHERE vendor_id = ?
-      `, [id]);
-
-      // Then insert all models from config
-      for (const modelId of vendorConfig.models) {
-        const modelUuid = randomUUID();
-        queryRun(`
-          INSERT INTO vendor_models (id, vendor_id, model_id, display_name, description, status, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?)
-        `, [
-          modelUuid,
-          id,
-          modelId, // modelId
-          modelId, // displayName = modelId
-          null, // No description in simplified format
-          'active', // Default status
-          now,
-        ]);
-        totalModels++;
-      }
+      return {
+        created: createdVendors,
+        updated: updatedVendors,
+        deleted: deletedVendors,
+        models: totalModels,
+      };
+    } finally {
+      // 无论成功还是失败，都必须重新开启外键检查
+      queryRun('PRAGMA foreign_keys = ON');
     }
-
-    return {
-      created: createdVendors,
-      updated: updatedVendors,
-      deleted: deletedVendors,
-      models: totalModels,
-    };
   }
 
   /**

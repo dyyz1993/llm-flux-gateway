@@ -88,10 +88,24 @@ vendors:
       - sonar-medium-online
       - sonar-small-online
 
+
+
+
+  - name: SiliconFlow 硅基流动
+    baseUrl: https://api.siliconflow.cn/v1  # 兼容OpenAI格式的基础URL
+    endpoint: /chat/completions  # OpenAI风格对话补全端点
+    iconUrl: https://image-clip.docker.19930810.xyz:8443/api/image?url=https%3A%2F%2Fsiliconflow.cn%2Flogo-new.svg&cx=0&cy=0&cw=59&ch=32  # 建议使用官方图标路径
+    models:
+      - deepseek-ai/DeepSeek-R1  
+      
+      - deepseek-ai/DeepSeek-V3  
+      
+      - Qwen/Qwen3-8B   
+  
   - name: Zhipu AI
     baseUrl: https://open.bigmodel.cn/api/paas/v4
     endpoint: /chat/completions
-    iconUrl: /icons/zhipu.svg
+    iconUrl: https://image-clip.docker.19930810.xyz:8443/api/image?id=38272329-0c4a-4681-a32e-dafcbaa3c292&cx=-9&cy=0&cw=64&ch=56&wt=%5Bpremium-crown%5D&wc=%23ffffff&wo=128&wx=7&wy=-1&ws=50
     models:
       - glm-4.6
       - glm-4.7
@@ -102,20 +116,29 @@ vendors:
   - name: Zhipu coding
     baseUrl: https://open.bigmodel.cn/api/coding/paas/v4
     endpoint: /chat/completions
-    iconUrl: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAAyCAMAAABYtdZYAAAAqFBMVEVHcEwcICglLEYaICkbICgaICkaICkaICkaICkbICqLrv5dg/AbICkcICwaICkaICkcICkbIClLdelehO9ulfRsjvQ3ZOQ3YuRbee95k/kaICkaICn///9vevRidPB8gfdAYuZXbu1MaOoxXOIjVN5NoutcpfBsqPWMifw9n+Z7q/pCduhahe9Pfuxji/J0l/ZrkfUybON/nfvy9f6kvvjA0vrg5f2ao/eWX6F+AAAAG3RSTlMAQBDvILuf34Bg/iCQQM9wMFBBY6Hdz4u5f3zrMRhGAAAG/klEQVRo3uWaeVviPBDAeyRNC+VUPN4CiuDqyqVyff9v9uZqMpO2UnnkWXedv7Rp0vzmyEwSPK8ozatB0/tpElzPZs/Pl80fBj2dTjn2893tDwLvX02FCOy7wcWPgb6/V9h3QkY/Arx5c69EY49Go/FN858P6gcukvpeYgtqLv/22nYxmTzk3PeLg6QW2JPJ5PovQ2nFH7ZSITqoBxMhOfd6mxtbPryqCPEghpK0AtTaEQ+7R6box9VvJaKp81noHs3YR+1JxkW+0b8ZT8aGm4Nvd7mLa1Vc9ctGIJkj7YjYViaeJEcmGct+tHp09kno8FifHDu4VIRjy73fQGMLB5heN2tgc4lPwc5aJU30FOw4q4l9O9JRPDYGXw2HB0wt0tp1UAfbWu4z2KxieufDlmsX5t4Nh3vr4gp6Ops1a2Fn/52AnRVDmJ0ZW+UqAD4ecjm4xq7ETn0lHeWVWai9Qq6Yfk3sMCg39vmxDfdOYO9hYEvqKmxr0E6W1bFwGXbmJB3CzoytCjJg8MNwqMwNbV0LW0PEp2A75jbPz4oN/Hy0UdibO2Ds2awWtn86dhaVrxpnw5a7LePpOTXnHlkXn9bD7kJst1xpRSzMQpro1N7yMTZKYlEZdiumjLG2GcGWTZ2IN9CUFLCDVtoWXTqkiH2nsSX4fmhkP35QFboydg3sHpw/Xslb1IAkor5rK+2oaVKnZlEDRwjBDsBbCKoVQ/scY3fCYhdg7ec8wO82wyHktoFdC5vCjyLsDippOsYp1DR9x9xynAghxChJsl5x8ZPPoaoIRV26RWxt8AOi5n5+uDe2Po7dpeh/iI0nnTEH28PmVskLWS52q4OkjBoFhtsSdovWFuiH/bAg+wdj7CpsGilhTiYC2MTU7BHFZaxGI0WFpTBOc+o2pfozIUFVTchbHOy2akiTJFYvsQBiHxR1GbSQ3foINla0X1aTM9BGohJsLwVJTE2MAGz9ISpRewwUwVofcSCDHGIrl0kDN7Nq7PV6/f6+3W+G1bI7LJbz+bwGNm2V7cB8oGwwVYgdhOYRyUPAYitNpdivW/bPLsokqg9DWTE2atXYv5U87SrAN7vtu5JaNTlLithq1sTZWyFsMC/8SPwRYLVpNUbGpLFTBrC8JbTfDPPZYOzfvx+3mzLo97X0h/f3Rs2tSFrADp385JdgK3OncJ00bX5pxgjNH7bAU6OwXNWgBEqRpnLsRyG/dsXAfn0V1OsPrJ1PJ/D10pE62F13jwU82jpyrF0iwk8YaHKKf1JUqO0tF7QOMRIjN9DYj5rbMfh29fpquY/nbdIGCdhg+4UirF2CHTC1atkxY2S50HOrQZ670U7XKET0KXXE0MWW0FxeNoh6lXPXw9Z2pMewaQm2jlM5QNsrYrdLPkwKe4Deh9gZxlbUgvsJcG8XqxUEr4GtDROcgu1RpzzH2OzLsS31r6enraVeLCD2ug42CEMntpMjTp6rx65E1U5uFInWUOTkIaykjADsR+viv544t17XdsvFAoPXx24h7MCdHMlKsY25iYPdKV/SuvobHyxp1RtPAM2ZuSg336yWLncdbGrLB5vAmJNmkgpsH++8nQQWO5WQ8YPMjkxMAkurDqIx9qO2NceWbr5dCsm5BXgdbGJCCGLH2Ny6tCpia6WRwpFBiPWWGO10nBOKNMOqAgtKgLGBhytjvwhz71fzHFtwvwru49gtWC5bbLW+5+YiLKvCJsiqbk6nWG2kMDI6fma6sjedYhdbr2aC+0Vg8+jezZfzJQRfVWLT/DYo34PB/UcCp0OTLumlYVaJLaxlZwpyuurDWuBUIYIjy0OEbgS3Ij1YK8tOKcRuXtrVTBn7pTEcLvjWY4kMXnLlW16cFqo0/tV21f3JR2dfhZzOHZ2ZE1WlnYCZltDZeGolML6ct8HNhbkD6w8w9Utjv59LWRqDD/p17sAqanJ3yx+xz2IXjhmMTziHCSDFF3St+tirP+9iAKFfGrvt/M2am3PfBl5NbLvhRodKJAJTCz6PDY/FRMlGyg+VYgL7pHhTTJwbT497+lMe2Jy7sV2/vc2twS+D8nkVsFnqV954+jori4uSE7Ch4kJ8JB3n4HxohJ0fc+WfLWArcA3NsVdvc8XNDX7Tr/wBhI+EYO3IZwF6vZd0A7T59Yh4qeIS3G0LeimlNOoUL5hkg1R5kHDpgTES2ZSA1O68cTFQHi5k+SZEgp/hVzvdysvdPyK32tiNhoQW2NfBGb7j1lZ//LdKlw2LzeXqy36uE6TOvUT5Lxj+GLjCnkro/pcNy5dbpu9w8vPNxPtWciGwZ5z6C4O6FepT7iiiYfb9jC0NfsutPf3KoA6KNxeMeN9Ompdf6N9useKWG/+0+PAaLoy9HyMkoW0e16yd+t8gdf0PxNHdl2KDVEMAAAAASUVORK5CYII=
+    iconUrl: https://image-clip.docker.19930810.xyz:8443/api/image?id=38272329-0c4a-4681-a32e-dafcbaa3c292&cx=-9&cy=0&cw=64&ch=56&wt=%5Bpremium-crown%5D&wc=%23ffffff&wo=128&wx=7&wy=-1&ws=50
     models:
       - glm-4.6
       - glm-4.7
       - glm-4-flash
       - glm-4-plus
       - glm-4-air
- - name: Zhipu coding anthropic
+  - name: Zhipu coding anthropic
     baseUrl: https://open.bigmodel.cn/api/anthropic/v1
     endpoint: /messages
-    iconUrl: data:image/png;base64,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
+    iconUrl: https://image-clip.docker.19930810.xyz:8443/api/image?id=38272329-0c4a-4681-a32e-dafcbaa3c292&cx=-9&cy=0&cw=64&ch=56&wt=%5Bpremium-crown%5D&wc=%23ffffff&wo=128&wx=7&wy=-1&ws=50
     models:
       - glm-4.6
       - glm-4.7
       - glm-4-flash
       - glm-4-plus
       - glm-4-air
+  - name: DeepSeek 深度求索  # 修正拼写错误，原"deepspeek"应为"DeepSeek"
+    baseUrl: https://api.deepseek.com/v1  # 兼容OpenAI格式的基础URL
+    endpoint: /chat/completions
+    iconUrl: https://image-clip.docker.19930810.xyz:8443/api/image?url=https%3A%2F%2Fcdn.deepseek.com%2Flogo.png%3Fx-image-process%3Dimage%252Fresize%252Cw_1920&cx=0&cy=0&cw=233&ch=165 # 建议使用官方图标路径
+    models:
+      - deepseek-chat  # DeepSeek-V3.2-Exp非思考模式，官方默认对话模型{insert\_element\_0\_}
+      - deepseek-reasoner  # DeepSeek-V3.2-Exp思考模式，适合复杂推理{insert\_element\_1\_}
+      - deepseek-coder  # 代码生成模型，支持代码补全、解释等{insert\_element\_2\_}
+      - deepseek-vl  # 多模态模型，支持图文理解

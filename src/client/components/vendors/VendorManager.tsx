@@ -59,6 +59,8 @@ export const VendorManager: React.FC = () => {
   // YAML Editor state
   const [showEditor, setShowEditor] = useState(false);
   const [yamlContent, setYamlContent] = useState('');
+  const [isYamlValid, setIsYamlValid] = useState(true);
+  const [yamlErrors, setYamlErrors] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
@@ -114,7 +116,11 @@ export const VendorManager: React.FC = () => {
       const data = await adminPut<{ success: boolean; error?: string }>('/api/vendors/yaml', { content: yamlContent });
       if (data.success) {
         setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 3000);
+        // 显示 1 秒成功状态后自动关闭弹窗
+        setTimeout(() => {
+          setSaveSuccess(false);
+          setShowEditor(false);
+        }, 1000);
       } else {
         setError(data.error || 'Failed to save YAML');
       }
@@ -253,19 +259,36 @@ export const VendorManager: React.FC = () => {
             </div>
 
             {/* Editor */}
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 min-h-0 relative">
               <CodeEditor
                 value={yamlContent}
                 onChange={setYamlContent}
+                onValidate={(isValid, errors) => {
+                  setIsYamlValid(isValid);
+                  setYamlErrors(errors);
+                }}
                 language="yaml"
                 placeholder="# YAML content..."
               />
+              {!isYamlValid && yamlErrors.length > 0 && (
+                <div className="absolute bottom-4 left-4 right-4 bg-red-500/90 text-white text-xs p-2 rounded shadow-lg backdrop-blur-sm animate-in slide-in-from-bottom-2 duration-200">
+                  <div className="font-bold flex items-center gap-1 mb-1">
+                    <XCircle className="w-3 h-3" />
+                    YAML Syntax Error:
+                  </div>
+                  {yamlErrors[0]}
+                </div>
+              )}
             </div>
 
             {/* Modal Footer */}
             <div className="flex items-center justify-between p-4 border-t border-[#262626] flex-shrink-0">
               <div className="text-xs text-gray-500">
-                Changes will be saved to <code className="bg-[#1a1a1a] px-1.5 py-0.5 rounded">config/vendors.yaml</code>
+                {isYamlValid ? (
+                  <span>Changes will be saved to <code className="bg-[#1a1a1a] px-1.5 py-0.5 rounded">config/vendors.yaml</code></span>
+                ) : (
+                  <span className="text-red-400">Please fix the syntax errors before saving</span>
+                )}
               </div>
               <div className="flex gap-2">
                 <button
@@ -276,8 +299,8 @@ export const VendorManager: React.FC = () => {
                 </button>
                 <button
                   onClick={saveYaml}
-                  disabled={saving}
-                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-700 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  disabled={saving || !isYamlValid}
+                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-700/50 disabled:text-white/50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                 >
                   <Save className="w-4 h-4" />
                   {saving ? 'Saving...' : 'Save Changes'}

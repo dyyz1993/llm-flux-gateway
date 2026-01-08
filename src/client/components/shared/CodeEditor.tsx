@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import { EditorState, Compartment } from '@codemirror/state';
-import { EditorView, keymap, lineNumbers, highlightSpecialChars, drawSelection, dropCursor, rectangularSelection, crosshairCursor } from '@codemirror/view';
+import { EditorView, keymap, lineNumbers, highlightSpecialChars, drawSelection, dropCursor, rectangularSelection, crosshairCursor, ViewUpdate } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
 import { autocompletion } from '@codemirror/autocomplete';
@@ -8,12 +8,15 @@ import { bracketMatching, indentUnit, syntaxHighlighting, defaultHighlightStyle 
 import { yaml } from '@codemirror/lang-yaml';
 import { javascript } from '@codemirror/lang-javascript';
 import { oneDark } from '@codemirror/theme-one-dark';
+import { linter, Diagnostic } from '@codemirror/lint';
+import jsYaml from 'js-yaml';
 
 export type SupportedLanguage = 'yaml' | 'json' | 'jsonl' | 'javascript' | 'text';
 
 interface CodeEditorProps {
   value: string;
   onChange: (value: string) => void;
+  onValidate?: (isValid: boolean, errors: string[]) => void;
   language?: SupportedLanguage;
   readOnly?: boolean;
   minHeight?: string;
@@ -22,16 +25,53 @@ interface CodeEditorProps {
   placeholder?: string;
 }
 
+// YAML Linter implementation
+const createYamlLinter = (onValidate?: (isValid: boolean, errors: string[]) => void) => linter((view) => {
+  const diagnostics: Diagnostic[] = [];
+  const text = view.state.doc.toString();
+  if (!text.trim()) {
+    onValidate?.(true, []);
+    return diagnostics;
+  }
+
+  try {
+    // 尝试解析 YAML，处理反引号 (js-yaml 不原生支持反引号)
+    const processedText = text.replace(/`([^`]*)`/g, '"$1"');
+    jsYaml.load(processedText);
+    onValidate?.(true, []);
+  } catch (e: any) {
+    const loc = e.mark;
+    const message = e.reason || e.message;
+    if (loc) {
+      diagnostics.push({
+        from: Math.min(loc.position, view.state.doc.length),
+        to: Math.min(loc.position + 1, view.state.doc.length),
+        severity: 'error',
+        message: message,
+      });
+    } else {
+      diagnostics.push({
+        from: 0,
+        to: view.state.doc.length,
+        severity: 'error',
+        message: message,
+      });
+    }
+    onValidate?.(false, [message]);
+  }
+  return diagnostics;
+});
+
 // Language extension mapping
-const getLanguageExtension = (lang: SupportedLanguage) => {
+const getLanguageExtension = (lang: SupportedLanguage, onValidate?: (isValid: boolean, errors: string[]) => void) => {
   switch (lang) {
     case 'yaml':
-      return yaml();
+      return [yaml(), createYamlLinter(onValidate)];
     case 'json':
     case 'jsonl':
-      return javascript({ jsx: false, typescript: false });
+      return [javascript({ jsx: false, typescript: false })];
     case 'javascript':
-      return javascript({ jsx: true, typescript: false });
+      return [javascript({ jsx: true, typescript: false })];
     default:
       return [];
   }
@@ -40,6 +80,7 @@ const getLanguageExtension = (lang: SupportedLanguage) => {
 export const CodeEditor: React.FC<CodeEditorProps> = ({
   value,
   onChange,
+  onValidate,
   language = 'yaml',
   readOnly = false,
   minHeight: _minHeight = '300px',
@@ -50,6 +91,12 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const languageCompartment = useRef(new Compartment());
+
+  // Use a ref for onValidate to avoid re-initializing editor when it changes
+  const onValidateRef = useRef(onValidate);
+  useEffect(() => {
+    onValidateRef.current = onValidate;
+  }, [onValidate]);
 
   // Handle editor changes
   const handleChange = useCallback(
@@ -97,7 +144,9 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
           },
         ]),
         oneDark,
-        languageCompartment.current.of(getLanguageExtension(language)),
+        languageCompartment.current.of(getLanguageExtension(language, (isValid, errors) => {
+          onValidateRef.current?.(isValid, errors);
+        })),
         EditorView.theme({
           '&': {
             height: '100%',
@@ -160,7 +209,9 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   useEffect(() => {
     if (viewRef.current) {
       viewRef.current.dispatch({
-        effects: languageCompartment.current.reconfigure(getLanguageExtension(language)),
+        effects: languageCompartment.current.reconfigure(getLanguageExtension(language, (isValid, errors) => {
+          onValidateRef.current?.(isValid, errors);
+        })),
       });
     }
   }, [language]);
@@ -186,6 +237,3 @@ const insertTab: (view: EditorView) => boolean = (view) => {
   });
   return true;
 };
-
-// Type for ViewUpdate
-type ViewUpdate = import('@codemirror/view').ViewUpdate;
