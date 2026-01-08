@@ -13,7 +13,7 @@ const router = new Hono();
  */
 router.get('/', async (c) => {
   const apiKeyId = c.req.query('apiKeyId');
-  const limit = parseInt(c.req.query('limit') || '100');
+  const limit = parseInt(c.req.query('limit') || '20');
 
   // If apiKeyId is provided, get logs for that key
   if (apiKeyId) {
@@ -39,7 +39,7 @@ router.get('/', async (c) => {
  * Get all logs (not filtered by API key), with pagination
  */
 router.get('/all', async (c) => {
-  const limit = parseInt(c.req.query('limit') || '1000');
+  const limit = parseInt(c.req.query('limit') || '20');
   const offset = parseInt(c.req.query('offset') || '0');
 
   try {

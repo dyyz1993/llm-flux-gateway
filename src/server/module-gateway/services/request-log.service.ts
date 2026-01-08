@@ -187,7 +187,13 @@ export class RequestLogService {
   async getLogsByApiKey(apiKeyId: string, limit = 50) {
     const logs = queryAll<any>(
       `
-      SELECT * FROM request_logs
+      SELECT 
+        id, api_key_id, route_id, original_model, final_model,
+        method, path, status_code, timestamp, latency_ms,
+        prompt_tokens, completion_tokens, total_tokens,
+        message_count, first_message, has_tools, tool_count,
+        is_favorited, original_response_format
+      FROM request_logs
       WHERE api_key_id = ?
       ORDER BY timestamp DESC
       LIMIT ?
@@ -195,7 +201,7 @@ export class RequestLogService {
       [apiKeyId, limit]
     );
 
-    return logs.map((log: any) => this.mapDbLogToRequestLog(log));
+    return logs.map((log: any) => this.mapDbLogToSummaryRequestLog(log));
   }
 
   /**
@@ -204,14 +210,20 @@ export class RequestLogService {
   async getAllLogs(limit = 1000, offset = 0) {
     const logs = queryAll<any>(
       `
-      SELECT * FROM request_logs
+      SELECT 
+        id, api_key_id, route_id, original_model, final_model,
+        method, path, status_code, timestamp, latency_ms,
+        prompt_tokens, completion_tokens, total_tokens,
+        message_count, first_message, has_tools, tool_count,
+        is_favorited, original_response_format
+      FROM request_logs
       ORDER BY timestamp DESC
       LIMIT ? OFFSET ?
       `,
       [limit, offset]
     );
 
-    return logs.map((log: any) => this.mapDbLogToRequestLog(log));
+    return logs.map((log: any) => this.mapDbLogToSummaryRequestLog(log));
   }
 
   /**
@@ -241,6 +253,38 @@ export class RequestLogService {
       return firstMsg.content.slice(0, 200); // First 200 chars
     }
     return JSON.stringify(firstMsg.content || '').slice(0, 200);
+  }
+
+  /**
+   * Map database row to RequestLog interface (Summary version)
+   * This excludes large fields like messages, responseContent, etc.
+   */
+  private mapDbLogToSummaryRequestLog(log: any): RequestLog {
+    return {
+      id: log.id,
+      apiKeyId: log.api_key_id,
+      routeId: log.route_id,
+      originalModel: log.original_model,
+      finalModel: log.final_model,
+      method: log.method,
+      path: log.path,
+      statusCode: log.status_code,
+      timestamp: log.timestamp,
+      latencyMs: log.latency_ms,
+      promptTokens: log.prompt_tokens,
+      completionTokens: log.completion_tokens,
+      totalTokens: log.total_tokens,
+      messageCount: log.message_count || 0,
+      firstMessage: log.first_message || '',
+      hasTools: Boolean(log.has_tools),
+      toolCount: log.tool_count || 0,
+      isFavorited: Boolean(log.is_favorited),
+      originalResponseFormat: log.original_response_format,
+      // Provide empty placeholders for required fields to avoid client crashes
+      messages: [],
+      responseContent: '',
+      overwrittenAttributes: {},
+    };
   }
 
   /**
@@ -356,14 +400,20 @@ export class RequestLogService {
    */
   async getFavoriteLogs(limit = 100): Promise<RequestLog[]> {
     const logs = queryAll<any>(
-      `SELECT * FROM request_logs
+      `SELECT 
+        id, api_key_id, route_id, original_model, final_model,
+        method, path, status_code, timestamp, latency_ms,
+        prompt_tokens, completion_tokens, total_tokens,
+        message_count, first_message, has_tools, tool_count,
+        is_favorited, original_response_format
+       FROM request_logs
        WHERE is_favorited = 1
        ORDER BY timestamp DESC
        LIMIT ?`,
       [limit]
     );
 
-    return logs.map((log: any) => this.mapDbLogToRequestLog(log));
+    return logs.map((log: any) => this.mapDbLogToSummaryRequestLog(log));
   }
 
   /**

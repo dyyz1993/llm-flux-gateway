@@ -78,42 +78,6 @@ const Card = ({
 
 const COLORS = ['#4f46e5', '#3b82f6', '#06b6d4', '#10b981', '#f59e0b'];
 
-/**
- * Format content that may be a string or an array of content blocks (Anthropic format)
- * Converts content to a string representation suitable for display
- */
-function formatContent(content: string | any): string {
-  // If it's already a string, return as-is
-  if (typeof content === 'string') {
-    return content;
-  }
-
-  // If it's an array (Anthropic content blocks format), format it
-  if (Array.isArray(content)) {
-    return content.map((block) => {
-      if (typeof block === 'string') {
-        return block;
-      }
-      if (block?.type === 'text') {
-        return block.text || '';
-      }
-      if (block?.type === 'image') {
-        return `[Image: ${block.source?.type || 'unknown'}]`;
-      }
-      if (block?.type === 'tool_use') {
-        return `[Tool Use: ${block.name || 'unknown'}]`;
-      }
-      if (block?.type === 'tool_result') {
-        return `[Tool Result: ${block.tool_use_id || 'unknown'}]`;
-      }
-      // Fallback for unknown block types
-      return `[${block?.type || 'unknown'}]`;
-    }).join('\n');
-  }
-
-  // Fallback: convert to JSON string
-  return JSON.stringify(content, null, 2);
-}
 
 export const Dashboard: React.FC = () => {
   const [overviewStats, setOverviewStats] = useState<OverviewStats | null>(null as any);
@@ -146,7 +110,7 @@ export const Dashboard: React.FC = () => {
           getTTFBStats(),
           getCacheStats(),
           getTimeSeriesStats(7),
-          getRequestLogs({ limit: 50 }),
+          getRequestLogs({ limit: 20 }),
         ]);
 
         setOverviewStats(overviewData);
@@ -593,7 +557,7 @@ export const Dashboard: React.FC = () => {
                     {log.timeToFirstByteMs ? formatLatency(log.timeToFirstByteMs) : '-'}
                   </td>
                   <td className="py-3 px-4 text-gray-400 max-w-md truncate">
-                    {formatContent(log.messages?.[0]?.content) || '-'}
+                    {log.firstMessage || '-'}
                   </td>
                 </tr>
               ))}

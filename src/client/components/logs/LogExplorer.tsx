@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { getRequestLogs, toggleLogFavorite, clearAllNonFavoritedLogs, getFavoriteLogs } from '@client/services/analyticsService';
+import { 
+  getRequestLogs, 
+  toggleLogFavorite, 
+  clearAllNonFavoritedLogs, 
+  getFavoriteLogs,
+  getRequestLogById 
+} from '@client/services/analyticsService';
 import { realtimeLogsService } from '@client/services/realtimeLogsService';
 import { fetchVendors, fetchKeys } from '@client/services/apiClient';
 import { RequestLog, ApiKey, Vendor } from '@shared/types';
@@ -242,7 +248,7 @@ export const LogExplorer: React.FC = () => {
         } else {
           data = await getRequestLogs({
             apiKeyId: selectedApiKey || undefined,
-            limit: 100,
+            limit: 20,
           });
         }
 
@@ -316,9 +322,20 @@ export const LogExplorer: React.FC = () => {
           if (filters.timeRange !== undefined) setFilterTimeRange(filters.timeRange);
           if (filters.hasTools !== undefined) setFilterHasTools(filters.hasTools);
         }}
-        onLogSelect={(log) => {
+        onLogSelect={async (log) => {
+          // Set selected log immediately with summary data for UI responsiveness
           setSelectedLog(log);
           markLogAsRead(log.id);
+          
+          // Fetch full log details if it's a summary (missing messages or responseContent)
+          if (!log.messages || log.messages.length === 0 || !log.responseContent) {
+            try {
+              const fullLog = await getRequestLogById(log.id);
+              setSelectedLog(fullLog);
+            } catch (error) {
+              console.error('[LogExplorer] Failed to fetch full log details:', error);
+            }
+          }
         }}
         onToggleFavorite={handleToggleFavorite}
         onClearNewLogs={clearNewLogs}
