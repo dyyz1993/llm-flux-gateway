@@ -14,6 +14,7 @@ import logsStreamRouter from './module-gateway/routes/logs-stream-routes';
 import analyticsRouter from './module-gateway/routes/analytics-routes';
 import systemRouter from './module-system/main';
 import authRouter from './module-auth';
+import styleJumpRouter from './module-style-jump/routes/style-jump-routes';
 import { vendorsService } from './module-vendors/services/vendors.service';
 
 // Initialize database
@@ -48,6 +49,9 @@ app.get('/health', (c) => {
 // API routes
 // Auth routes (public - no middleware)
 app.route('/api/auth', authRouter);
+
+// Style jump routes (public - dev tool, no auth needed)
+app.route('/api/style-jump', styleJumpRouter);
 
 // Protected admin routes (require authentication)
 const protectedKeysRouter = new Hono();

@@ -2,6 +2,8 @@ import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import devServer from '@hono/vite-dev-server';
+import { styleJumpPlugin } from './plugins/style-jump/index';
+import { reactComponentJumpPlugin } from './plugins/react-component-jump/index';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
@@ -9,9 +11,19 @@ export default defineConfig(({ mode }) => {
       server: {
         port: 3000,
         host: '0.0.0.0',
+        strictPort: true, // 如果端口被占用则失败，而不是自动尝试下一个端口
       },
       plugins: [
+        // React 组件跳转插件 - 必须在 react() 之前运行
+        // 因为需要在 JSX 被转换前注入 data-component-name 属性
+        reactComponentJumpPlugin({
+          enabled: true,
+        }),
         react(),
+        // 样式跳转插件 - 只在开发模式启用
+        styleJumpPlugin({
+          enabled: true, // 或者用 process.env.NODE_ENV === 'development'
+        }),
         devServer({
           // Hono server entry point
           entry: 'src/server/index.ts',
@@ -22,6 +34,7 @@ export default defineConfig(({ mode }) => {
             /^\/node_modules\/.*/,                     // npm packages
             /^\/index\.tsx(\?.*)?$/,                   // Client entry point (with optional query params)
             /^\/src\/.*/,                              // Source files
+            // /^\/api\/.*/,                          // ❌ 移除：让 Hono 处理所有 /api/* 请求
             /\.html?$/,                                // HTML files
             /\.(js|jsx|ts|tsx|css|json|svg|png|jpg)$/,  // Static assets
           ],
@@ -38,6 +51,9 @@ export default defineConfig(({ mode }) => {
           '@client': path.resolve(__dirname, './src/client'),
           '@server': path.resolve(__dirname, './src/server'),
           '@shared': path.resolve(__dirname, './src/shared'),
+          // Plugin runtimes
+          '@client/style-jumper-runtime': path.resolve(__dirname, './plugins/style-jump/runtime'),
+          '@client/react-component-jumper-runtime': path.resolve(__dirname, './plugins/react-component-jump/runtime'),
         }
       },
       optimizeDeps: {

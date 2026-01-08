@@ -38,8 +38,8 @@ class SSEBroadcasterService {
         }
       });
 
-      const results = await Promise.all(promises);
-      
+      await Promise.all(promises);
+
       // Clean up failed callbacks (though registerCallback handles disconnection via stream.onAbort)
       // This is a safety measure
     }, 15000); // Every 15 seconds

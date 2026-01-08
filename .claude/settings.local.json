@@ -182,7 +182,20 @@
       "Bash(do sed -i '' \"/import.*expectSuccess/d\" \"$file\")",
       "Bash(sort:*)",
       "Bash(rm:*)",
-      "Skill(investigating-bugs)"
+      "Skill(investigating-bugs)",
+      "Skill(commit)",
+      "Bash(code:*)",
+      "Bash(/Users/xuyingzhou/Downloads/llm-flux-gateway/test-style-jump.sh:*)",
+      "Bash(trae:*)",
+      "Bash(__NEW_LINE__ curl -s http://localhost:3000/__style_jump/health)",
+      "Bash(__NEW_LINE__ echo \"\")",
+      "Bash(__NEW_LINE__ echo \"=== 测试正常的 API（应该不受影响）===\")",
+      "Bash(__NEW_LINE__ curl -s http://localhost:3000/)",
+      "Bash(__NEW_LINE__ echo \"=== 验证同步 ===\")",
+      "Bash(__NEW_LINE__ curl -s http://localhost:61394/api/style-map)",
+      "Bash(./test-style-sync.sh:*)",
+      "Bash(./verify-fix.sh:*)",
+      "Bash(./verify-react-component-jump.sh:*)"
     ]
   },
   "sandbox": {

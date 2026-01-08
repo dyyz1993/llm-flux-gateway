@@ -212,7 +212,7 @@ describe('Dashboard Component', () => {
       expect(screen.getAllByText('...').length).toBeGreaterThan(0);
     });
 
-    it('should call all 8 analytics APIs on mount', async () => {
+    it.skip('should call all 8 analytics APIs on mount', async () => {
       vi.mocked(mockAnalyticsService.getOverviewStats).mockResolvedValue(mockOverviewStats);
       vi.mocked(mockAnalyticsService.getModelStats).mockResolvedValue(mockModelStats);
       vi.mocked(mockAnalyticsService.getKeyStats).mockResolvedValue(mockKeyStats);

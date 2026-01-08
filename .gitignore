@@ -50,3 +50,6 @@ data/*.db*
 *.db-wal
 docker.env
 dist-server
+
+# Component cache
+.component-cache.json
