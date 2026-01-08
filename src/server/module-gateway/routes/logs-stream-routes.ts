@@ -13,46 +13,50 @@ router.get('/', async (c) => {
   const apiKeyId = c.req.query('apiKeyId');
 
   return streamSSE(c, async (stream) => {
-    console.log('[LogsStream] SSE connection opened', apiKeyId ? `for apiKey: ${apiKeyId}` : '');
+    console.log('[LogsStream] SSE connection opening...', apiKeyId ? `for apiKey: ${apiKeyId}` : '');
 
-    // 立即发送一个连接成功消息，解决 pending 状态
-    await stream.write(': connected\n\n');
-    await stream.write('event: connected\ndata: {"status":"ok"}\n\n');
+    // 1. 立即设置合适的 Headers，防止代理缓存
+    // 注意：Hono streamSSE 已经处理了 content-type: text/event-stream
+    // 我们额外设置缓存控制
+    c.header('Cache-Control', 'no-cache, no-transform');
+    c.header('X-Accel-Buffering', 'no'); // 针对 Nginx
 
-    // 只发送实际的日志数据
+    // 2. 立即发送连接确认
+    try {
+      await stream.write(': connected\n\n');
+      await stream.write('event: connected\ndata: {"status":"ok"}\n\n');
+      console.log('[LogsStream] Connection ack sent');
+    } catch (e) {
+      console.error('[LogsStream] Failed to send initial ack:', e);
+      return;
+    }
 
-    // 创建一个回调函数，当有新日志时被调用
+    // 3. 注册回调
     const onNewLog = async (logData: string) => {
       try {
-        // logData 已经是正确的 SSE 格式 (data: {...}\n\n)
         await stream.write(logData);
-        console.log('[LogsStream] Successfully sent log to client');
         return true;
       } catch (error) {
-        console.error('[LogsStream] Failed to send log:', error);
         return false;
       }
     };
 
-    // 注册回调到广播服务
     const unregister = sseBroadcasterService.registerCallback(onNewLog);
 
-    console.log('[LogsStream] Registered callback, waiting for logs...');
-
-    // 清理函数：当客户端断开连接时
+    // 4. 优化保持连接的方式
+    // 监听断开
+    let isAborted = false;
     stream.onAbort(() => {
+      isAborted = true;
       console.log('[LogsStream] Client disconnected, cleaning up...');
       unregister();
     });
 
-    // ✅ 保持连接打开 - 使用永不结束的 Promise
-    // streamSSE 需要回调函数保持运行状态，否则会关闭连接
-    await new Promise<void>((resolve) => {
-      // 当客户端断开时，resolve 这个 Promise
-      stream.onAbort(() => {
-        resolve();
-      });
-    });
+    // 使用非阻塞循环保持连接，同时定期检查状态
+    // 这种方式比 new Promise 更稳健，能及时响应系统中断
+    while (!isAborted) {
+      await stream.sleep(10000); // 每10秒检查一次状态，心跳由 broadcaster 处理
+    }
   });
 });
 
