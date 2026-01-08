@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
       server: {
         port: 3000,
         host: '0.0.0.0',
-        strictPort: true, // 如果端口被占用则失败，而不是自动尝试下一个端口
+        strictPort: false, // 端口被占用时自动尝试下一个端口
       },
       plugins: [
         // React 组件跳转插件 - 必须在 react() 之前运行
@@ -51,9 +51,6 @@ export default defineConfig(({ mode }) => {
           '@client': path.resolve(__dirname, './src/client'),
           '@server': path.resolve(__dirname, './src/server'),
           '@shared': path.resolve(__dirname, './src/shared'),
-          // Plugin runtimes
-          '@client/style-jumper-runtime': path.resolve(__dirname, './plugins/style-jump/runtime'),
-          '@client/react-component-jumper-runtime': path.resolve(__dirname, './plugins/react-component-jump/runtime'),
         }
       },
       optimizeDeps: {

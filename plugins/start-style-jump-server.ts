@@ -2,21 +2,19 @@
  * 独立的样式跳转服务器
  *
  * 作为独立进程启动，不依赖 Vite/Hono
- * Vite 插件会在 build 时启动它
+ * Vite 插件会在开发模式时启动它
  *
  * 特性：
  * - 使用随机端口（避免冲突）
  * - 将端口写入 .style-jump-port 文件
  * - 提供编辑器跳转 API
+ * - 智能编辑器检测（环境变量 + 进程检测）
  */
 
 import { createServer, Server, IncomingMessage, ServerResponse } from 'http';
-import { exec } from 'child_process';
-import { promisify } from 'util';
 import { writeFileSync, unlink } from 'fs';
 import { resolve } from 'path';
-
-const execAsync = promisify(exec);
+import { jumpToEditor as jumpToEditorImpl } from '../shared/editor-detector.js';
 
 interface StyleLocation {
   file: string;
@@ -36,32 +34,11 @@ const PORT_FILE = resolve('.style-jump-port');
 
 const styleMap: StyleMap = {};
 
+/**
+ * 跳转到编辑器（使用智能检测）
+ */
 async function jumpToEditor(location: StyleLocation): Promise<boolean> {
-  const editors = [
-    { name: 'Trae', cmd: 'trae', test: 'which trae' },
-    { name: 'VSCode', cmd: 'code', test: 'which code' }
-  ];
-
-  for (const editor of editors) {
-    try {
-      await execAsync(editor.test);
-
-      const absolutePath = location.file.startsWith('/')
-        ? location.file
-        : `/Users/xuyingzhou/Downloads/llm-flux-gateway/${location.file}`;
-
-      const cmd = `${editor.cmd} --goto "${absolutePath}:${location.line}:${location.column}"`;
-      console.log(`[style-jump] 📂 ${cmd}`);
-
-      await execAsync(cmd);
-      console.log(`[style-jump] ✅ 已在 ${editor.name} 中打开`);
-      return true;
-    } catch (e) {
-      continue;
-    }
-  }
-
-  return false;
+  return jumpToEditorImpl(location.file, location.line, location.column);
 }
 
 const server: Server = createServer((req: IncomingMessage, res: ServerResponse) => {

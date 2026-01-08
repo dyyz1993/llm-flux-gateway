@@ -286,6 +286,12 @@ export function styleJumpPlugin(options: {
     const styleCount = Object.keys(styleMap).length;
     console.log(`[style-jump] 🔄 syncToServer() 被调用: actualPort=${actualPort}, styleCount=${styleCount}`);
 
+    // 如果没有 Vite 服务器实例（构建模式），跳过同步
+    if (!viteServer) {
+      console.log('[style-jump] ⏭️  构建模式，跳过同步到独立服务');
+      return;
+    }
+
     // 如果端口还没准备好，等待端口就绪
     if (!actualPort) {
       console.log('[style-jump] ⏳ 端口未就绪，等待端口回调...');
@@ -381,14 +387,9 @@ export function styleJumpPlugin(options: {
           next();
         }
       });
-    },
 
-    // 启动独立服务
-    buildStart() {
-      if (!config.enabled) return;
-
+      // 启动独立服务（仅在开发模式）
       console.log('[style-jump] 🚀 启动独立服务...');
-
       serverProcess = spawn('npx', ['tsx', './plugins/start-style-jump-server.ts'], {
         stdio: 'inherit',
         detached: false,
@@ -446,11 +447,27 @@ export function styleJumpPlugin(options: {
       };
 
       checkPort();
+
+      // 开发服务器关闭时清理服务进程
+      server.httpServer?.on('close', () => {
+        if (serverProcess) {
+          console.log('[style-jump] 🛑 关闭独立服务...');
+          serverProcess.kill('SIGTERM');
+          serverProcess = null;
+          actualPort = null;
+        }
+      });
+    },
+
+    // buildStart() 已废弃 - 独立服务现在在 configureServer 中启动
+    buildStart() {
+      // 空实现，保持兼容性
     },
 
     buildEnd() {
+      // 仅在构建模式下清理（如果有遗留进程）
       if (serverProcess) {
-        console.log('[style-jump] 🛑 关闭独立服务...');
+        console.log('[style-jump] 🛑 清理独立服务进程...');
         serverProcess.kill('SIGTERM');
         serverProcess = null;
         actualPort = null;

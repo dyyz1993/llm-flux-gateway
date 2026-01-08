@@ -4,14 +4,14 @@ import App from '@client/App';
 
 // 开发模式：初始化样式跳转功能
 if (import.meta.env.DEV) {
-  import('@client/style-jumper-runtime').then(({ setupStyleJumper }) => {
+  import('./plugins/style-jump/runtime').then(({ setupStyleJumper }) => {
     setupStyleJumper().catch((err) => {
       console.warn('[style-jumper] 初始化失败:', err);
     });
   });
 
   // 开发模式：初始化 React 组件跳转功能
-  import('@client/react-component-jumper-runtime').then(({ setupReactComponentJumper }) => {
+  import('./plugins/react-component-jump/runtime').then(({ setupReactComponentJumper }) => {
     setupReactComponentJumper().catch((err) => {
       console.warn('[react-component-jumper] 初始化失败:', err);
     });

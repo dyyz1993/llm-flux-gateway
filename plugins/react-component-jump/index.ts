@@ -10,12 +10,11 @@
  * - 计算组件和文件 hash
  * - 检测循环依赖
  * - 生成组件注册表 JSON 文件
+ * - 智能编辑器检测
  */
 
 import { Plugin } from 'vite';
 import { createHash } from 'node:crypto';
-import { exec } from 'node:child_process';
-import { promisify } from 'node:util';
 import * as parser from '@babel/parser';
 // @ts-ignore - Babel traverse uses CommonJS default export
 import traverseNamespace from '@babel/traverse';
@@ -35,8 +34,7 @@ import {
   validateRegistry,
 } from '../../src/server/module-component-registry/utils.js';
 import { getDependencyTree } from '../../src/server/module-component-registry/dependency-graph.js';
-
-const execAsync = promisify(exec);
+import { jumpToEditor as jumpToEditorImpl } from '../shared/editor-detector.js';
 
 export interface ComponentLocation {
   file: string;
@@ -568,33 +566,8 @@ export function reactComponentJumpPlugin(options: {
 }
 
 /**
- * 直接调用编辑器跳转
+ * 跳转到编辑器（使用智能检测）
  */
 async function jumpToEditor(filePath: string, line: number, column: number): Promise<boolean> {
-  const editors = [
-    { name: 'Trae', cmd: 'trae', test: 'which trae' },
-    { name: 'VSCode', cmd: 'code', test: 'which code' }
-  ];
-
-  for (const editor of editors) {
-    try {
-      await execAsync(editor.test);
-
-      const absolutePath = filePath.startsWith('/')
-        ? filePath
-        : `/Users/xuyingzhou/Downloads/llm-flux-gateway/${filePath}`;
-
-      const cmd = `${editor.cmd} --goto "${absolutePath}:${line}:${column}"`;
-      console.log(`[react-component-jump] 📂 ${cmd}`);
-
-      await execAsync(cmd);
-      console.log(`[react-component-jump] ✅ 已在 ${editor.name} 中打开`);
-      return true;
-    } catch (e) {
-      continue;
-    }
-  }
-
-  console.error('[react-component-jump] ❌ 未找到可用的编辑器');
-  return false;
+  return jumpToEditorImpl(filePath, line, column);
 }

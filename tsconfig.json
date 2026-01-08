@@ -41,9 +41,7 @@
       "@/*": ["./src/*"],
       "@client/*": ["./src/client/*"],
       "@server/*": ["./src/server/*"],
-      "@shared/*": ["./src/shared/*"],
-      "@client/style-jumper-runtime": ["./plugins/style-jump/runtime.ts"],
-      "@client/react-component-jumper-runtime": ["./plugins/react-component-jump/runtime.ts"]
+      "@shared/*": ["./src/shared/*"]
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
