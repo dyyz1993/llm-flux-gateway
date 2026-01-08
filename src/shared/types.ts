@@ -39,8 +39,10 @@ export interface Message {
   role: Role;
   content: string | null;
   tool_calls?: ToolCall[];
+  toolCalls?: ToolCall[]; // Support both snake_case and camelCase
   name?: string;
   tool_call_id?: string; // For tool messages: the ID of the tool call this result belongs to
+  toolCallId?: string;   // Support both snake_case and camelCase
 }
 
 export interface RequestParams {
