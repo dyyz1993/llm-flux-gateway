@@ -15,7 +15,10 @@ router.get('/', async (c) => {
   return streamSSE(c, async (stream) => {
     console.log('[LogsStream] SSE connection opened', apiKeyId ? `for apiKey: ${apiKeyId}` : '');
 
-    // 不发送连接消息 - 前端通过 onopen 事件检测连接
+    // 立即发送一个连接成功消息，解决 pending 状态
+    await stream.write(': connected\n\n');
+    await stream.write('event: connected\ndata: {"status":"ok"}\n\n');
+
     // 只发送实际的日志数据
 
     // 创建一个回调函数，当有新日志时被调用

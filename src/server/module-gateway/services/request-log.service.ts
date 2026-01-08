@@ -172,10 +172,11 @@ export class RequestLogService {
       ]
     );
 
-    // 📢 Broadcast the updated log to all SSE clients
-    const updatedLog = await this.getLogById(id);
-    if (updatedLog) {
-      sseBroadcasterService.broadcastNewLog(updatedLog).catch((error) => {
+    // 📢 Broadcast the updated log to all SSE clients (using summary view to save bandwidth)
+    const logFromDb = queryFirst<any>(`SELECT * FROM request_logs WHERE id = ?`, [id]);
+    if (logFromDb) {
+      const summaryLog = this.mapDbLogToSummaryRequestLog(logFromDb);
+      sseBroadcasterService.broadcastNewLog(summaryLog).catch((error) => {
         console.error('[RequestLogService] Failed to broadcast log:', error);
       });
     }

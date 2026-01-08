@@ -12,6 +12,38 @@ type LogCallback = (logData: string) => Promise<boolean>;
 
 class SSEBroadcasterService {
   private callbacks: Set<LogCallback> = new Set();
+  private heartbeatInterval: NodeJS.Timeout | null = null;
+
+  constructor() {
+    this.startHeartbeat();
+  }
+
+  /**
+   * Start sending heartbeats to keep connections alive
+   */
+  private startHeartbeat() {
+    if (this.heartbeatInterval) return;
+
+    this.heartbeatInterval = setInterval(async () => {
+      if (this.callbacks.size === 0) return;
+
+      // SSE comment message for heartbeat
+      const heartbeatMessage = ': heartbeat\n\n';
+      
+      const promises = Array.from(this.callbacks).map(async (callback) => {
+        try {
+          return await callback(heartbeatMessage);
+        } catch {
+          return false;
+        }
+      });
+
+      const results = await Promise.all(promises);
+      
+      // Clean up failed callbacks (though registerCallback handles disconnection via stream.onAbort)
+      // This is a safety measure
+    }, 15000); // Every 15 seconds
+  }
 
   /**
    * Register a callback to be called when new logs arrive
