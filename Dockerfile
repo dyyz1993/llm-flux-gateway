@@ -41,6 +41,7 @@ COPY package*.json ./
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/dist-server ./dist-server
 COPY --from=builder /app/config ./config
+COPY --from=builder /app/migrations ./migrations
 # 保留一份默认配置，用于在挂载空卷时恢复
 COPY --from=builder /app/config ./config.dist
 

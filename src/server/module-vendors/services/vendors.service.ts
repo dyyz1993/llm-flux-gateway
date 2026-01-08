@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { queryAll, queryFirst, queryRun } from '@server/shared/database';
 import { randomUUID } from 'node:crypto';
 import type { VendorsYamlSimple } from '@shared/types';
+import yaml from 'js-yaml';
 
 // ============================================
 // Service Class
@@ -35,72 +36,35 @@ export class VendorsService {
   }
 
   /**
-   * Parse simplified YAML content
-   * Format:
-   * vendors:
-   *   - name: OpenAI
-   *     baseUrl: https://api.openai.com/v1
-   *     iconUrl: /icons/openai.svg
-   *     models:
-   *       - gpt-4o
-   *       - gpt-4o-mini
+   * Parse simplified YAML content using js-yaml
    */
   private parseYaml(content: string): VendorsYamlSimple {
-    const vendors: VendorsYamlSimple['vendors'] = [];
-    const lines = content.split('\n');
-    let currentVendor: Partial<VendorsYamlSimple['vendors'][0]> | null = null;
-    let inModels = false;
-    let inVendors = false;
-
-    for (const line of lines) {
-      const trimmed = line.trim();
-
-      // Skip empty lines and comments
-      if (!trimmed || trimmed.startsWith('#')) continue;
-
-      // Detect vendors: section
-      if (trimmed === 'vendors:' || trimmed.startsWith('vendors:')) {
-        inVendors = true;
-        continue;
+    try {
+      // Pre-process: Replace backticks with double quotes to support user's template-string style
+      // but keep standard YAML compliance.
+      const preProcessed = content.replace(/`([^`]*)`/g, '"$1"');
+      
+      const parsed = yaml.load(preProcessed) as VendorsYamlSimple;
+      
+      if (!parsed || !parsed.vendors || !Array.isArray(parsed.vendors)) {
+        return { vendors: [] };
       }
 
-      // Detect vendor entry (starts with "- name:")
-      if (inVendors && trimmed.startsWith('- name:')) {
-        if (currentVendor && currentVendor.name && currentVendor.baseUrl) {
-          vendors.push(currentVendor as VendorsYamlSimple['vendors'][0]);
-        }
-        const name = trimmed.split(':')[1]!.trim();
-        currentVendor = { name, baseUrl: '', models: [], endpoint: '/chat/completions' };
-        inModels = false;
-      } else if (currentVendor) {
-        // Parse vendor properties
-        if (trimmed.startsWith('baseUrl:')) {
-          currentVendor.baseUrl = trimmed.substring(9).trim();
-        } else if (trimmed.startsWith('endpoint:')) {
-          currentVendor.endpoint = trimmed.substring(10).trim();
-        } else if (trimmed.startsWith('apiVersion:')) {
-          (currentVendor as any).apiVersion = trimmed.substring(12).trim();
-        } else if (trimmed.startsWith('iconUrl:')) {
-          currentVendor.iconUrl = trimmed.substring(9).trim();
-        } else if (trimmed.startsWith('models:')) {
-          inModels = true;
-          currentVendor.models = [];
-        } else if (inModels && trimmed.startsWith('- ')) {
-          // Model entry (just the model ID as a string)
-          const modelId = trimmed.substring(2).trim();
-          if (modelId && !modelId.startsWith('#')) {
-            currentVendor.models!.push(modelId);
-          }
-        }
-      }
-    }
+      // Ensure consistent formatting and default values
+      const vendors = parsed.vendors.map(v => ({
+        ...v,
+        name: v.name?.toString().trim() || '',
+        baseUrl: v.baseUrl?.toString().trim() || '',
+        endpoint: v.endpoint?.toString().trim() || '/chat/completions',
+        iconUrl: v.iconUrl?.toString().trim(),
+        models: Array.isArray(v.models) ? v.models.map(m => m.toString().trim()) : []
+      }));
 
-    // Add last vendor
-    if (currentVendor && currentVendor.name && currentVendor.baseUrl) {
-      vendors.push(currentVendor as VendorsYamlSimple['vendors'][0]);
+      return { vendors };
+    } catch (error) {
+      console.error('[Vendors] YAML Parse Error:', error);
+      throw new Error(`Failed to parse vendor YAML: ${error}`);
     }
-
-    return { vendors };
   }
 
   /**
