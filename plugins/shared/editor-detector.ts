@@ -9,7 +9,7 @@
 
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
-import path from 'node:path';
+import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const execAsync = promisify(exec);

@@ -10,7 +10,7 @@ import * as parser from '@babel/parser';
 import traverseNamespace from '@babel/traverse';
 import type { NodePath } from '@babel/traverse';
 const traverse = (traverseNamespace as any).default || traverseNamespace;
-import t from '@babel/types';
+import * as t from '@babel/types';
 
 import type {
   ComponentInfo,

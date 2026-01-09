@@ -279,7 +279,7 @@ function createSearchBox() {
   searchBox.addEventListener('mousedown', (e) => {
     // 只在搜索框本身（不是输入框）上才允许拖拽
     if (e.target !== searchBox && !searchBox.contains(e.target as Node)) return;
-    if (e.target.tagName === 'INPUT') return;
+    if ((e.target as HTMLElement).tagName === 'INPUT') return;
 
     isDragging = true;
     const rect = searchBox.getBoundingClientRect();

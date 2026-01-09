@@ -7,6 +7,7 @@ import { unlink } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { ComponentCacheManager } from '../../src/server/module-component-registry/cache.js';
+import type { ComponentInfo } from '../../src/server/module-component-registry/types.js';
 
 const TEST_CACHE_PATH = resolve('.test-component-cache.json');
 
@@ -202,10 +203,10 @@ describe('ComponentCacheManager', () => {
 
   describe('updateComponents', () => {
     it('应该批量更新多个组件', async () => {
-      const components = {
-        Component1: { hash: 'hash1', fileHash: 'file1', dependencies: [], dependents: [], file: '', line: 0, column: 0, startIndex: 0 },
-        Component2: { hash: 'hash2', fileHash: 'file2', dependencies: [], dependents: [], file: '', line: 0, column: 0, startIndex: 0 },
-        Component3: { hash: 'hash3', fileHash: 'file3', dependencies: [], dependents: [], file: '', line: 0, column: 0, startIndex: 0 },
+      const components: Record<string, ComponentInfo> = {
+        Component1: { hash: 'hash1', fileHash: 'file1', dependencies: [], dependents: [], file: '', line: 0, column: 0, startIndex: 0 } as ComponentInfo,
+        Component2: { hash: 'hash2', fileHash: 'file2', dependencies: [], dependents: [], file: '', line: 0, column: 0, startIndex: 0 } as ComponentInfo,
+        Component3: { hash: 'hash3', fileHash: 'file3', dependencies: [], dependents: [], file: '', line: 0, column: 0, startIndex: 0 } as ComponentInfo,
       };
 
       await manager.updateComponents(components);

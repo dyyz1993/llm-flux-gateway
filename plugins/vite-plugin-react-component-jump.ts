@@ -15,6 +15,8 @@ import { promisify } from 'util';
 import * as parser from '@babel/parser';
 // @ts-ignore - Babel traverse uses CommonJS default export
 import traverseNamespace from '@babel/traverse';
+import type { NodePath } from '@babel/traverse';
+import * as t from '@babel/types';
 const traverse = (traverseNamespace as any).default || traverseNamespace;
 
 const execAsync = promisify(exec);
@@ -72,8 +74,8 @@ function extractComponentsFromCode(code: string): ComponentInfo[] {
 
     traverse(ast, {
       // 处理 function ComponentName() {...}
-      FunctionDeclaration(path) {
-        const node = path.node as FunctionDeclaration;
+      FunctionDeclaration(path: NodePath<t.FunctionDeclaration>) {
+        const node = path.node;
         const name = node.id?.name;
         if (name && /^[A-Z]/.test(name)) {
           const component: ComponentInfo = {
@@ -85,8 +87,8 @@ function extractComponentsFromCode(code: string): ComponentInfo[] {
 
           // 查找 return 语句
           path.traverse({
-            ReturnStatement(returnPath) {
-              const returnNode = returnPath.node as ReturnStatement;
+            ReturnStatement(returnPath: NodePath<t.ReturnStatement>) {
+              const returnNode = returnPath.node;
               if (returnNode.argument && (returnNode.argument.type === 'JSXElement' || returnNode.argument.type === 'JSXFragment')) {
                 component.returnStatementStart = returnNode.start;
                 component.returnStatementEnd = returnNode.end;
@@ -102,15 +104,15 @@ function extractComponentsFromCode(code: string): ComponentInfo[] {
       },
 
       // 处理 const ComponentName = () => {...}
-      VariableDeclarator(path) {
-        const node = path.node as VariableDeclarator;
+      VariableDeclarator(path: NodePath<t.VariableDeclarator>) {
+        const node = path.node;
         if (
           node.id.type === 'Identifier' &&
-          /^[A-Z]/.test(node.id.name) &&
+          /^[A-Z]/.test((node.id as any).name) &&
           (node.init?.type === 'ArrowFunctionExpression' ||
            node.init?.type === 'FunctionExpression')
         ) {
-          const name = node.id.name;
+          const name = (node.id as any).name;
           const component: ComponentInfo = {
             name,
             startIndex: node.start || 0,
@@ -120,7 +122,7 @@ function extractComponentsFromCode(code: string): ComponentInfo[] {
 
           // 处理箭头函数直接返回 JSX: const Comp = () => <JSX />
           if (node.init?.type === 'ArrowFunctionExpression') {
-            const body = (node.init as ArrowFunctionExpression).body;
+            const body = (node.init as t.ArrowFunctionExpression).body;
             if (body.type === 'JSXElement' || body.type === 'JSXFragment') {
               // 直接返回 JSX（无 return 关键字）
               component.returnStatementStart = body.start;
@@ -134,8 +136,8 @@ function extractComponentsFromCode(code: string): ComponentInfo[] {
           // 查找 return 语句（函数体有花括号的情况）
           if (node.init) {
             path.get('init')?.traverse({
-              ReturnStatement(returnPath) {
-                const returnNode = returnPath.node as ReturnStatement;
+              ReturnStatement(returnPath: NodePath<t.ReturnStatement>) {
+                const returnNode = returnPath.node;
                 if (returnNode.argument && (returnNode.argument.type === 'JSXElement' || returnNode.argument.type === 'JSXFragment')) {
                   component.returnStatementStart = returnNode.start;
                   component.returnStatementEnd = returnNode.end;
