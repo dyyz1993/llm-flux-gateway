@@ -15,6 +15,8 @@
 
 import { Plugin } from 'vite';
 import { createHash } from 'node:crypto';
+import { readdirSync, readFileSync } from 'node:fs';
+import { dirname, basename, join } from 'node:path';
 import * as parser from '@babel/parser';
 // @ts-ignore - Babel traverse uses CommonJS default export
 import traverseNamespace from '@babel/traverse';
@@ -71,6 +73,124 @@ let componentRegistry: ComponentRegistry = {
 function generateComponentId(componentName: string, file: string): string {
   const hash = createHash('md5').update(componentName + file).digest('hex').slice(0, 8);
   return `${componentName}--${hash}`;
+}
+
+/**
+ * 兄弟组件信息接口
+ */
+interface SiblingComponent {
+  name: string;
+  file: string;
+  line: number;
+  endLine: number;
+  lineCount: number;
+}
+
+/**
+ * 查找组件的兄弟组件（同一目录下的其他组件）
+ */
+function findSiblingComponents(
+  componentName: string,
+  componentRegistry: ComponentRegistry
+): {
+  current: SiblingComponent | null;
+  siblings: SiblingComponent[];
+  directory: string;
+  copyFormats: {
+    fileNameAndLines: string;
+    llmSearch: string;
+  };
+} {
+  const currentComponent = componentRegistry.components[componentName];
+  if (!currentComponent) {
+    return {
+      current: null,
+      siblings: [],
+      directory: '',
+      copyFormats: { fileNameAndLines: '', llmSearch: '' }
+    };
+  }
+
+  const componentFile = currentComponent.file;
+  const componentDir = dirname(componentFile);
+  const fileName = basename(componentFile);
+
+  // 查找同一目录下的所有组件文件
+  const siblings: SiblingComponent[] = [];
+  try {
+    const files = readdirSync(componentDir);
+    const componentFiles = files.filter(f =>
+      /\.(tsx|ts|jsx|js)$/.test(f) &&
+      f !== fileName && // 排除当前文件
+      !f.startsWith('.') && // 排除隐藏文件
+      !f.includes('.test.') && // 排除测试文件
+      !f.includes('.spec.')
+    );
+
+    for (const file of componentFiles) {
+      const filePath = join(componentDir, file);
+      try {
+        const content = readFileSync(filePath, 'utf-8');
+        const components = extractComponentsFromCode(content);
+
+        for (const comp of components) {
+          siblings.push({
+            name: comp.name,
+            file: filePath,
+            line: comp.line,
+            endLine: comp.endIndex ? getLineNumberForPosition(content, comp.endIndex) : comp.line,
+            lineCount: comp.endIndex
+              ? getLineNumberForPosition(content, comp.endIndex) - comp.line + 1
+              : 0
+          });
+        }
+      } catch (err) {
+        console.error(`[react-component-jump] ❌ 读取文件失败: ${filePath}`, err);
+      }
+    }
+  } catch (err) {
+    console.error(`[react-component-jump] ❌ 读取目录失败: ${componentDir}`, err);
+  }
+
+  // 计算当前组件的结束行
+  const currentEndLine = currentComponent.endIndex
+    ? getLineNumberForPosition(
+        readFileSync(componentFile, 'utf-8'),
+        currentComponent.endIndex
+      )
+    : currentComponent.line;
+
+  const currentLineCount = currentEndLine - currentComponent.line + 1;
+
+  const current: SiblingComponent = {
+    name: componentName,
+    file: componentFile,
+    line: currentComponent.line,
+    endLine: currentEndLine,
+    lineCount: currentLineCount
+  };
+
+  // 生成复制格式
+  const shortFileName = basename(componentFile);
+  const copyFormats = {
+    fileNameAndLines: `${shortFileName}:${current.line}-${currentEndLine}`,
+    llmSearch: `查看 ${shortFileName} 文件第 ${current.line} 行开始的 ${componentName} 组件`
+  };
+
+  return {
+    current,
+    siblings,
+    directory: componentDir,
+    copyFormats
+  };
+}
+
+/**
+ * 从文件内容获取指定位置的行号
+ */
+function getLineNumberForPosition(content: string, position: number): number {
+  const lines = content.substring(0, position).split('\n');
+  return lines.length;
 }
 
 // 删除未使用的 extractComponentNameFromPath 函数
@@ -547,6 +667,30 @@ export function reactComponentJumpPlugin(options: {
               success: true,
               component,
               dependencyTree,
+            }, null, 2));
+            return;
+          }
+
+          // GET /api/sibling-components/:componentName
+          if (targetPath.startsWith('/api/sibling-components/') && req.method === 'GET') {
+            const componentName = decodeURIComponent(targetPath.split('/').pop() || '');
+
+            console.log(`[react-component-jump] 🔍 查找兄弟组件: ${componentName}`);
+
+            // 更新统计信息
+            componentRegistry.totalComponents = Object.keys(componentRegistry.components).length;
+            componentRegistry.totalFiles = Object.keys(componentRegistry.fileHashes).length;
+            componentRegistry.lastUpdate = new Date().toISOString();
+
+            // 查找兄弟组件
+            const result = findSiblingComponents(componentName, componentRegistry);
+
+            console.log(`[react-component-jump] ✓ 找到 ${result.siblings.length} 个兄弟组件`);
+
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({
+              success: true,
+              ...result,
             }, null, 2));
             return;
           }
