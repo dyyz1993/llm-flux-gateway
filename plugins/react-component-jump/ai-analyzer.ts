@@ -83,7 +83,7 @@ export function writeCache(cache: AnalysisCache): void {
     writeFileSync(cachePath, JSON.stringify(cache, null, 2), 'utf-8');
     console.log(`[ai-analyzer] ✅ 缓存已保存: ${cache.component.name} (${cache.component.hash})`);
   } catch (error) {
-    console.error(`[ai-analyzer] ❌ 写入缓存失败: ${hash}`, error);
+    console.error(`[ai-analyzer] ❌ 写入缓存失败: ${cache.component.hash}`, error);
   }
 }
 
