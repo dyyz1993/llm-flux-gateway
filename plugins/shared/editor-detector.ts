@@ -10,8 +10,13 @@
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const execAsync = promisify(exec);
+
+// ES module 兼容的 __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export type EditorType = 'trae' | 'code' | 'cursor' | 'jetbrains';
 
@@ -49,7 +54,7 @@ const EDITORS: Record<EditorType, EditorInfo> = {
     type: 'jetbrains',
     name: 'JetBrains IDE',
     cmd: 'idea', // 或 webstorm, phpstorm 等
-    gotoArgs: (file, line, column) => ['--line', String(line), `${file}`],
+    gotoArgs: (file, line, _column) => ['--line', String(line), `${file}`],
   },
 };
 

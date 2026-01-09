@@ -14,7 +14,8 @@
 import { createServer, Server, IncomingMessage, ServerResponse } from 'http';
 import { writeFileSync, unlink } from 'fs';
 import { resolve } from 'path';
-import { jumpToEditor as jumpToEditorImpl } from '../shared/editor-detector.js';
+import type { AddressInfo } from 'net';
+import { jumpToEditor as jumpToEditorImpl } from './shared/editor-detector.js';
 
 interface StyleLocation {
   file: string;
@@ -62,7 +63,8 @@ const server: Server = createServer((req: IncomingMessage, res: ServerResponse) 
   // GET /health
   if (path === '/health' && method === 'GET') {
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({ status: 'ok', port: server.address()?.port }));
+    const address = server.address() as AddressInfo;
+    res.end(JSON.stringify({ status: 'ok', port: address?.port }));
     return;
   }
 
@@ -145,7 +147,7 @@ const server: Server = createServer((req: IncomingMessage, res: ServerResponse) 
 // 启动服务器并获取分配的端口
 server.listen(PORT, '127.0.0.1', () => {
   const address = server.address();
-  const actualPort = typeof address === 'string' ? parseInt(address.split(':')[1]) : address?.port;
+  const actualPort = (address as AddressInfo)?.port ?? 3000;
 
   console.log(`
 ╔═══════════════════════════════════════════════════════╗

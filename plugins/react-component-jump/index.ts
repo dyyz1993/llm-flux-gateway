@@ -23,7 +23,7 @@ const traverse = (traverseNamespace as any).default || traverseNamespace;
 import type {
   ComponentRegistry,
   ComponentInfo as RegistryComponentInfo,
-} from '../../src/server/module-component-registry/types.js';
+} from './types.js';
 import {
   extractImports,
   extractComponentNamesFromImports,
@@ -32,8 +32,8 @@ import {
   buildDependencyGraph,
   detectCircularDeps,
   validateRegistry,
-} from '../../src/server/module-component-registry/utils.js';
-import { getDependencyTree } from '../../src/server/module-component-registry/dependency-graph.js';
+} from './utils.js';
+import { getDependencyTree } from './dependency-graph.js';
 import { jumpToEditor as jumpToEditorImpl } from '../shared/editor-detector.js';
 
 export interface ComponentLocation {
@@ -73,13 +73,7 @@ function generateComponentId(componentName: string, file: string): string {
   return `${componentName}--${hash}`;
 }
 
-/**
- * 从文件路径提取组件名
- */
-function extractComponentNameFromPath(filePath: string): string {
-  const match = filePath.match(/\/([A-Z][a-zA-Z0-9]*)\.(tsx|ts|jsx|js)$/);
-  return match ? match[1] : 'Unknown';
-}
+// 删除未使用的 extractComponentNameFromPath 函数
 
 /**
  * 使用 AST 从代码中提取所有组件
@@ -105,7 +99,7 @@ function extractComponentsFromCode(code: string): ComponentInfo[] {
 
     traverse(ast, {
       // 处理 function ComponentName() {...}
-      FunctionDeclaration(path) {
+      FunctionDeclaration(path: any) {
         const node = path.node as any;
         const name = node.id?.name;
         if (name && /^[A-Z]/.test(name)) {
@@ -200,7 +194,7 @@ function extractComponentsFromCode(code: string): ComponentInfo[] {
  */
 function addComponentNamesToCode(
   code: string,
-  filePath: string
+  _filePath: string
 ): { code: string; components: ComponentInfo[] } {
   const components = extractComponentsFromCode(code);
 
@@ -231,6 +225,9 @@ function addComponentNamesToCode(
     }
 
     const tagName = tagMatch[1];
+    if (!tagName) {
+      continue;
+    }
     const tagStartInReturn = returnCode.indexOf('<' + tagName);
     const tagEndInReturn = returnCode.indexOf('>', tagStartInReturn);
 
