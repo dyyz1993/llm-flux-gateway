@@ -222,7 +222,7 @@ function extractSiblingElementsFromJSX(
 
   while (pos < jsxCode.length) {
     // 跳过空白
-    while (pos < jsxCode.length && /\s/.test(jsxCode[pos])) {
+    while (pos < jsxCode.length && /\s/.test(jsxCode[pos]!)) {
       pos++;
     }
 
@@ -324,12 +324,12 @@ function extractSiblingElementsFromJSX(
       // 只在深度为 1 时提取元素（直接子元素，不是根元素）
       if (depth === 1 && !wasSelfClosing) {
         // 判断是 React 组件还是 HTML 元素
-        const isReactComponent = /^[A-Z]/.test(tagName);
+        const isReactComponent = /^[A-Z]/.test(tagName!);
 
         elements.push({
-          name: tagName,
+          name: tagName!,
           type: isReactComponent ? 'react' : 'html',
-          tagName: isReactComponent ? undefined : tagName,
+          tagName: isReactComponent ? undefined : tagName!,
           file,
           line: startLine,
           endLine: startLine, // 先设置为开始行，后面会更新
@@ -337,7 +337,7 @@ function extractSiblingElementsFromJSX(
         });
 
         // 记录到栈中
-        elementStack.push({ name: tagName, start: startLine, depth });
+        elementStack.push({ name: tagName!, start: startLine, depth });
       }
 
       // 如果不是自闭合标签，增加深度并压栈
@@ -373,8 +373,8 @@ function findSiblingElements(
 
   if (isHtmlElement) {
     const parts = elementName.split('__');
-    targetComponent = parts[0];
-    targetElement = parts[1]; // HTML 标签名
+    targetComponent = parts[0]!;
+    targetElement = parts[1] || null; // HTML 标签名
   } else {
     targetComponent = elementName;
   }
@@ -620,7 +620,7 @@ function extractHTMLElementsFromJSX(
 
   while (pos < jsxCode.length) {
     // 跳过空白和注释
-    while (pos < jsxCode.length && /\s/.test(jsxCode[pos])) {
+    while (pos < jsxCode.length && /\s/.test(jsxCode[pos]!)) {
       pos++;
     }
 
@@ -640,8 +640,6 @@ function extractHTMLElementsFromJSX(
 
     // 查找 JSX 标签开始
     if (jsxCode[pos] === '<') {
-      const tagStart = pos;
-
       // 跳过 </>
       if (jsxCode[pos + 1] === '/') {
         // 找到对应的 >
@@ -659,7 +657,7 @@ function extractHTMLElementsFromJSX(
         continue;
       }
 
-      const tagName = tagNameMatch[1];
+      const tagName = tagNameMatch[1]!;
 
       // 跳过大写字母开头的（React 组件）
       if (/^[A-Z]/.test(tagName)) {
@@ -721,8 +719,6 @@ function extractHTMLElementsFromJSX(
       }
 
       // 计算行号
-      const tagContent = jsxCode.substring(elementStart, elementEnd);
-      const lineCount = tagContent.split('\n').length;
       const elementLine = baseLine; // 简化处理，使用基准行号
 
       elements.push({
