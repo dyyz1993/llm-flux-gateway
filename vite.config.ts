@@ -12,7 +12,12 @@ export default defineConfig(({ mode }) => {
         port: 3000,
         host: '0.0.0.0',
         strictPort: false, // 端口被占用时自动尝试下一个端口
+        hmr: {
+          protocol: 'ws',
+          host: 'localhost',
+        },
       },
+      envPrefix: ['VITE_', 'LLM_', 'GEMINI_'],
       plugins: [
         // React 组件跳转插件 - 必须在 react() 之前运行
         // 因为需要在 JSX 被转换前注入 data-component-name 属性
@@ -34,6 +39,7 @@ export default defineConfig(({ mode }) => {
             /^\/node_modules\/.*/,                     // npm packages
             /^\/index\.tsx(\?.*)?$/,                   // Client entry point (with optional query params)
             /^\/src\/.*/,                              // Source files
+            /^\/plugins\/.*/,                          // Plugin runtime files
             // /^\/api\/.*/,                          // ❌ 移除：让 Hono 处理所有 /api/* 请求
             /\.html?$/,                                // HTML files
             /\.(js|jsx|ts|tsx|css|json|svg|png|jpg)$/,  // Static assets
@@ -51,6 +57,7 @@ export default defineConfig(({ mode }) => {
           '@client': path.resolve(__dirname, './src/client'),
           '@server': path.resolve(__dirname, './src/server'),
           '@shared': path.resolve(__dirname, './src/shared'),
+          '@plugins': path.resolve(__dirname, './plugins'),
         }
       },
       optimizeDeps: {
@@ -63,6 +70,8 @@ export default defineConfig(({ mode }) => {
           '@codemirror/state',
           '@codemirror/theme-one-dark',
           '@codemirror/view',
+          '@plugins/react-component-jump/runtime',
+          '@plugins/style-jump/runtime',
         ]
       }
     };

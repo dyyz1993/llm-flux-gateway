@@ -87,6 +87,19 @@ interface SiblingComponent {
 }
 
 /**
+ * 并列元素信息接口
+ */
+interface SiblingElement {
+  name: string;          // 元素/组件名
+  type: 'react' | 'html'; // 类型
+  tagName?: string;       // HTML 标签名（如果是 HTML 元素）
+  file: string;
+  line: number;
+  endLine: number;
+  lineCount: number;
+}
+
+/**
  * 查找组件的兄弟组件（同一目录下的其他组件）
  */
 function findSiblingComponents(
@@ -191,6 +204,281 @@ function findSiblingComponents(
 function getLineNumberForPosition(content: string, position: number): number {
   const lines = content.substring(0, position).split('\n');
   return lines.length;
+}
+
+/**
+ * 从组件的 JSX 中提取并列元素（只提取顶层元素，不提取嵌套元素）
+ */
+function extractSiblingElementsFromJSX(
+  jsxCode: string,
+  fileContentStartPosition: number,
+  file: string,
+  fileContent: string
+): SiblingElement[] {
+  const elements: SiblingElement[] = [];
+  const elementStack: Array<{ name: string; start: number; depth: number }> = [];
+  let pos = 0;
+  let depth = 0; // 当前嵌套深度
+
+  while (pos < jsxCode.length) {
+    // 跳过空白
+    while (pos < jsxCode.length && /\s/.test(jsxCode[pos])) {
+      pos++;
+    }
+
+    if (pos >= jsxCode.length) {
+      break;
+    }
+
+    // 跳过注释 {/* ... */}
+    if (pos + 1 < jsxCode.length && jsxCode[pos] === '{' && jsxCode[pos + 1] === '*') {
+      const commentEnd = jsxCode.indexOf('*/', pos);
+      if (commentEnd !== -1) {
+        pos = commentEnd + 2;
+        continue;
+      }
+    }
+
+    // 跳过注释 </...>
+    if (pos + 3 < jsxCode.length && jsxCode[pos] === '<' && jsxCode[pos + 1] === '!' && jsxCode[pos + 2] === '-' && jsxCode[pos + 3] === '-') {
+      const commentEnd = jsxCode.indexOf('-->', pos);
+      if (commentEnd !== -1) {
+        pos = commentEnd + 3;
+        continue;
+      }
+    }
+
+    // 查找 JSX 标签开始
+    if (jsxCode[pos] === '<') {
+      const isClosingTag = jsxCode[pos + 1] === '/';
+
+      // 处理闭合标签
+      if (isClosingTag) {
+        const closeBracket = jsxCode.indexOf('>', pos);
+        if (closeBracket !== -1) {
+          // 获取闭合标签的名称
+          const tagNameMatch = jsxCode.substring(pos + 2, closeBracket).match(/^([a-zA-Z][a-zA-Z0-9]*)/);
+          if (tagNameMatch) {
+            const closeTagName = tagNameMatch[1];
+
+            // 检查栈顶元素是否匹配
+            if (elementStack.length > 0 && elementStack[elementStack.length - 1]!.name === closeTagName) {
+              const popped = elementStack.pop()!;
+              // 只有深度为 1 的元素才是我们需要的直接子元素
+              if (popped.depth === 1) {
+                const absoluteEndPosition = fileContentStartPosition + closeBracket + 1;
+                const endLine = getLineNumberForPosition(fileContent, absoluteEndPosition);
+
+                // 找到对应的元素并更新结束位置
+                const element = elements.find(e => e.name === popped.name && e.line === popped.start);
+                if (element) {
+                  element.endLine = endLine;
+                  element.lineCount = endLine - element.line + 1;
+                }
+              }
+            }
+            depth--;
+          }
+          pos = closeBracket + 1;
+        }
+        continue;
+      }
+
+      // 处理开始标签
+      const tagStart = pos;
+      pos++; // 跳过 <
+
+      // 获取标签名
+      const tagNameMatch = jsxCode.substring(pos).match(/^([a-zA-Z][a-zA-Z0-9]*)/);
+      if (!tagNameMatch) {
+        pos++;
+        continue;
+      }
+
+      const tagName = tagNameMatch[1];
+      pos += tagNameMatch[0].length; // 跳过标签名
+
+      // 跳过标签属性
+      let foundClosing = false;
+      while (pos < jsxCode.length && !foundClosing) {
+        if (jsxCode[pos] === '>') {
+          pos++; // 跳过 >
+          foundClosing = true;
+          break;
+        } else if (pos + 1 < jsxCode.length && jsxCode[pos] === '/' && jsxCode[pos + 1] === '>') {
+          pos += 2; // 跳过 />
+          foundClosing = true;
+          break;
+        } else {
+          pos++;
+        }
+      }
+
+      // 检查是否是自闭合标签
+      const wasSelfClosing = foundClosing && pos > 2 && jsxCode[pos - 2] === '/' && jsxCode[pos - 1] === '>';
+
+      // 计算开始行号
+      const absolutePosition = fileContentStartPosition + tagStart;
+      const startLine = getLineNumberForPosition(fileContent, absolutePosition);
+
+      // 只在深度为 1 时提取元素（直接子元素，不是根元素）
+      if (depth === 1 && !wasSelfClosing) {
+        // 判断是 React 组件还是 HTML 元素
+        const isReactComponent = /^[A-Z]/.test(tagName);
+
+        elements.push({
+          name: tagName,
+          type: isReactComponent ? 'react' : 'html',
+          tagName: isReactComponent ? undefined : tagName,
+          file,
+          line: startLine,
+          endLine: startLine, // 先设置为开始行，后面会更新
+          lineCount: 1, // 先设置为 1，后面会更新
+        });
+
+        // 记录到栈中
+        elementStack.push({ name: tagName, start: startLine, depth });
+      }
+
+      // 如果不是自闭合标签，增加深度并压栈
+      if (!wasSelfClosing) {
+        depth++;
+      }
+    } else {
+      pos++;
+    }
+  }
+
+  return elements;
+}
+
+/**
+ * 查找组件内部的并列元素（React 组件 + HTML 元素）
+ */
+function findSiblingElements(
+  elementName: string,
+  componentRegistry: ComponentRegistry
+): {
+  current: SiblingElement | null;
+  siblings: SiblingElement[];
+  parentComponent: string | null;
+} {
+  // 解析元素名称
+  // 格式1: ComponentName (React 组件)
+  // 格式2: ComponentName__tagName__position (HTML 元素)
+  const isHtmlElement = elementName.includes('__');
+
+  let targetComponent: string;
+  let targetElement: string | null = null;
+
+  if (isHtmlElement) {
+    const parts = elementName.split('__');
+    targetComponent = parts[0];
+    targetElement = parts[1]; // HTML 标签名
+  } else {
+    targetComponent = elementName;
+  }
+
+  const componentInfo = componentRegistry.components[targetComponent];
+  if (!componentInfo) {
+    return {
+      current: null,
+      siblings: [],
+      parentComponent: null,
+    };
+  }
+
+  // 读取组件文件内容
+  let fileContent: string;
+  try {
+    fileContent = readFileSync(componentInfo.file, 'utf-8');
+  } catch (err) {
+    console.error(`[react-component-jump] ❌ 读取文件失败: ${componentInfo.file}`, err);
+    return {
+      current: null,
+      siblings: [],
+      parentComponent: targetComponent,
+    };
+  }
+
+  // 提取 return 语句内的 JSX
+  const returnStart = componentInfo.returnStatementStart;
+  const returnEnd = componentInfo.returnStatementEnd;
+
+  if (!returnStart || !returnEnd) {
+    return {
+      current: null,
+      siblings: [],
+      parentComponent: targetComponent,
+    };
+  }
+
+  const returnCode = fileContent.substring(returnStart, returnEnd);
+
+  // 查找第一个标签的结束位置
+  const firstTagEnd = returnCode.indexOf('>');
+  if (firstTagEnd === -1) {
+    return {
+      current: null,
+      siblings: [],
+      parentComponent: targetComponent,
+    };
+  }
+
+  // 提取根标签内的 JSX 内容
+  const innerJSX = returnCode.substring(firstTagEnd + 1);
+
+  // 计算根标签后的位置（相对于文件开头）
+  const innerJSXStartPosition = returnStart + firstTagEnd + 1;
+
+  // 提取所有并列元素（传递文件内容以计算正确的行号）
+  const allElements = extractSiblingElementsFromJSX(
+    innerJSX,
+    innerJSXStartPosition,
+    componentInfo.file,
+    fileContent
+  );
+
+  // 找到当前元素
+  let current: SiblingElement | null = null;
+  const siblings: SiblingElement[] = [];
+
+  if (isHtmlElement && targetElement) {
+    // HTML 元素：查找同名的所有元素，取第一个作为当前元素
+    for (const elem of allElements) {
+      if (elem.type === 'html' && elem.tagName === targetElement) {
+        if (!current) {
+          current = elem;
+        } else {
+          siblings.push(elem);
+        }
+      } else {
+        siblings.push(elem);
+      }
+    }
+  } else {
+    // React 组件：当前元素就是组件本身（使用组件注册表中的信息）
+    current = {
+      name: componentInfo.name,
+      type: 'react',
+      file: componentInfo.file,
+      line: componentInfo.line,
+      endLine: componentInfo.endIndex
+        ? getLineNumberForPosition(fileContent, componentInfo.endIndex)
+        : componentInfo.line,
+      lineCount: componentInfo.endIndex
+        ? getLineNumberForPosition(fileContent, componentInfo.endIndex) - componentInfo.line + 1
+        : 0,
+    };
+    // siblings 是 JSX 内部的所有直接子元素
+    siblings.push(...allElements);
+  }
+
+  return {
+    current,
+    siblings,
+    parentComponent: targetComponent,
+  };
 }
 
 // 删除未使用的 extractComponentNameFromPath 函数
@@ -310,7 +598,153 @@ function extractComponentsFromCode(code: string): ComponentInfo[] {
 }
 
 /**
- * 为组件添加 data-component-name 属性
+ * HTML 元素信息接口
+ */
+interface HTMLElementInfo {
+  name: string;
+  startIndex: number;
+  endIndex: number;
+  line: number;
+  isSelfClosing: boolean;
+}
+
+/**
+ * 从 JSX 代码中提取并列的 HTML 元素
+ */
+function extractHTMLElementsFromJSX(
+  jsxCode: string,
+  baseLine: number
+): HTMLElementInfo[] {
+  const elements: HTMLElementInfo[] = [];
+  let pos = 0;
+
+  while (pos < jsxCode.length) {
+    // 跳过空白和注释
+    while (pos < jsxCode.length && /\s/.test(jsxCode[pos])) {
+      pos++;
+    }
+
+    // 检查是否到达结尾
+    if (pos >= jsxCode.length) {
+      break;
+    }
+
+    // 检查是否是注释 {/* ... */}
+    if (jsxCode.substr(pos, 2) === '{' && jsxCode.substr(pos, 2) === '/*') {
+      const commentEnd = jsxCode.indexOf('*/', pos);
+      if (commentEnd !== -1) {
+        pos = commentEnd + 2;
+        continue;
+      }
+    }
+
+    // 查找 JSX 标签开始
+    if (jsxCode[pos] === '<') {
+      const tagStart = pos;
+
+      // 跳过 </>
+      if (jsxCode[pos + 1] === '/') {
+        // 找到对应的 >
+        const closeBracket = jsxCode.indexOf('>', pos);
+        if (closeBracket !== -1) {
+          pos = closeBracket + 1;
+          continue;
+        }
+      }
+
+      // 获取标签名
+      const tagNameMatch = jsxCode.substr(pos + 1).match(/^([a-zA-Z][a-zA-Z0-9]*)/);
+      if (!tagNameMatch) {
+        pos++;
+        continue;
+      }
+
+      const tagName = tagNameMatch[1];
+
+      // 跳过大写字母开头的（React 组件）
+      if (/^[A-Z]/.test(tagName)) {
+        // 找到这个 React 组件的结束位置
+        pos += tagNameMatch[0].length + 1; // 跳过 <TagName
+
+        // 跳过标签属性
+        while (pos < jsxCode.length) {
+          if (jsxCode[pos] === '>') {
+            pos++;
+            break;
+          } else if (jsxCode.substr(pos, 2) === '/>') {
+            pos += 2;
+            break;
+          } else {
+            pos++;
+          }
+        }
+
+        // 如果不是自闭合的，需要找到闭合标签
+        if (pos > 0 && jsxCode[pos - 1] !== '/' && pos > 0 && jsxCode[pos - 2] !== '/') {
+          // 查找闭合标签
+          const closeTag = `</${tagName}>`;
+          const closeIndex = jsxCode.indexOf(closeTag, pos);
+          if (closeIndex !== -1) {
+            pos = closeIndex + closeTag.length;
+          }
+        }
+        continue;
+      }
+
+      // 这是一个 HTML 元素（小写开头）
+      const elementStart = pos;
+      pos += tagNameMatch[0].length + 1; // 跳过 <tagname
+
+      // 检查是否是自闭合标签
+      let isSelfClosing = false;
+      while (pos < jsxCode.length) {
+        if (jsxCode[pos] === '>') {
+          pos++;
+          break;
+        } else if (jsxCode.substr(pos, 2) === '/>') {
+          pos += 2;
+          isSelfClosing = true;
+          break;
+        } else {
+          pos++;
+        }
+      }
+
+      // 如果不是自闭合的，需要找到闭合标签
+      let elementEnd = pos;
+      if (!isSelfClosing) {
+        const closeTag = `</${tagName}>`;
+        const closeIndex = jsxCode.indexOf(closeTag, pos);
+        if (closeIndex !== -1) {
+          elementEnd = closeIndex + closeTag.length;
+        }
+      }
+
+      // 计算行号
+      const tagContent = jsxCode.substring(elementStart, elementEnd);
+      const lineCount = tagContent.split('\n').length;
+      const elementLine = baseLine; // 简化处理，使用基准行号
+
+      elements.push({
+        name: tagName,
+        startIndex: elementStart,
+        endIndex: elementEnd,
+        line: elementLine,
+        isSelfClosing,
+      });
+
+      pos = elementEnd;
+    } else {
+      pos++;
+    }
+  }
+
+  return elements;
+}
+
+/**
+ * 为组件添加 data-component-name 和 data-element-name 属性
+ * 同时标记并列的 HTML 元素
  */
 function addComponentNamesToCode(
   code: string,
@@ -379,6 +813,46 @@ function addComponentNamesToCode(
       modifiedCode.substring(absoluteTagStart + fullTag.length);
 
     console.log(`[react-component-jump] ✓ 为 ${componentName} 添加 data-component-name`);
+
+    // 提取并列的 HTML 元素并添加标记
+    const jsxContent = returnCode.substring(tagEndInReturn + 1);
+    const htmlElements = extractHTMLElementsFromJSX(jsxContent, component.line);
+
+    // 为 HTML 元素添加 data-element-name 属性（倒序处理）
+    const sortedElements = [...htmlElements].sort((a, b) => b.startIndex - a.startIndex);
+
+    for (const element of sortedElements) {
+      const elementAbsoluteStart = returnStart + tagEndInReturn + 1 + element.startIndex;
+      const elementTagEnd = modifiedCode.indexOf('>', elementAbsoluteStart);
+
+      if (elementTagEnd === -1) {
+        continue;
+      }
+
+      const elementFullTag = modifiedCode.substring(elementAbsoluteStart, elementTagEnd + 1);
+
+      // 检查是否已经有属性
+      if (elementFullTag.includes('data-element-name') || elementFullTag.includes('data-component-name')) {
+        continue;
+      }
+
+      // 生成唯一的元素 ID
+      const elementId = `${componentName}__${element.name}__${elementAbsoluteStart}`;
+
+      // 添加 data-element-name 属性
+      const newElementTag = elementFullTag.replace(
+        new RegExp(`^(<${element.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})(\\s|>)`),
+        `$1 data-element-name="${elementId}"$2`
+      );
+
+      // 替换原代码
+      modifiedCode =
+        modifiedCode.substring(0, elementAbsoluteStart) +
+        newElementTag +
+        modifiedCode.substring(elementAbsoluteStart + elementFullTag.length);
+
+      console.log(`[react-component-jump]   ↳ 为 ${element.name} 添加 data-element-name`);
+    }
   }
 
   return { code: modifiedCode, components };
@@ -451,6 +925,8 @@ export function reactComponentJumpPlugin(options: {
           dependents: [],
           startIndex: component.startIndex,
           endIndex: component.endIndex,
+          returnStatementStart: component.returnStatementStart,
+          returnStatementEnd: component.returnStatementEnd,
         };
 
         componentRegistry.components[component.name] = registryComponent;
@@ -573,43 +1049,75 @@ export function reactComponentJumpPlugin(options: {
             req.on('data', (chunk) => { body += chunk; });
             req.on('end', async () => {
               try {
-                const { componentName } = JSON.parse(body);
-                const filePath = componentNameToFileMap.get(componentName);
+                const data = JSON.parse(body);
 
-                if (!filePath) {
-                  res.statusCode = 404;
+                // 支持两种参数格式：
+                // 1. { filePath, line } - 新格式（直接传入文件路径）
+                // 2. { componentName } - 旧格式（组件名，需要查表）
+                let filePath: string;
+                let line: number;
+                let column: number;
+
+                if (data.filePath) {
+                  // 新格式：直接使用文件路径
+                  filePath = data.filePath;
+                  line = data.line || 1;
+                  column = 0;
+                } else if (data.componentName) {
+                  // 旧格式：通过组件名查找文件路径
+                  const componentName = data.componentName;
+                  const foundPath = componentNameToFileMap.get(componentName);
+
+                  if (!foundPath) {
+                    res.statusCode = 404;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.end(JSON.stringify({
+                      success: false,
+                      error: `Component ${componentName} not found`
+                    }));
+                    return;
+                  }
+
+                  filePath = foundPath;
+
+                  // 查找组件的位置信息
+                  const componentId = generateComponentId(componentName, filePath);
+                  const location = componentMap[componentId];
+
+                  if (!location) {
+                    res.statusCode = 404;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.end(JSON.stringify({
+                      success: false,
+                      error: `Component location ${componentName} not found`
+                    }));
+                    return;
+                  }
+
+                  line = location.line;
+                  column = location.column;
+                } else {
+                  res.statusCode = 400;
                   res.setHeader('Content-Type', 'application/json');
                   res.end(JSON.stringify({
                     success: false,
-                    error: `Component ${componentName} not found`
+                    error: 'Either filePath or componentName is required'
                   }));
                   return;
                 }
 
-                // 查找组件的位置信息
-                const componentId = generateComponentId(componentName, filePath);
-                const location = componentMap[componentId];
-
-                if (!location) {
-                  res.statusCode = 404;
-                  res.setHeader('Content-Type', 'application/json');
-                  res.end(JSON.stringify({
-                    success: false,
-                    error: `Component location ${componentName} not found`
-                  }));
-                  return;
-                }
+                console.log(`[react-component-jump] 🎯 跳转到: ${filePath}:${line}:${column}`);
 
                 // 使用实际的行号和列号调用编辑器跳转
-                const success = await jumpToEditor(filePath, location.line, location.column);
+                const success = await jumpToEditor(filePath, line, column);
 
                 res.setHeader('Content-Type', 'application/json');
                 res.end(JSON.stringify({
                   success,
                   file: filePath,
-                  line: location.line,
-                  column: location.column,
-                  message: success ? `已跳转到 ${componentName}:${location.line}:${location.column}` : '跳转失败'
+                  line,
+                  column,
+                  message: success ? `已跳转到 ${filePath.split('/').pop()}:${line}:${column}` : '跳转失败'
                 }));
               } catch (error) {
                 console.error('[react-component-jump] ❌ 跳转错误:', error);
@@ -692,6 +1200,190 @@ export function reactComponentJumpPlugin(options: {
               success: true,
               ...result,
             }, null, 2));
+            return;
+          }
+
+          // GET /api/sibling-elements/:elementName
+          if (targetPath.startsWith('/api/sibling-elements/') && req.method === 'GET') {
+            const elementName = decodeURIComponent(targetPath.split('/').pop() || '');
+
+            console.log(`[react-component-jump] 🔍 查找并列元素: ${elementName}`);
+
+            // 更新统计信息
+            componentRegistry.totalComponents = Object.keys(componentRegistry.components).length;
+            componentRegistry.totalFiles = Object.keys(componentRegistry.fileHashes).length;
+            componentRegistry.lastUpdate = new Date().toISOString();
+
+            // 查找并列元素
+            const result = findSiblingElements(elementName, componentRegistry);
+
+            console.log(`[react-component-jump] ✓ 找到 ${result.siblings.length} 个并列元素`);
+
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({
+              success: true,
+              ...result,
+            }, null, 2));
+            return;
+          }
+
+          // GET /api/code-snippet?file=...&line=...&endLine=...
+          if (targetPath.startsWith('/api/code-snippet') && req.method === 'GET') {
+            const url = new URL(req.url || '', `http://${req.headers.host}`);
+            const filePath = url.searchParams.get('file');
+            const line = parseInt(url.searchParams.get('line') || '1', 10);
+            const endLine = parseInt(url.searchParams.get('endLine') || String(line), 10);
+
+            if (!filePath) {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({
+                success: false,
+                error: 'file parameter is required'
+              }));
+              return;
+            }
+
+            try {
+              const fileContent = readFileSync(filePath, 'utf-8');
+              const lines = fileContent.split('\n');
+              const snippetLines = lines.slice(line - 1, endLine);
+              const snippet = snippetLines.join('\n');
+
+              // 计算上下文（前后各几行）
+              const contextBefore = Math.max(0, line - 3);
+              const contextAfter = Math.min(lines.length, endLine + 2);
+              const contextLines = lines.slice(contextBefore, contextAfter);
+              const contextStartLine = contextBefore + 1;
+
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({
+                success: true,
+                file: filePath,
+                line,
+                endLine,
+                snippet,
+                context: {
+                  startLine: contextStartLine,
+                  endLine: contextAfter,
+                  lines: contextLines,
+                },
+              }, null, 2));
+            } catch (error) {
+              console.error('[react-component-jump] ❌ 读取文件失败:', error);
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({
+                success: false,
+                error: String(error)
+              }));
+            }
+            return;
+          }
+
+          // POST /api/ai-analyze
+          if (targetPath === '/api/ai-analyze' && req.method === 'POST') {
+            let body = '';
+            req.on('data', (chunk) => { body += chunk; });
+            req.on('end', async () => {
+              try {
+                const data = JSON.parse(body);
+
+                // 验证必需参数
+                if (!data.componentName || !data.file || !data.line || !data.endLine) {
+                  res.statusCode = 400;
+                  res.setHeader('Content-Type', 'application/json');
+                  res.end(JSON.stringify({
+                    success: false,
+                    error: '缺少必需参数: componentName, file, line, endLine'
+                  }));
+                  return;
+                }
+
+                // 导入 AI 分析器
+                const { analyzeComponent } = await import('./ai-analyzer.js');
+
+                // 调用分析
+                const result = await analyzeComponent({
+                  componentName: data.componentName,
+                  file: data.file,
+                  line: data.line,
+                  endLine: data.endLine,
+                  code: data.code,
+                  context: data.context,
+                  force: data.force || false,
+                });
+
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify(result, null, 2));
+              } catch (error) {
+                console.error('[react-component-jump] ❌ AI 分析失败:', error);
+                res.statusCode = 500;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({
+                  success: false,
+                  error: String(error)
+                }));
+              }
+            });
+            return;
+          }
+
+          // GET /api/ai-analyses
+          if (targetPath === '/api/ai-analyses' && req.method === 'GET') {
+            try {
+              const { getAllCachedAnalyses } = await import('./ai-analyzer.js');
+              const analyses = getAllCachedAnalyses();
+
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({
+                success: true,
+                count: analyses.length,
+                analyses,
+              }, null, 2));
+            } catch (error) {
+              console.error('[react-component-jump] ❌ 获取分析列表失败:', error);
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({
+                success: false,
+                error: String(error)
+              }));
+            }
+            return;
+          }
+
+          // GET /api/ai-analysis/:componentName
+          if (targetPath.startsWith('/api/ai-analysis/') && req.method === 'GET') {
+            try {
+              const componentName = decodeURIComponent(targetPath.split('/').pop() || '');
+              const { getCachedAnalysis } = await import('./ai-analyzer.js');
+              const analysis = getCachedAnalysis(componentName);
+
+              if (!analysis) {
+                res.statusCode = 404;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({
+                  success: false,
+                  error: `未找到组件 ${componentName} 的分析结果`
+                }));
+                return;
+              }
+
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({
+                success: true,
+                analysis,
+              }, null, 2));
+            } catch (error) {
+              console.error('[react-component-jump] ❌ 获取分析结果失败:', error);
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({
+                success: false,
+                error: String(error)
+              }));
+            }
             return;
           }
 

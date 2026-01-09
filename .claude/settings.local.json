@@ -195,7 +195,8 @@
       "Bash(__NEW_LINE__ curl -s http://localhost:61394/api/style-map)",
       "Bash(./test-style-sync.sh:*)",
       "Bash(./verify-fix.sh:*)",
-      "Bash(./verify-react-component-jump.sh:*)"
+      "Bash(./verify-react-component-jump.sh:*)",
+      "Bash(./verify-ai-analysis-fix.sh:*)"
     ]
   },
   "sandbox": {

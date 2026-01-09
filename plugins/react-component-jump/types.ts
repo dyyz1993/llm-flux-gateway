@@ -30,6 +30,10 @@ export interface ComponentInfo {
   startIndex: number;
   /** 组件的结束位置（在源码中） */
   endIndex?: number;
+  /** return 语句的起始位置（用于提取并列元素） */
+  returnStatementStart?: number;
+  /** return 语句的结束位置（用于提取并列元素） */
+  returnStatementEnd?: number;
 }
 
 /**
@@ -91,4 +95,123 @@ export interface ImportDeclaration {
   /** 在源码中的位置 */
   start: number;
   end: number;
+}
+
+/**
+ * AI 组件分析结果
+ */
+export interface ComponentAnalysis {
+  /** 组件描述 */
+  description: string;
+  /** 组件目的 */
+  purpose: string;
+  /** Props 信息 */
+  props: PropDescription[];
+  /** State 信息 */
+  state: StateDescription[];
+  /** 依赖 */
+  dependencies: {
+    external: string[];
+    internal: string[];
+  };
+  /** 业务逻辑 */
+  businessLogic: string[];
+  /** 使用场景 */
+  usage: string;
+  /** 问题分类 */
+  issues?: {
+    /** 严重缺陷 */
+    critical?: IssueItem[];
+    /** 潜在问题 */
+    potential?: IssueItem[];
+    /** 改进建议 */
+    improvements?: IssueItem[];
+  };
+  /** 向后兼容：旧格式的 concerns 和 suggestions */
+  concerns?: string[];
+  suggestions?: string[];
+}
+
+/**
+ * 问题/建议项
+ */
+export interface IssueItem {
+  /** 文件路径 */
+  file: string;
+  /** 起始行号 */
+  startLine: number;
+  /** 总行数 */
+  lineCount: number;
+  /** 问题描述 */
+  description: string;
+  /** 可直接复制给 AI 的提示 */
+  aiPrompt: string;
+}
+
+/**
+ * Prop 描述
+ */
+export interface PropDescription {
+  name: string;
+  type: string;
+  required: boolean;
+  description: string;
+  defaultValue?: string;
+}
+
+/**
+ * State 描述
+ */
+export interface StateDescription {
+  name: string;
+  type: string;
+  purpose: string;
+}
+
+/**
+ * 组件分析缓存
+ */
+export interface AnalysisCache {
+  component: {
+    name: string;
+    file: string;
+    line: number;
+    endLine: number;
+    hash: string;
+  };
+  code: string;
+  analysis: ComponentAnalysis;
+  meta: {
+    analyzedAt: string;
+    model: string;
+    version: string;
+  };
+}
+
+/**
+ * AI 分析请求
+ */
+export interface AnalyzeRequest {
+  componentName: string;
+  file: string;
+  line: number;
+  endLine: number;
+  code: string;
+  context?: {
+    imports?: string[];
+    childComponents?: string[];
+    siblingComponents?: string[];
+    parentComponent?: string;
+  };
+  force?: boolean; // 强制重新分析
+}
+
+/**
+ * AI 分析响应
+ */
+export interface AnalyzeResponse {
+  success: boolean;
+  cached: boolean;
+  analysis?: ComponentAnalysis;
+  error?: string;
 }

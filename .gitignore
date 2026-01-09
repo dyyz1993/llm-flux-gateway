@@ -54,3 +54,4 @@ dist-server
 # Component cache
 .component-cache.json
 .style-jump-port
+plugins/react-component-jump/cache
