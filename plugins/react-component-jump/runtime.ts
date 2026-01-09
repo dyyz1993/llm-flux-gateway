@@ -610,6 +610,7 @@ function addAllComponentBadges() {
     badge.innerHTML = `
       <span class="badge-name">${componentName}</span>
       <span class="badge-actions">
+        <span class="badge-siblings" title="查看平级组件">🔗</span>
         <span class="badge-copy" title="复制组件名">📋</span>
         <span class="badge-jump" title="跳转到源文件">↗️</span>
       </span>
@@ -642,6 +643,33 @@ function addAllComponentBadges() {
       e.stopPropagation();
       navigator.clipboard.writeText(componentName);
       showCopySuccess(componentName);
+    });
+
+    // 兄弟组件按钮
+    const siblingsBtn = badge.querySelector('.badge-siblings')!;
+    siblingsBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (!hasStyleProperty(siblingsBtn)) {
+        return;
+      }
+
+      // 设置 loading 状态
+      siblingsBtn.textContent = '⏳';
+      siblingsBtn.style.pointerEvents = 'none';
+      siblingsBtn.classList.add('loading');
+
+      showSiblingComponents(componentName).finally(() => {
+        // 恢复状态
+        setTimeout(() => {
+          if (siblingsBtn && hasStyleProperty(siblingsBtn)) {
+            siblingsBtn.textContent = '🔗';
+            siblingsBtn.style.pointerEvents = '';
+            siblingsBtn.classList.remove('loading');
+          }
+        }, 500);
+      });
     });
 
     // 跳转按钮
@@ -1465,6 +1493,468 @@ function showDependencyGraphError(error: string) {
   toast.innerHTML = `
     <div style="font-weight: bold; margin-bottom: 4px;">❌ 获取依赖图失败</div>
     <div style="font-size: 11px; opacity: 0.9;">${error}</div>
+  `;
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #ef4444;
+    color: white;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 13px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 999999;
+    animation: slideIn 0.3s ease-out;
+  `;
+
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(10px)';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// ============================================================
+// 兄弟组件发现
+// ============================================================
+
+/**
+ * 显示兄弟组件
+ */
+async function showSiblingComponents(componentName: string): Promise<void> {
+  console.log(`[react-component-jumper] 🔗 查找兄弟组件: ${componentName}`);
+
+  try {
+    const response = await fetch(`/__react_component_jump/api/sibling-components/${encodeURIComponent(componentName)}`);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (!data.success) {
+      showSiblingComponentsError(componentName, data.error);
+      return;
+    }
+
+    showSiblingComponentsModal(data);
+  } catch (error) {
+    console.error('[react-component-jumper] ❌ 获取兄弟组件失败:', error);
+    showSiblingComponentsError(componentName, String(error));
+  }
+}
+
+/**
+ * 显示兄弟组件模态框
+ */
+function showSiblingComponentsModal(data: {
+  current: any;
+  siblings: any[];
+  directory: string;
+  copyFormats: any;
+}) {
+  // 如果已经存在，先移除
+  removeSiblingComponentsModal();
+
+  const modal = document.createElement('div');
+  modal.className = 'react-component-jumper-siblings-modal';
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease-out;
+  `;
+
+  const content = document.createElement('div');
+  content.style.cssText = `
+    background: #1e293b;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    animation: slideUp 0.3s ease-out;
+  `;
+
+  // 头部
+  const header = document.createElement('div');
+  header.style.cssText = `
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  `;
+
+  const title = document.createElement('div');
+  title.innerHTML = `
+    <div style="font-size: 18px; font-weight: 600; color: white; margin-bottom: 4px;">
+      🔗 平级组件
+    </div>
+    <div style="font-size: 12px; color: rgba(255, 255, 255, 0.6);">
+      ${data.siblings.length} 个兄弟组件 • 同一目录
+    </div>
+  `;
+
+  const closeButton = document.createElement('button');
+  closeButton.innerHTML = '✕';
+  closeButton.style.cssText = `
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s;
+  `;
+
+  closeButton.addEventListener('mouseenter', () => {
+    closeButton.style.background = 'rgba(255, 255, 255, 0.1)';
+    closeButton.style.color = 'white';
+  });
+
+  closeButton.addEventListener('mouseleave', () => {
+    closeButton.style.background = 'transparent';
+    closeButton.style.color = 'rgba(255, 255, 255, 0.6)';
+  });
+
+  closeButton.addEventListener('click', removeSiblingComponentsModal);
+
+  header.appendChild(title);
+  header.appendChild(closeButton);
+
+  // 内容区域
+  const body = document.createElement('div');
+  body.style.cssText = `
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+  `;
+
+  // 当前组件信息
+  const currentSection = document.createElement('div');
+  currentSection.style.cssText = `
+    margin-bottom: 24px;
+    padding: 16px;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 8px;
+  `;
+
+  const currentTitle = document.createElement('div');
+  currentTitle.textContent = '📍 当前组件';
+  currentTitle.style.cssText = `
+    font-size: 12px;
+    font-weight: 600;
+    color: #10b981;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  `;
+
+  const currentInfo = document.createElement('div');
+  currentInfo.innerHTML = `
+    <div style="font-size: 16px; font-weight: 600; color: white; margin-bottom: 4px;">
+      ${data.current.name}
+    </div>
+    <div style="font-size: 12px; color: rgba(255, 255, 255, 0.7); margin-bottom: 8px;">
+      ${data.current.file}
+    </div>
+    <div style="font-size: 12px; color: rgba(255, 255, 255, 0.5);">
+      第 ${data.current.line} - ${data.current.endLine} 行 (${data.current.lineCount} 行)
+    </div>
+  `;
+
+  currentSection.appendChild(currentTitle);
+  currentSection.appendChild(currentInfo);
+
+  // 复制格式
+  const copySection = document.createElement('div');
+  copySection.style.cssText = `
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(16, 185, 129, 0.2);
+  `;
+
+  const copyTitle = document.createElement('div');
+  copyTitle.textContent = '📋 复制格式';
+  copyTitle.style.cssText = `
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  `;
+
+  const copyFormats = document.createElement('div');
+  copyFormats.style.cssText = `
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  `;
+
+  // 文件名+行数
+  const format1 = createCopyFormat(
+    `${data.copyFormats.fileNameAndLines}`,
+    '文件名 + 行数',
+    '用于大模型精确引用'
+  );
+
+  // 大模型搜索格式
+  const format2 = createCopyFormat(
+    data.copyFormats.llmSearch,
+    '大模型搜索',
+    '直接复制给大模型'
+  );
+
+  copyFormats.appendChild(format1.element);
+  copyFormats.appendChild(format2.element);
+
+  copySection.appendChild(copyTitle);
+  copySection.appendChild(copyFormats);
+
+  currentSection.appendChild(copySection);
+
+  // 兄弟组件列表
+  const siblingsSection = document.createElement('div');
+
+  const siblingsTitle = document.createElement('div');
+  siblingsTitle.textContent = `🔍 平级组件 (${data.siblings.length})`;
+  siblingsTitle.style.cssText = `
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 12px;
+  `;
+
+  const siblingsList = document.createElement('div');
+  siblingsList.style.cssText = `
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  `;
+
+  if (data.siblings.length === 0) {
+    siblingsList.innerHTML = `
+      <div style="text-align: center; color: rgba(255, 255, 255, 0.5); padding: 20px;">
+        同一目录下没有其他组件
+      </div>
+    `;
+  } else {
+    for (const sibling of data.siblings) {
+      const siblingItem = document.createElement('div');
+      siblingItem.style.cssText = `
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      `;
+
+      siblingItem.addEventListener('mouseenter', () => {
+        siblingItem.style.background = 'rgba(255, 255, 255, 0.1)';
+        siblingItem.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+      });
+
+      siblingItem.addEventListener('mouseleave', () => {
+        siblingItem.style.background = 'rgba(255, 255, 255, 0.05)';
+        siblingItem.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+      });
+
+      siblingItem.addEventListener('click', () => {
+        removeSiblingComponentsModal();
+        jumpToComponent(sibling.name);
+      });
+
+      const siblingInfo = document.createElement('div');
+      siblingInfo.innerHTML = `
+        <div style="font-size: 14px; font-weight: 500; color: white; margin-bottom: 4px;">
+          ${sibling.name}
+        </div>
+        <div style="font-size: 11px; color: rgba(255, 255, 255, 0.5);">
+          ${sibling.file} • 第 ${sibling.line} - ${sibling.endLine} 行
+        </div>
+      `;
+
+      const jumpIcon = document.createElement('span');
+      jumpIcon.innerHTML = '↗️';
+      jumpIcon.style.cssText = `
+        font-size: 16px;
+        opacity: 0;
+        transition: opacity 0.2s;
+      `;
+
+      siblingItem.addEventListener('mouseenter', () => {
+        jumpIcon.style.opacity = '1';
+      });
+
+      siblingItem.addEventListener('mouseleave', () => {
+        jumpIcon.style.opacity = '0';
+      });
+
+      siblingItem.appendChild(siblingInfo);
+      siblingItem.appendChild(jumpIcon);
+      siblingsList.appendChild(siblingItem);
+    }
+  }
+
+  siblingsSection.appendChild(siblingsTitle);
+  siblingsSection.appendChild(siblingsList);
+
+  body.appendChild(currentSection);
+  body.appendChild(siblingsSection);
+
+  // 底部
+  const footer = document.createElement('div');
+  footer.style.cssText = `
+    padding: 16px 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+  `;
+
+  footer.innerHTML = `
+    <div>按 ESC 或点击背景关闭</div>
+    <div>${data.directory}</div>
+  `;
+
+  content.appendChild(header);
+  content.appendChild(body);
+  content.appendChild(footer);
+  modal.appendChild(content);
+
+  // 点击背景关闭
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      removeSiblingComponentsModal();
+    }
+  });
+
+  // ESC 关闭
+  const handleEscape = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      removeSiblingComponentsModal();
+      document.removeEventListener('keydown', handleEscape);
+    }
+  };
+  document.addEventListener('keydown', handleEscape);
+
+  document.body.appendChild(modal);
+  (state as any).siblingComponentsModal = modal;
+}
+
+/**
+ * 创建复制格式元素
+ */
+function createCopyFormat(text: string, _label: string, _description: string) {
+  const container = document.createElement('div');
+  container.style.cssText = `
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  `;
+
+  const textElement = document.createElement('div');
+  textElement.style.cssText = `
+    flex: 1;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+    font-size: 11px;
+    color: white;
+    word-break: break-all;
+  `;
+  textElement.textContent = text;
+
+  const copyButton = document.createElement('button');
+  copyButton.innerHTML = '📋 复制';
+  copyButton.style.cssText = `
+    background: rgba(16, 185, 129, 0.2);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    color: #10b981;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  `;
+
+  copyButton.addEventListener('mouseenter', () => {
+    copyButton.style.background = 'rgba(16, 185, 129, 0.3)';
+    copyButton.style.borderColor = 'rgba(16, 185, 129, 0.6)';
+  });
+
+  copyButton.addEventListener('mouseleave', () => {
+    copyButton.style.background = 'rgba(16, 185, 129, 0.2)';
+    copyButton.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+  });
+
+  copyButton.addEventListener('click', () => {
+    navigator.clipboard.writeText(text);
+    copyButton.innerHTML = '✅ 已复制';
+    setTimeout(() => {
+      copyButton.innerHTML = '📋 复制';
+    }, 1500);
+  });
+
+  container.appendChild(textElement);
+  container.appendChild(copyButton);
+
+  return { element: container };
+}
+
+/**
+ * 移除兄弟组件模态框
+ */
+function removeSiblingComponentsModal() {
+  const modal = (state as any).siblingComponentsModal;
+  if (modal) {
+    modal.remove();
+    (state as any).siblingComponentsModal = null;
+  }
+}
+
+/**
+ * 显示兄弟组件错误提示
+ */
+function showSiblingComponentsError(componentName: string, error: string) {
+  const toast = document.createElement('div');
+  toast.innerHTML = `
+    <div style="font-weight: bold; margin-bottom: 4px;">❌ 获取兄弟组件失败</div>
+    <div style="font-size: 11px; opacity: 0.9;">&lt;${componentName} /&gt;</div>
+    <div style="font-size: 10px; opacity: 0.7; margin-top: 4px;">${error}</div>
   `;
   toast.style.cssText = `
     position: fixed;
