@@ -646,7 +646,7 @@ export class AssetsService {
             method: 'POST',
             headers,
             body: JSON.stringify(body),
-            signal: AbortSignal.timeout(30000), // 30 second timeout per model
+            signal: AbortSignal.timeout(60000), // 60秒超时，单个模型验证最多1分钟
           });
 
           const latencyMs = Date.now() - startTime;

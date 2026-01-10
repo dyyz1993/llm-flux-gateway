@@ -52,7 +52,7 @@ const DEFAULTS: SystemConfigSchema = {
   rateLimitEnabled: false,
   rateLimitRequests: 100,
   rateLimitWindow: 60,
-  requestTimeout: 120,
+  requestTimeout: 300,
 
   // Monitoring
   healthCheckInterval: 60,

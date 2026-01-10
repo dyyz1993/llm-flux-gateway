@@ -5,6 +5,7 @@
  * Returns raw SSE text streams for external parsing
  */
 
+import { config } from '../../shared/config';
 import type { ProtocolTranspiler } from '../../module-protocol-transpiler';
 import type { VendorType } from '../../module-protocol-transpiler/interfaces';
 import { writeFile, mkdir } from 'node:fs/promises';
@@ -263,6 +264,7 @@ export class UpstreamService {
         ...body,
         stream: true,
       }),
+      signal: AbortSignal.timeout(config.requestTimeout * 1000),
     });
 
     if (!response.ok) {
@@ -487,6 +489,7 @@ export class UpstreamService {
         ...body,
         stream: false,
       }),
+      signal: AbortSignal.timeout(config.requestTimeout * 1000),
     });
 
     if (!response.ok) {

@@ -82,18 +82,32 @@ export class SystemConfigService {
   /**
    * Set a config value
    */
-  async setConfig(key: string, value: any, _dataType: string): Promise<void> {
+  async setConfig(key: string, value: any, dataType: string, category?: string): Promise<void> {
     const now = Math.floor(Date.now() / 1000);
     const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
 
-    queryRun(
-      `INSERT INTO system_config (key, value, updated_at)
-       VALUES (?, ?, ?)
-       ON CONFLICT(key) DO UPDATE SET
-         value = excluded.value,
-         updated_at = excluded.updated_at`,
-      [key, stringValue, now]
-    );
+    if (category) {
+      queryRun(
+        `INSERT INTO system_config (key, value, data_type, category, updated_at)
+         VALUES (?, ?, ?, ?, ?)
+         ON CONFLICT(key) DO UPDATE SET
+           value = excluded.value,
+           data_type = excluded.data_type,
+           category = excluded.category,
+           updated_at = excluded.updated_at`,
+        [key, stringValue, dataType, category, now]
+      );
+    } else {
+      queryRun(
+        `INSERT INTO system_config (key, value, data_type, updated_at)
+         VALUES (?, ?, ?, ?)
+         ON CONFLICT(key) DO UPDATE SET
+           value = excluded.value,
+           data_type = excluded.data_type,
+           updated_at = excluded.updated_at`,
+        [key, stringValue, dataType, now]
+      );
+    }
   }
 
   /**
@@ -101,18 +115,29 @@ export class SystemConfigService {
    */
   async updateConfigs(updates: Record<string, any>): Promise<void> {
     const now = Math.floor(Date.now() / 1000);
+    const runtimeKeys = require('../../shared/config').RUNTIME_CONFIG_KEYS;
 
     for (const [key, value] of Object.entries(updates)) {
       const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
+      const configInfo = runtimeKeys[key as keyof typeof runtimeKeys];
 
-      queryRun(
-        `INSERT INTO system_config (key, value, updated_at)
-         VALUES (?, ?, ?)
-         ON CONFLICT(key) DO UPDATE SET
-           value = excluded.value,
-           updated_at = excluded.updated_at`,
-        [key, stringValue, now]
-      );
+      if (configInfo) {
+        queryRun(
+          `INSERT INTO system_config (key, value, data_type, category, updated_at)
+           VALUES (?, ?, ?, ?, ?)
+           ON CONFLICT(key) DO UPDATE SET
+             value = excluded.value,
+             updated_at = excluded.updated_at`,
+          [key, stringValue, configInfo.dataType, configInfo.category, now]
+        );
+      } else {
+        queryRun(
+          `UPDATE system_config 
+           SET value = ?, updated_at = ?
+           WHERE key = ?`,
+          [stringValue, now, key]
+        );
+      }
     }
   }
 
