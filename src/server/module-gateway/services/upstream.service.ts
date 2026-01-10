@@ -6,6 +6,7 @@
  */
 
 import { config } from '../../shared/config';
+import { systemConfigService } from '../../module-system/services/system-config.service';
 import type { ProtocolTranspiler } from '../../module-protocol-transpiler';
 import type { VendorType } from '../../module-protocol-transpiler/interfaces';
 import { writeFile, mkdir } from 'node:fs/promises';
@@ -254,6 +255,13 @@ export class UpstreamService {
 
     console.log('[Upstream] Starting stream request to:', url);
 
+    // Get dynamic timeout from config (default 120s)
+    const baseTimeout = await systemConfigService.getEffectiveValue<number>('request_timeout') || config.requestTimeout;
+    
+    // For streaming, we use a much larger timeout (default 10 minutes) to allow for long generations
+    // but still have a safety net to prevent hanging connections
+    const streamTimeout = Math.max(baseTimeout * 5, 600);
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -264,7 +272,7 @@ export class UpstreamService {
         ...body,
         stream: true,
       }),
-      signal: AbortSignal.timeout(config.requestTimeout * 1000),
+      signal: AbortSignal.timeout(streamTimeout * 1000),
     });
 
     if (!response.ok) {
@@ -479,6 +487,9 @@ export class UpstreamService {
   }> {
     const { url, apiKey, body } = options;
 
+    // Get dynamic timeout from config (default 120s)
+    const timeout = await systemConfigService.getEffectiveValue<number>('request_timeout') || config.requestTimeout;
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -489,7 +500,7 @@ export class UpstreamService {
         ...body,
         stream: false,
       }),
-      signal: AbortSignal.timeout(config.requestTimeout * 1000),
+      signal: AbortSignal.timeout(timeout * 1000),
     });
 
     if (!response.ok) {
