@@ -12,7 +12,7 @@ import type { VendorType } from '../../module-protocol-transpiler/interfaces';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { existsSync } from 'node:fs';
-import { Agent } from 'undici';
+import { Agent, request } from 'undici';
 
 
 // ============================================
@@ -276,13 +276,8 @@ export class UpstreamService {
 
     console.log('[Upstream] Starting stream request to:', url);
 
-    // Get dynamic timeout from config (default 120s)    
-    // For streaming, we DON'T use a total timeout signal because it's too restrictive for long generations.
-    // Instead, we rely on the underlying connection and the stream's own lifecycle.
-    // The previous AbortSignal.timeout(streamTimeout * 1000) was likely causing the 70s disconnects
-    // if the framework or environment has a lower internal threshold.
-    
-    const response = await fetch(url, {
+    // Using undici.request instead of fetch for more robust timeout control in Docker/ESM
+    const { statusCode, body: responseBody } = await request(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -294,39 +289,31 @@ export class UpstreamService {
         ...body,
         stream: true,
       }),
-      // @ts-ignore - dispatcher is supported in undici-based fetch
       dispatcher: this.persistentAgent,
-      // signal: AbortSignal.timeout(streamTimeout * 1000), // REMOVED to prevent premature termination
+      // Explicitly set very long timeouts at the request level
+      headersTimeout: 600000, // 10 minutes
+      bodyTimeout: 0,         // No timeout for the stream body itself
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Upstream API error: ${response.status} ${errorText}`);
+    if (statusCode >= 400) {
+      const errorText = await responseBody.text();
+      throw new Error(`Upstream API error: ${statusCode} ${errorText}`);
     }
 
-    if (!response.body) {
+    if (!responseBody) {
       throw new Error('No response body');
     }
 
     // Read and yield raw SSE text lines
-    const reader = response.body.getReader();
+    // undici body is already a ReadableStream or can be consumed as one
     const decoder = new TextDecoder();
     let buffer = '';
 
     try {
-      while (true) {
-        const { done, value } = await reader.read();
-
-        if (done) {
-          // Flush any remaining data in buffer
-          if (buffer.trim()) {
-            yield buffer;
-          }
-          break;
-        }
-
+      // @ts-ignore - undici body is a Dispatcher.ResponseData['body'] which has symbol-based async iterator
+      for await (const chunk of responseBody) {
         // Decode chunk and add to buffer
-        buffer += decoder.decode(value, { stream: true });
+        buffer += decoder.decode(chunk as Buffer, { stream: true });
 
         // Process complete SSE lines
         const lines = buffer.split('\n');
@@ -339,8 +326,14 @@ export class UpstreamService {
           }
         }
       }
-    } finally {
-      reader.releaseLock();
+      
+      // Flush any remaining data in buffer
+      if (buffer.trim()) {
+        yield buffer;
+      }
+    } catch (err: any) {
+      console.error('[Upstream] Stream consumption error:', err);
+      throw err;
     }
   }
 
@@ -518,8 +511,8 @@ export class UpstreamService {
     // especially for reasoning models that may take a long time to respond
     const timeout = Math.max(baseTimeout, 300);
 
-    const response = await fetch(url, {
-      method: 'POST',
+    const { statusCode, body: responseBody } = await request(url, {
+      method: 'POST', 
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
@@ -530,17 +523,18 @@ export class UpstreamService {
         ...body,
         stream: false,
       }),
-      // @ts-ignore - dispatcher is supported in undici-based fetch
       dispatcher: this.persistentAgent,
-      signal: AbortSignal.timeout(timeout * 1000),
+      headersTimeout: timeout * 1000,
+      bodyTimeout: timeout * 1000,
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Upstream API error: ${response.status} ${errorText}`);
+    if (statusCode >= 400) {
+      const errorText = await responseBody.text();
+      throw new Error(`Upstream API error: ${statusCode} ${errorText}`);
     }
 
-    return await response.json();
+    const data = await responseBody.json() as any;
+    return data;
   }
 }
 
