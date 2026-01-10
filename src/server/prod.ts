@@ -29,7 +29,24 @@ app.use('/*', serveStatic({
 const port = Number(process.env.PORT) || 3000;
 console.log(`服务器启动在端口: ${port}`);
 
-serve({
+const server = serve({
   fetch: app.fetch,
   port
 });
+
+// Configure incoming server timeouts
+// Node.js default headersTimeout is 60s, which often causes disconnects at ~70s
+// when the server is busy or waiting for slow upstream responses.
+if ('headersTimeout' in server) {
+  (server as any).headersTimeout = 600000; // 10 minutes
+}
+if ('requestTimeout' in server) {
+  (server as any).requestTimeout = 600000; // 10 minutes
+}
+if ('keepAliveTimeout' in server) {
+  (server as any).keepAliveTimeout = 60000; // 1 minute
+}
+// Set general socket timeout
+if (typeof server.setTimeout === 'function') {
+  server.setTimeout(600000); // 10 minutes
+}

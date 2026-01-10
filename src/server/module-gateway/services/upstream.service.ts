@@ -12,6 +12,8 @@ import type { VendorType } from '../../module-protocol-transpiler/interfaces';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { existsSync } from 'node:fs';
+import { Agent } from 'undici';
+
 
 // ============================================
 // Type Definitions
@@ -243,7 +245,26 @@ export interface UsageInfo {
   thinkingTokens?: number;
 }
 
+/**
+ * 上游请求服务
+ * 处理发往各 LLM 供应商的实际 API 请求
+ */
 export class UpstreamService {
+  private persistentAgent: Agent;
+
+  constructor() {
+    /**
+     * 创建持久化 Agent 以处理长连接
+     * 显式设置超长的 headersTimeout 和 bodyTimeout 以防止 Node.js 默认在 60s/70s 断开连接
+     */
+    this.persistentAgent = new Agent({
+      headersTimeout: 600000, // 10 分钟
+      bodyTimeout: 600000,    // 10 分钟
+      connectTimeout: 60000,  // 1 分钟
+      keepAliveTimeout: 60000, // 1 分钟
+    });
+  }
+
   /**
    * Make a streaming request to upstream API
    *
@@ -273,6 +294,8 @@ export class UpstreamService {
         ...body,
         stream: true,
       }),
+      // @ts-ignore - dispatcher is supported in undici-based fetch
+      dispatcher: this.persistentAgent,
       // signal: AbortSignal.timeout(streamTimeout * 1000), // REMOVED to prevent premature termination
     });
 
@@ -507,6 +530,8 @@ export class UpstreamService {
         ...body,
         stream: false,
       }),
+      // @ts-ignore - dispatcher is supported in undici-based fetch
+      dispatcher: this.persistentAgent,
       signal: AbortSignal.timeout(timeout * 1000),
     });
 
