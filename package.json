@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "npm run build:client && npm run build:server",
     "build:client": "vite build",
-    "build:server": "esbuild src/server/prod.ts --bundle --platform=node --format=esm --outfile=dist-server/index.js --external:better-sqlite3 --external:@hono/node-server",
+    "build:server": "esbuild src/server/prod.ts --bundle --platform=node --format=esm --outfile=dist-server/index.js --external:better-sqlite3 --external:@hono/node-server --external:undici",
     "start": "node dist-server/index.js",
     "preview": "vite preview",
     "seed": "tsx scripts/seed-data.ts",
