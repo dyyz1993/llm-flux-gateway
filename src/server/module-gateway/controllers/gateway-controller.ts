@@ -258,6 +258,13 @@ async function handleGatewayRequest(
     // Step 8: Forward to upstream API
     if (stream) {
       console.log('[Gateway] Starting streaming request...');
+      
+      // Set headers for streaming to prevent any intermediate buffering or timeouts
+      c.header('Content-Type', 'text/event-stream');
+      c.header('Cache-Control', 'no-cache');
+      c.header('Connection', 'keep-alive');
+      c.header('X-Accel-Buffering', 'no'); // Disable Nginx buffering
+      
       // Streaming response
       return streamText(c, async (stream) => {
         let promptTokens = 0;

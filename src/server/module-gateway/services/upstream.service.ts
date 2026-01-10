@@ -255,13 +255,12 @@ export class UpstreamService {
 
     console.log('[Upstream] Starting stream request to:', url);
 
-    // Get dynamic timeout from config (default 120s)
-    const baseTimeout = await systemConfigService.getEffectiveValue<number>('request_timeout') || config.requestTimeout;
+    // Get dynamic timeout from config (default 120s)    
+    // For streaming, we DON'T use a total timeout signal because it's too restrictive for long generations.
+    // Instead, we rely on the underlying connection and the stream's own lifecycle.
+    // The previous AbortSignal.timeout(streamTimeout * 1000) was likely causing the 70s disconnects
+    // if the framework or environment has a lower internal threshold.
     
-    // For streaming, we use a much larger timeout (default 10 minutes) to allow for long generations
-    // but still have a safety net to prevent hanging connections
-    const streamTimeout = Math.max(baseTimeout * 5, 600);
-
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -272,7 +271,7 @@ export class UpstreamService {
         ...body,
         stream: true,
       }),
-      signal: AbortSignal.timeout(streamTimeout * 1000),
+      // signal: AbortSignal.timeout(streamTimeout * 1000), // REMOVED to prevent premature termination
     });
 
     if (!response.ok) {
