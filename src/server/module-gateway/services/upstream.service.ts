@@ -266,6 +266,8 @@ export class UpstreamService {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
+        'Connection': 'keep-alive',
+        'Accept': 'text/event-stream',
       },
       body: JSON.stringify({
         ...body,
@@ -487,13 +489,19 @@ export class UpstreamService {
     const { url, apiKey, body } = options;
 
     // Get dynamic timeout from config (default 120s)
-    const timeout = await systemConfigService.getEffectiveValue<number>('request_timeout') || config.requestTimeout;
+    const baseTimeout = await systemConfigService.getEffectiveValue<number>('request_timeout') || config.requestTimeout;
+    
+    // For non-streaming requests, we allow a generous timeout (default 5 minutes)
+    // especially for reasoning models that may take a long time to respond
+    const timeout = Math.max(baseTimeout, 300);
 
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
+        'Connection': 'keep-alive',
+        'Accept': 'application/json',
       },
       body: JSON.stringify({
         ...body,
