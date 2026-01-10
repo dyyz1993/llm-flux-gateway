@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { setGlobalDispatcher, Agent } from 'undici';
 import { corsMiddleware } from './shared/middleware/cors';
 import { loggerMiddleware } from './shared/middleware/logger';
 import { errorLoggerMiddleware } from './shared/middleware/logger';
@@ -16,6 +17,15 @@ import systemRouter from './module-system/main';
 import authRouter from './module-auth';
 import styleJumpRouter from './module-style-jump/routes/style-jump-routes';
 import { vendorsService } from './module-vendors/services/vendors.service';
+
+// Configure global fetch agent to prevent 60s/70s timeouts (undici defaults)
+// This is critical for LLM reasoning models that take a long time to start responding
+setGlobalDispatcher(new Agent({
+  headersTimeout: 600000, // 10 minutes
+  bodyTimeout: 600000,    // 10 minutes
+  connectTimeout: 60000,  // 1 minute
+  keepAliveTimeout: 60000, // 1 minute
+}));
 
 // Initialize database
 await initDatabase();
