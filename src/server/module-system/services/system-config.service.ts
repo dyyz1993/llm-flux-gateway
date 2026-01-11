@@ -98,14 +98,19 @@ export class SystemConfigService {
         [key, stringValue, dataType, category, now]
       );
     } else {
+      // If category is not provided, try to find existing config's category
+      const existing = queryFirst<any>('SELECT category FROM system_config WHERE key = ?', [key]);
+      const finalCategory = category || (existing ? existing.category : 'general');
+
       queryRun(
-        `INSERT INTO system_config (key, value, data_type, updated_at)
-         VALUES (?, ?, ?, ?)
+        `INSERT INTO system_config (key, value, data_type, category, updated_at)
+         VALUES (?, ?, ?, ?, ?)
          ON CONFLICT(key) DO UPDATE SET
            value = excluded.value,
            data_type = excluded.data_type,
+           category = excluded.category,
            updated_at = excluded.updated_at`,
-        [key, stringValue, dataType, now]
+        [key, stringValue, dataType, finalCategory, now]
       );
     }
   }
@@ -127,6 +132,7 @@ export class SystemConfigService {
            VALUES (?, ?, ?, ?, ?)
            ON CONFLICT(key) DO UPDATE SET
              value = excluded.value,
+             category = excluded.category,
              updated_at = excluded.updated_at`,
           [key, stringValue, configInfo.dataType, configInfo.category, now]
         );
