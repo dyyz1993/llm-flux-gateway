@@ -269,8 +269,26 @@ export const LogExplorer: React.FC = () => {
 
     const unsubscribe = realtimeLogsService.subscribe((newLog) => {
       setLogs(prevLogs => {
-        if (prevLogs.some(l => l.id === newLog.id)) return prevLogs;
+        // If log already exists, update it (important for "requesting" -> "completed" transition)
+        const index = prevLogs.findIndex(l => l.id === newLog.id);
+        if (index !== -1) {
+          const nextLogs = [...prevLogs];
+          nextLogs[index] = newLog;
+          
+          // Also update selected log if it's the one being updated
+          setSelectedLog(prevSelected => {
+            if (prevSelected && prevSelected.id === newLog.id) {
+              // Merge existing full data with new summary data if needed
+              // Usually the summary is enough for the list, but for details we might want to keep the full content
+              return { ...prevSelected, ...newLog };
+            }
+            return prevSelected;
+          });
+          
+          return nextLogs;
+        }
 
+        // New log
         setNewLogIds(prev => {
           const next = new Set(prev).add(newLog.id);
           saveNewLogIds(next);

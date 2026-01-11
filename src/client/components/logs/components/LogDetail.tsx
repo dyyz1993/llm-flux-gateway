@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  Code, CheckCircle, XCircle, Key, Settings, MessageSquare, Cpu, Eye, Box, ArrowRight, Bot, Terminal
+  Code, CheckCircle, XCircle, Key, Settings, MessageSquare, Cpu, Eye, Box, ArrowRight, Bot, Terminal, Loader2
 } from 'lucide-react';
 import { RequestLog, ApiKey, Vendor, Role, Message } from '@shared/types';
 import { TOOL_TEMPLATES } from '@client/components/playground/toolTemplates';
@@ -212,12 +212,20 @@ export const LogDetail: React.FC<LogDetailProps> = ({ selectedLog, apiKeys, vend
             </div>
             <div className="text-right">
               <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${
-                log.statusCode === 200
-                  ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                  : 'bg-red-500/10 text-red-500 border-red-500/20'
+                log.statusCode === 0
+                  ? 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20 animate-pulse'
+                  : log.statusCode >= 200 && log.statusCode < 300
+                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                    : 'bg-red-500/10 text-red-500 border-red-500/20'
               }`}>
-                {log.statusCode === 200 ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
-                {log.statusCode} {log.statusCode === 200 ? 'OK' : 'Error'}
+                {log.statusCode === 0 ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : log.statusCode >= 200 && log.statusCode < 300 ? (
+                  <CheckCircle className="w-3 h-3" />
+                ) : (
+                  <XCircle className="w-3 h-3" />
+                )}
+                {log.statusCode === 0 ? 'Requesting...' : `${log.statusCode} ${log.statusCode >= 200 && log.statusCode < 300 ? 'OK' : 'Error'}`}
               </div>
             </div>
           </div>

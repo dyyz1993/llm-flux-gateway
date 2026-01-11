@@ -1,9 +1,9 @@
 import React, { useRef, useEffect } from 'react';
 import {
-  Search, Filter, CheckCircle, XCircle, MessageSquare, Key, Bell, Eye, Star, ChevronDown, Settings, Trash2
+  Search, Filter, XCircle, MessageSquare, Key, Bell, Eye, Star, ChevronDown, Settings, Trash2
 } from 'lucide-react';
 import { RequestLog, ApiKey, Vendor } from '@shared/types';
-import { ProtocolBadge, VendorBadge, StreamingBadge } from './badges';
+import { ProtocolBadge, VendorBadge, StreamingBadge, RequestStatusBadge } from './badges';
 import { isStreamingRequest } from '../utils/contentFormatters';
 
 interface LogListProps {
@@ -368,7 +368,9 @@ export const LogList: React.FC<LogListProps> = ({
               className={`p-4 rounded-xl border cursor-pointer transition-all ${
                 selectedLog?.id === log.id
                   ? 'bg-[#1a1a1a] border-indigo-600/50 shadow-lg shadow-indigo-900/10'
-                  : 'bg-[#0a0a0a] border-[#262626] hover:border-[#404040]'
+                  : log.statusCode === 0
+                    ? 'bg-indigo-500/5 border-indigo-500/20'
+                    : 'bg-[#0a0a0a] border-[#262626] hover:border-[#404040]'
               }`}
             >
               <div className="flex justify-between items-start mb-2">
@@ -385,7 +387,7 @@ export const LogList: React.FC<LogListProps> = ({
                   >
                     <Star className={`w-3.5 h-3.5 ${log.isFavorited ? 'fill-current' : ''}`} />
                   </button>
-                  {log.statusCode === 200 ? <CheckCircle className="w-3.5 h-3.5 text-emerald-500" /> : <XCircle className="w-3.5 h-3.5 text-red-500" />}
+                  <RequestStatusBadge statusCode={log.statusCode} />
                   <span className="text-xs font-mono text-gray-500">#{log.id!.slice(-6)}</span>
                   {newLogIds.has(log.id) && (
                     <span className="flex items-center gap-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 text-[10px] rounded-full border border-indigo-500/20">
@@ -393,24 +395,24 @@ export const LogList: React.FC<LogListProps> = ({
                     </span>
                   )}
                 </div>
-                <span className="text-[10px] text-gray-600">{new Date(log.timestamp * 1000).toLocaleTimeString()}</span>
-              </div>
+              <span className="text-[10px] text-gray-600">{new Date(log.timestamp * 1000).toLocaleTimeString()}</span>
+            </div>
 
-              <div className="flex items-center gap-2 mb-2 flex-wrap">
-                <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
-                  log.method === 'POST' ? 'bg-blue-500/10 text-blue-400' : 'bg-gray-800 text-gray-400'
-                }`}>{log.method}</span>
-                <span className="text-xs font-mono text-gray-400 truncate">{log.finalModel}</span>
-                {log.errorMessage && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20 flex items-center gap-1">
-                    <XCircle className="w-2.5 h-2.5" /> Error
-                  </span>
-                )}
-                {/* Protocol, Vendor, and Streaming Badges */}
-                <ProtocolBadge format={log.originalResponseFormat} />
-                <VendorBadge modelName={log.originalModel} vendors={vendors} />
-                <StreamingBadge isStreaming={isStreamingRequest(log)} />
-              </div>
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                log.method === 'POST' ? 'bg-blue-500/10 text-blue-400' : 'bg-gray-800 text-gray-400'
+              }`}>{log.method}</span>
+              <span className="text-xs font-mono text-gray-400 truncate">{log.finalModel}</span>
+              {log.errorMessage && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20 flex items-center gap-1">
+                  <XCircle className="w-2.5 h-2.5" /> Error
+                </span>
+              )}
+              {/* Protocol, Vendor, and Streaming Badges */}
+              <ProtocolBadge format={log.originalResponseFormat} />
+              <VendorBadge modelName={log.originalModel} vendors={vendors} />
+              <StreamingBadge isStreaming={isStreamingRequest(log)} />
+            </div>
 
               {/* Optional: Show Key Name and baseUrl in list item if filtering is "All" */}
               {!selectedApiKey && (

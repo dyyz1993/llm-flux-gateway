@@ -123,6 +123,15 @@ export class RequestLogService {
       ]
     );
 
+    // 📢 Broadcast the newly created log to all SSE clients
+    const logFromDb = queryFirst<any>(`SELECT * FROM request_logs WHERE id = ?`, [id]);
+    if (logFromDb) {
+      const summaryLog = this.mapDbLogToSummaryRequestLog(logFromDb);
+      sseBroadcasterService.broadcastNewLog(summaryLog).catch((error) => {
+        console.error('[RequestLogService] Failed to broadcast new log:', error);
+      });
+    }
+
     return id;
   }
 

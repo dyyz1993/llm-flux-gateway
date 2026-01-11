@@ -5,7 +5,7 @@ description: >
   Use when: Creating new skills, refactoring existing skills, writing skill documentation,
   or when user asks about skill structure, SKILL.md format, or skill organization.
   Supports: Skill design, constraint-based documentation, progressive disclosure patterns.
-allowed-tools: [Read, Write, Edit, Glob, Grep]
+allowed-tools: [SubTask, Context:fork, Read, Write, Edit, Glob, Grep]
 ---
 
 # Skill Authoring
