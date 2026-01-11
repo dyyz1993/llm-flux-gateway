@@ -26,11 +26,13 @@ const router = new Hono();
 /**
  * Unified gateway request handler supporting multiple API formats
  */
-async function handleGatewayRequest(
+export async function handleGatewayRequest(
   c: any,
-  sourceFormat: VendorType
+  sourceFormat: VendorType,
+  manualBody?: any,
+  manualApiKeyId?: string
 ): Promise<Response> {
-  const apiKeyId = c.get('apiKeyId');
+  const apiKeyId = manualApiKeyId || c.get('apiKeyId');
   // const apiKey = c.get('apiKey');
 
   // Generate unique request ID for this request
@@ -40,39 +42,41 @@ async function handleGatewayRequest(
   const transformationLogger = await createTransformationLogger(requestId);
 
   // Parse request body with enhanced error handling
-  let body;
-  try {
-    body = await c.req.json();
-  } catch (error: any) {
-    // Get raw body for debugging
-    const rawBody = await c.req.text();
+  let body = manualBody;
+  if (!body) {
+    try {
+      body = await c.req.json();
+    } catch (error: any) {
+      // Get raw body for debugging
+      const rawBody = await c.req.text();
 
-    console.error('[Gateway] JSON Parse Error:', {
-      requestId,
-      errorMessage: error.message,
-      errorPosition: error.position,
-      rawBodyLength: rawBody.length,
-      rawBodyPreview: rawBody.slice(0, 500),
-      // Show context around error position
-      errorContext: error.position
-        ? {
-            beforeError: rawBody.slice(Math.max(0, error.position - 50), error.position),
-            atError: rawBody.slice(error.position, error.position + 10),
-            afterError: rawBody.slice(error.position + 10, error.position + 60),
-          }
-        : null,
-    });
+      console.error('[Gateway] JSON Parse Error:', {
+        requestId,
+        errorMessage: error.message,
+        errorPosition: error.position,
+        rawBodyLength: rawBody.length,
+        rawBodyPreview: rawBody.slice(0, 500),
+        // Show context around error position
+        errorContext: error.position
+          ? {
+              beforeError: rawBody.slice(Math.max(0, error.position - 50), error.position),
+              atError: rawBody.slice(error.position, error.position + 10),
+              afterError: rawBody.slice(error.position + 10, error.position + 60),
+            }
+          : null,
+      });
 
-    return c.json({
-      success: false,
-      error: `Invalid JSON in request body at position ${error.position}: ${error.message}`,
-      details: {
-        position: error.position,
-        context: error.position
-          ? rawBody.slice(Math.max(0, error.position - 50), error.position + 60)
-          : rawBody.slice(0, 200),
-      },
-    }, 400);
+      return c.json({
+        success: false,
+        error: `Invalid JSON in request body at position ${error.position}: ${error.message}`,
+        details: {
+          position: error.position,
+          context: error.position
+            ? rawBody.slice(Math.max(0, error.position - 50), error.position + 60)
+            : rawBody.slice(0, 200),
+        },
+      }, 400);
+    }
   }
 
   console.log('[Gateway] Received request in format:', sourceFormat, {
@@ -244,12 +248,16 @@ async function handleGatewayRequest(
     routeId: match.route.id,
     originalModel: model,
     finalModel: rewriteResult.rewrittenRequest.model,
+    method: c.req.method,
+    path: c.req.path,
     messages,
     overwrittenAttributes: rewriteResult.overwrittenAttributes,
     requestTools: requestToolsValue,
     // ⭐ FIX: Store all parameters (temperature, maxTokens, topP, etc.) in request_params
     requestParams,
     baseUrl: upstreamRequest.url,
+    originalRequestFormat: sourceFormat,
+    originalRequestRaw: JSON.stringify(body), // Capture 100% raw body
   });
 
   const startTime = Date.now();

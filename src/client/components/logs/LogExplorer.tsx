@@ -4,7 +4,8 @@ import {
   toggleLogFavorite, 
   clearAllNonFavoritedLogs, 
   getFavoriteLogs,
-  getRequestLogById 
+  getRequestLogById,
+  retryRequestLog 
 } from '@client/services/analyticsService';
 import { realtimeLogsService } from '@client/services/realtimeLogsService';
 import { fetchVendors, fetchKeys } from '@client/services/apiClient';
@@ -214,6 +215,22 @@ export const LogExplorer: React.FC = () => {
     }
   };
 
+  // Handle retry request
+  const handleRetry = async (logId: string) => {
+    try {
+      const response = await retryRequestLog(logId);
+      
+      if (!response.success) {
+        console.error('[LogExplorer] Retry failed:', response);
+        alert('Retry failed. Please check backend logs.');
+      }
+      // Note: We don't need to manually update logs here because SSE will push the new log
+    } catch (error: any) {
+      console.error('[LogExplorer] Retry error:', error);
+      alert(`Retry failed: ${error.message || 'Unknown error'}`);
+    }
+  };
+
   // Load API Keys on mount
   useEffect(() => {
     fetchKeys()
@@ -356,6 +373,7 @@ export const LogExplorer: React.FC = () => {
           }
         }}
         onToggleFavorite={handleToggleFavorite}
+        onRetry={handleRetry}
         onClearNewLogs={clearNewLogs}
         onClearReadLogs={clearReadLogs}
         onClearHistory={handleClearHistory}
@@ -364,6 +382,7 @@ export const LogExplorer: React.FC = () => {
         selectedLog={selectedLog}
         apiKeys={apiKeys}
         vendors={vendors}
+        onRetry={handleRetry}
       />
     </div>
   );

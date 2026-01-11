@@ -1,6 +1,6 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
-  Search, Filter, XCircle, MessageSquare, Key, Bell, Eye, Star, ChevronDown, Settings, Trash2
+  Search, Filter, XCircle, MessageSquare, Key, Bell, Eye, Star, ChevronDown, Settings, Trash2, RefreshCw, Loader2
 } from 'lucide-react';
 import { RequestLog, ApiKey, Vendor } from '@shared/types';
 import { ProtocolBadge, VendorBadge, StreamingBadge, RequestStatusBadge } from './badges';
@@ -44,6 +44,7 @@ interface LogListProps {
   }) => void;
   onLogSelect: (log: RequestLog) => void;
   onToggleFavorite: (logId: string) => void;
+  onRetry: (logId: string) => Promise<void>;
   onClearNewLogs: () => void;
   onClearReadLogs: () => void;
   onClearHistory: () => void;
@@ -75,11 +76,13 @@ export const LogList: React.FC<LogListProps> = ({
   onFilterChange,
   onLogSelect,
   onToggleFavorite,
+  onRetry,
   onClearNewLogs,
   onClearReadLogs,
   onClearHistory,
 }) => {
   const clearMenuRef = useRef<HTMLDivElement>(null);
+  const [retryingIds, setRetryingIds] = useState<Set<string>>(new Set());
 
   // Close clear menu when clicking outside
   useEffect(() => {
@@ -387,6 +390,36 @@ export const LogList: React.FC<LogListProps> = ({
                   >
                     <Star className={`w-3.5 h-3.5 ${log.isFavorited ? 'fill-current' : ''}`} />
                   </button>
+
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      if (retryingIds.has(log.id)) return;
+                      
+                      setRetryingIds(prev => new Set(prev).add(log.id));
+                      try {
+                        await onRetry(log.id);
+                      } finally {
+                        setRetryingIds(prev => {
+                          const next = new Set(prev);
+                          next.delete(log.id);
+                          return next;
+                        });
+                      }
+                    }}
+                    disabled={retryingIds.has(log.id)}
+                    className={`p-1 rounded hover:bg-[#333] transition-colors ${
+                      retryingIds.has(log.id) ? 'text-indigo-400' : 'text-gray-600 hover:text-indigo-400'
+                    }`}
+                    title="Retry this request"
+                  >
+                    {retryingIds.has(log.id) ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+
                   <RequestStatusBadge statusCode={log.statusCode} />
                   <span className="text-xs font-mono text-gray-500">#{log.id!.slice(-6)}</span>
                   {newLogIds.has(log.id) && (

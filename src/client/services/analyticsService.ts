@@ -196,3 +196,11 @@ export async function getRequestLogById(logId: string): Promise<RequestLog> {
   const response = await adminGet<{ success: boolean; data?: RequestLog }>(`/api/logs/${logId}`);
   return handleApiResponse<RequestLog>(response);
 }
+
+/**
+ * Retry a request log by ID
+ */
+export async function retryRequestLog(logId: string): Promise<{ success: boolean }> {
+  const response = await adminPost<{ success: boolean }>(`/api/logs/${logId}/retry`, {});
+  return response;
+}

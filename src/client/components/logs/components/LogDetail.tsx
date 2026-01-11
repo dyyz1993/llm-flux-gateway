@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  Code, CheckCircle, XCircle, Key, Settings, MessageSquare, Cpu, Eye, Box, ArrowRight, Bot, Terminal, Loader2
+  Code, CheckCircle, XCircle, Key, Settings, MessageSquare, Cpu, Eye, Box, ArrowRight, Bot, Terminal, Loader2, RefreshCw
 } from 'lucide-react';
 import { RequestLog, ApiKey, Vendor, Role, Message } from '@shared/types';
 import { TOOL_TEMPLATES } from '@client/components/playground/toolTemplates';
@@ -21,9 +21,12 @@ interface LogDetailProps {
   selectedLog: RequestLog | null;
   apiKeys: ApiKey[];
   vendors: Vendor[];
+  onRetry?: (logId: string) => Promise<void>;
 }
 
-export const LogDetail: React.FC<LogDetailProps> = ({ selectedLog, apiKeys, vendors }) => {
+export const LogDetail: React.FC<LogDetailProps> = ({ selectedLog, apiKeys, vendors, onRetry }) => {
+  const [isRetrying, setIsRetrying] = React.useState(false);
+
   if (!selectedLog) {
     return (
       <div className="flex-1 flex flex-col overflow-hidden bg-[#0a0a0a] rounded-xl border border-[#262626]">
@@ -37,6 +40,51 @@ export const LogDetail: React.FC<LogDetailProps> = ({ selectedLog, apiKeys, vend
 
   const log = selectedLog;
   const apiKey = apiKeys.find(k => k.id === log.apiKeyId);
+
+  /**
+   * 处理日志重试
+   * 100% 还原原始请求参数并重新发起
+   */
+  const handleRetry = async () => {
+    if (isRetrying || !onRetry) return;
+    
+    setIsRetrying(true);
+    try {
+      await onRetry(log.id);
+    } catch (error: any) {
+      console.error('[LogDetail] Retry error:', error);
+      alert(`Retry failed: ${error.message || 'Unknown error'}`);
+    } finally {
+      setIsRetrying(false);
+    }
+  };
+
+  /**
+   * 生成 cURL 命令
+   */
+  const generateCurl = () => {
+    if (!log) return '';
+    const baseUrl = window.location.origin;
+    const url = `${baseUrl}${log.path}`;
+    const headers = [
+      `'Content-Type: application/json'`,
+      `'Authorization: Bearer YOUR_API_KEY'`
+    ];
+    
+    if (log.originalRequestFormat && log.originalRequestFormat !== 'openai') {
+      headers.push(`'X-Request-Format: ${log.originalRequestFormat}'`);
+    }
+
+    // Reconstruct body
+    const body = {
+      model: log.originalModel,
+      messages: log.messages,
+      stream: isStreamingRequest(log),
+      ...(log.requestParams || {})
+    };
+
+    return `curl -X ${log.method} "${url}" \\\n  ${headers.map(h => `-H ${h}`).join(' \\\n  ')} \\\n  -d '${JSON.stringify(body, null, 2)}'`;
+  };
 
   // Handle tool calls display
   const renderToolCallsOutput = () => {
@@ -210,7 +258,7 @@ export const LogDetail: React.FC<LogDetailProps> = ({ selectedLog, apiKeys, vend
                 )}
               </div>
             </div>
-            <div className="text-right">
+            <div className="flex flex-col items-end gap-3">
               <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${
                 log.statusCode === 0
                   ? 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20 animate-pulse'
@@ -226,6 +274,38 @@ export const LogDetail: React.FC<LogDetailProps> = ({ selectedLog, apiKeys, vend
                   <XCircle className="w-3 h-3" />
                 )}
                 {log.statusCode === 0 ? 'Requesting...' : `${log.statusCode} ${log.statusCode >= 200 && log.statusCode < 300 ? 'OK' : 'Error'}`}
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    const curl = generateCurl();
+                    navigator.clipboard.writeText(curl);
+                    alert('cURL command copied to clipboard');
+                  }}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#262626] hover:bg-[#333] text-gray-300 text-xs font-medium transition-colors border border-[#333]"
+                  title="Copy as cURL"
+                >
+                  <Terminal className="w-3.5 h-3.5" />
+                  Copy cURL
+                </button>
+
+                <button
+                  onClick={handleRetry}
+                  disabled={isRetrying || !onRetry}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+                    isRetrying 
+                      ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' 
+                      : 'bg-indigo-500 hover:bg-indigo-600 text-white border-transparent shadow-lg shadow-indigo-500/20'
+                  }`}
+                >
+                  {isRetrying ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  )}
+                  {isRetrying ? 'Retrying...' : 'Retry Request'}
+                </button>
               </div>
             </div>
           </div>

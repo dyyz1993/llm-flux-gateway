@@ -12,6 +12,8 @@ export interface CreateLogParams {
   routeId: string | null;
   originalModel: string;
   finalModel: string;
+  method: string;
+  path: string;
   messages: any[];
   overwrittenAttributes: Record<string, { original: any; final: any }>;
   requestTools?: any[];
@@ -25,6 +27,8 @@ export interface CreateLogParams {
   requestParams?: any;
   overwrittenModel?: string;
   overwrittenFields?: any;
+  originalRequestFormat?: string;
+  originalRequestRaw?: string;
 }
 
 export interface UpdateLogParams {
@@ -91,8 +95,9 @@ export class RequestLogService {
         prompt_tokens, completion_tokens, total_tokens,
         latency_ms, status_code, timestamp,
         message_count, first_message, has_tools, tool_count,
-        request_params, overwritten_model, overwritten_fields
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        request_params, overwritten_model, overwritten_fields, 
+        original_request_format, original_request_raw
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         id,
@@ -100,8 +105,8 @@ export class RequestLogService {
         params.routeId,
         params.originalModel,
         params.finalModel,
-        'POST',
-        '/v1/chat/completions',
+        params.method || 'POST',
+        params.path || '/v1/chat/completions',
         JSON.stringify(params.messages),
         JSON.stringify(allOverwrittenAttributes),
         params.requestTools ? JSON.stringify(params.requestTools) : null,
@@ -120,6 +125,8 @@ export class RequestLogService {
         params.requestParams ? JSON.stringify(params.requestParams) : null,
         overwrittenModel || null,
         params.overwrittenFields ? JSON.stringify(params.overwrittenFields) : null,
+        params.originalRequestFormat || null,
+        params.originalRequestRaw || null,
       ]
     );
 
@@ -289,6 +296,7 @@ export class RequestLogService {
       hasTools: Boolean(log.has_tools),
       toolCount: log.tool_count || 0,
       isFavorited: Boolean(log.is_favorited),
+      originalRequestFormat: log.original_request_format,
       originalResponseFormat: log.original_response_format,
       // Provide empty placeholders for required fields to avoid client crashes
       messages: [],
@@ -338,7 +346,9 @@ export class RequestLogService {
       requestParams: log.request_params ? JSON.parse(log.request_params) : undefined,
       // Original Response (NEW)
       originalResponse: log.original_response,
+      originalRequestFormat: log.original_request_format,
       originalResponseFormat: log.original_response_format,
+      originalRequestRaw: log.original_request_raw,
       // Favorite
       isFavorited: Boolean(log.is_favorited),
     };

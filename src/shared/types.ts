@@ -168,10 +168,10 @@ export interface RequestLog {
   responseToolCalls?: ToolCall[]; // Tool calls from the response (if any)
   overwrittenAttributes: Record<string, { original: any; final: any }>;
 
-  // Original Response (NEW)
-  // Full upstream response JSON before any conversion
-  // Preserves API-specific features (thinking blocks, cache details, etc.)
+  // Original Data (NEW)
   originalResponse?: string;
+  originalRequestRaw?: string; // Full raw request body JSON
+  originalRequestFormat?: ApiFormat;
   originalResponseFormat?: ApiFormat;
 
   // Favorite

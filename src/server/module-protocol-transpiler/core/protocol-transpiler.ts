@@ -66,6 +66,16 @@ export class ProtocolTranspiler {
   }
 
   /**
+   * Get a registered converter by vendor type
+   * 
+   * @param vendor - Vendor type
+   * @returns The converter or undefined if not found
+   */
+  getConverter(vendor: string): FormatConverter | undefined {
+    return this.converters.get(this.resolveVendorType(vendor as VendorType));
+  }
+
+  /**
    * Set custom field mapping
    *
    * @param mappingType - Type of mapping (request/response/streamChunk)

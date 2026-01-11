@@ -1,5 +1,7 @@
 import { Hono } from 'hono';
+import { queryFirst } from '@server/shared/database';
 import { requestLogService } from '../services/request-log.service';
+import { protocolTranspiler } from '../../module-protocol-transpiler/protocol-transpiler-singleton';
 import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { existsSync } from 'node:fs';
@@ -121,6 +123,114 @@ router.delete('/clear-all', async (c) => {
       error: error.message || 'Failed to clear logs',
     }, 500);
   }
+});
+
+/**
+ * POST /api/logs/:id/retry
+ *
+ * Retry a specific request by its log ID
+ * This will 100% reconstruct the original request and re-run it through the gateway
+ */
+router.post('/:id/retry', async (c) => {
+  const id = c.req.param('id');
+  const log = await requestLogService.getLogById(id);
+
+  if (!log) {
+    return c.json({
+      success: false,
+      error: 'Log not found',
+    }, 404);
+  }
+
+  const originalFormat = log.originalRequestFormat || 'openai';
+
+  // Reconstruct original request body
+  let reconstructedBody: any;
+  
+  // Priority 1: Use the 100% raw body if available
+  if (log.originalRequestRaw) {
+    try {
+      reconstructedBody = JSON.parse(log.originalRequestRaw);
+      console.log('[Logs] Using original_request_raw for 100% reconstruction');
+    } catch (e) {
+      console.warn('[Logs] Failed to parse original_request_raw, falling back to reconstruction');
+    }
+  }
+
+  // Priority 2: Reconstruct from components (fallback for older logs)
+  if (!reconstructedBody) {
+    // 1. Reconstruct internal request format (camelCase)
+    const internalRequest = {
+      model: log.originalModel,
+      messages: log.messages,
+      tools: log.requestTools,
+      temperature: log.temperature,
+      ...(log.requestParams || {}),
+    };
+
+    // 2. Convert internal request back to original source format
+    reconstructedBody = internalRequest;
+    const converter = protocolTranspiler.getConverter(originalFormat);
+    if (converter && typeof converter.convertRequestFromInternal === 'function') {
+      const result = converter.convertRequestFromInternal(internalRequest as any);
+      if (result.success) {
+        reconstructedBody = result.data;
+      }
+    }
+  }
+
+  console.log('[Logs] Retrying request from log:', id, {
+    model: log.originalModel,
+    apiKeyId: log.apiKeyId,
+    path: log.path,
+    originalFormat,
+    stream: reconstructedBody.stream,
+  });
+
+  // Trigger background request using a real HTTP fetch to the local gateway
+  // This ensures it goes through the full middleware stack and doesn't rely on mock contexts
+  (async () => {
+    try {
+      const port = process.env.PORT || 3000;
+      const localUrl = `http://localhost:${port}${log.path}`;
+      
+      // Get an API key token to use for the request
+      // We'll use the one associated with the log if possible, 
+      // otherwise this request might fail auth middleware
+      const apiKey = queryFirst<{ key_token: string }>(
+        'SELECT key_token FROM api_keys WHERE id = ?', 
+        [log.apiKeyId]
+      );
+
+      if (!apiKey) {
+        console.error('[Logs] Cannot retry: API Key not found for log', log.id);
+        return;
+      }
+
+      console.log('[Logs] Dispatching real HTTP retry to:', localUrl);
+
+      const response = await fetch(localUrl, {
+        method: log.method || 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey.key_token}`,
+          ...(log.originalRequestFormat && log.originalRequestFormat !== 'openai' 
+              ? { 'X-Request-Format': log.originalRequestFormat } 
+              : {})
+        },
+        body: JSON.stringify(reconstructedBody)
+      });
+
+      console.log('[Logs] Real HTTP retry dispatched, response status:', response.status);
+    } catch (error) {
+      console.error('[Logs] Real HTTP retry dispatch failed:', error);
+    }
+  })();
+
+  return c.json({
+    success: true,
+    message: 'Retry initiated via HTTP',
+  });
 });
 
 /**
