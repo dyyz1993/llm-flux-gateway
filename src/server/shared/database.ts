@@ -337,6 +337,41 @@ export function initDatabase() {
     console.error('[Database] Migration failed:', error);
   }
 
+  // Migration: Add description and is_read_only columns to system_config if not exists
+  try {
+    const columns = sqlite.prepare("PRAGMA table_info(system_config)").all() as any[];
+    const hasDescriptionColumn = columns.some((col: any) => col.name === 'description');
+    const hasIsReadOnlyColumn = columns.some((col: any) => col.name === 'is_read_only');
+
+    if (!hasDescriptionColumn) {
+      console.log('[Database] Adding description column to system_config...');
+      sqlite.exec(`ALTER TABLE system_config ADD COLUMN description TEXT;`);
+      console.log('[Database] Migration completed: description column added to system_config');
+    }
+
+    if (!hasIsReadOnlyColumn) {
+      console.log('[Database] Adding is_read_only column to system_config...');
+      sqlite.exec(`ALTER TABLE system_config ADD COLUMN is_read_only INTEGER NOT NULL DEFAULT 0;`);
+      console.log('[Database] Migration completed: is_read_only column added to system_config');
+    }
+  } catch (error) {
+    console.error('[Database] Migration failed:', error);
+  }
+
+  // Migration: Add stream column to request_logs if not exists
+  try {
+    const columns = sqlite.prepare("PRAGMA table_info(request_logs)").all() as any[];
+    const hasStreamColumn = columns.some((col: any) => col.name === 'stream');
+
+    if (!hasStreamColumn) {
+      console.log('[Database] Adding stream column to request_logs...');
+      sqlite.exec(`ALTER TABLE request_logs ADD COLUMN stream INTEGER DEFAULT 0;`);
+      console.log('[Database] Migration completed: stream column added to request_logs');
+    }
+  } catch (error) {
+    console.error('[Database] Migration failed:', error);
+  }
+
   // Migration: Migrate temperature column to request_params
   // This ensures all existing temperature data is preserved in request_params JSON
   try {
