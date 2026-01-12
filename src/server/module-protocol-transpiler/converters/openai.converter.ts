@@ -295,9 +295,26 @@ export class OpenAIConverter implements FormatConverter {
       }
 
       // Basic validation
-      if (parsed.id && parsed.choices && parsed.object === 'chat.completion.chunk') {
+      // ⭐ RELAXED VALIDATION: GLM and some other vendors might not include 'object' or have slightly different formats
+      // As long as it has choices or tool_calls, we try to parse it
+      const hasChoices = parsed.choices && Array.isArray(parsed.choices);
+      const hasToolCalls = parsed.tool_calls || parsed.toolCalls;
+      const isChunk = parsed.object === 'chat.completion.chunk' || parsed.object === 'chat.completion';
+
+      if (parsed.id && (hasChoices || hasToolCalls || isChunk)) {
         // ⭐ FIX: Normalize snake_case to camelCase for internal format
         const normalizedChunk = normalizeToCamelCase(parsed, true) as InternalStreamChunk;
+
+        // Ensure choices exists for internal format consistency
+        if (!normalizedChunk.choices && hasToolCalls) {
+          normalizedChunk.choices = [{
+            index: 0,
+            delta: {
+              toolCalls: (normalizedChunk as any).toolCalls || (normalizedChunk as any).tool_calls
+            },
+            finishReason: null
+          }];
+        }
 
         const metadata: TranspileMetadata = {
           fromVendor: 'openai',
