@@ -995,23 +995,16 @@ export class AnthropicConverter implements FormatConverter {
     // Clean up stream state
     this.streamState.delete(streamId!);
 
-    return success({
-      id: streamId!,
-      object: 'chat.completion.chunk',
-      created: state.created,
-      model: state.model,
-      choices: [{
-        index: 0,
-        delta: {},
-        finishReason: 'stop',
-      }],
-    } as InternalStreamChunk, {
+    // ✅ FIX: Return empty chunk instead of sending finishReason: 'stop'
+    // The finishReason should be preserved from the message_delta event (e.g., 'tool_calls')
+    // Sending 'stop' here would overwrite the correct finish_reason and break tool call display
+    return success({ __empty: true } as InternalStreamChunk, {
       fromVendor: 'anthropic',
       toVendor: 'openai',
       convertedAt: Date.now(),
       conversionTimeMs: 0,
-      fieldsConverted: 1,
-      fieldsIgnored: 0,
+      fieldsConverted: 0,
+      fieldsIgnored: 1,
       fieldsWarned: 0,    });
   }
 

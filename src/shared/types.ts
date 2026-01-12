@@ -59,11 +59,17 @@ export interface RequestParams {
 }
 
 export interface ResponseParams {
+  // Internal Format (camelCase)
   finishReason?: 'stop' | 'length' | 'content_filter' | 'tool_calls';
   model?: string;
   systemFingerprint?: string;
   id?: string;
   created?: number;
+
+  // Vendor API format (snake_case) - for compatibility with different API responses
+  // Most APIs (OpenAI, Anthropic, GLM) use snake_case for these fields
+  finish_reason?: 'stop' | 'length' | 'content_filter' | 'tool_calls';
+  system_fingerprint?: string;
 }
 
 export interface OverwrittenField {

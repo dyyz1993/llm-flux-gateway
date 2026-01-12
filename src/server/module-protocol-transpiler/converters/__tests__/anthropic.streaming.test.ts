@@ -157,8 +157,10 @@ describe('AnthropicConverter - Streaming Conversion', () => {
       const result = converter.convertStreamChunkToInternal(anthropicChunk);
 
       expect(result.success).toBe(true);
-      expect((result.data! as any).choices).toHaveLength(1);
-      expect((result.data! as any).choices?.[0].finishReason).toBe('stop');
+      // ✅ FIX: message_stop now returns empty chunk to preserve finishReason from message_delta
+      // This prevents overwriting 'tool_calls' with 'stop'
+      expect(result.data! as any).toHaveProperty('__empty', true);
+      expect(result.metadata!?.fieldsIgnored).toBe(1);
     });
 
     it('should handle ping event without error', () => {

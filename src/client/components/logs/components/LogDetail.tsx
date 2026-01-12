@@ -86,6 +86,11 @@ export const LogDetail: React.FC<LogDetailProps> = ({ selectedLog, apiKeys, vend
     return `curl -X ${log.method} "${url}" \\\n  ${headers.map(h => `-H ${h}`).join(' \\\n  ')} \\\n  -d '${JSON.stringify(body, null, 2)}'`;
   };
 
+  // ✅ Compatible field access: support both camelCase (Internal Format) and snake_case (Vendor API)
+  // Most APIs use snake_case for finish_reason, but we use camelCase internally
+  const finishReason = log.responseParams?.finishReason ?? log.responseParams?.finish_reason;
+  const systemFingerprint = log.responseParams?.systemFingerprint ?? log.responseParams?.system_fingerprint;
+
   // Handle tool calls display
   const renderToolCallsOutput = () => {
     const toolCallsFromDb = log.responseToolCalls;
@@ -475,10 +480,10 @@ export const LogDetail: React.FC<LogDetailProps> = ({ selectedLog, apiKeys, vend
               <div className="mb-4 bg-[#1a1a1a] border border-[#333] rounded-lg p-3">
                 <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">Response Metadata</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {log.responseParams.finishReason && (
+                  {finishReason && (
                     <div className="flex justify-between items-center">
                       <span className="text-xs text-gray-400">Finish Reason</span>
-                      <span className="text-xs font-mono text-white">{log.responseParams.finishReason}</span>
+                      <span className="text-xs font-mono text-white">{finishReason}</span>
                     </div>
                   )}
                   {log.responseParams.model && (
@@ -487,10 +492,10 @@ export const LogDetail: React.FC<LogDetailProps> = ({ selectedLog, apiKeys, vend
                       <span className="text-xs font-mono text-indigo-400 truncate" title={log.responseParams.model}>{log.responseParams.model}</span>
                     </div>
                   )}
-                  {log.responseParams.systemFingerprint && (
+                  {systemFingerprint && (
                     <div className="flex justify-between items-center">
                       <span className="text-xs text-gray-400">System FP</span>
-                      <span className="text-xs font-mono text-gray-500 truncate" title={log.responseParams.systemFingerprint}>{log.responseParams.systemFingerprint.slice(0, 8)}</span>
+                      <span className="text-xs font-mono text-gray-500 truncate" title={systemFingerprint}>{systemFingerprint.slice(0, 8)}</span>
                     </div>
                   )}
                   {log.responseParams.id && (
@@ -533,7 +538,7 @@ export const LogDetail: React.FC<LogDetailProps> = ({ selectedLog, apiKeys, vend
                   className="text-sm text-gray-200 leading-relaxed border-l-2 border-emerald-500/20 pl-4"
                 />
               </div>
-            ) : log.responseParams?.finishReason === 'tool_calls' ? (
+            ) : finishReason === 'tool_calls' ? (
               renderToolCallsOutput()
             ) : getMessageSplit(log).output ? (
               <ResponseViewer msg={getMessageSplit(log).output as Message} />

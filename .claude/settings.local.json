@@ -196,7 +196,9 @@
       "Bash(./test-style-sync.sh:*)",
       "Bash(./verify-fix.sh:*)",
       "Bash(./verify-react-component-jump.sh:*)",
-      "Bash(./verify-ai-analysis-fix.sh:*)"
+      "Bash(./verify-ai-analysis-fix.sh:*)",
+      "Bash(for log in /Users/xuyingzhou/Downloads/llm-flux-gateway/logs/protocol-transformation/*.log)",
+      "Bash(do if grep -q \"content_block_start.*tool_use\" \"$log\")"
     ]
   },
   "sandbox": {
