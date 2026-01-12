@@ -55,3 +55,5 @@ dist-server
 .component-cache.json
 .style-jump-port
 plugins/react-component-jump/cache
+# Allow source code in logs components
+!src/client/**/logs/
