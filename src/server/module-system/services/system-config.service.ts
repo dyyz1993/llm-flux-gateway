@@ -82,35 +82,42 @@ export class SystemConfigService {
   /**
    * Set a config value
    */
-  async setConfig(key: string, value: any, dataType: string, category?: string): Promise<void> {
+  async setConfig(key: string, value: any, dataType: string, category?: string, description?: string, isReadOnly: boolean = false): Promise<void> {
     const now = Math.floor(Date.now() / 1000);
     const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
+    const isReadOnlyInt = isReadOnly ? 1 : 0;
 
     if (category) {
       queryRun(
-        `INSERT INTO system_config (key, value, data_type, category, updated_at)
-         VALUES (?, ?, ?, ?, ?)
+        `INSERT INTO system_config (key, value, data_type, category, description, is_read_only, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(key) DO UPDATE SET
            value = excluded.value,
            data_type = excluded.data_type,
            category = excluded.category,
+           description = COALESCE(excluded.description, system_config.description),
+           is_read_only = excluded.is_read_only,
            updated_at = excluded.updated_at`,
-        [key, stringValue, dataType, category, now]
+        [key, stringValue, dataType, category, description || null, isReadOnlyInt, now]
       );
     } else {
-      // If category is not provided, try to find existing config's category
-      const existing = queryFirst<any>('SELECT category FROM system_config WHERE key = ?', [key]);
-      const finalCategory = category || (existing ? existing.category : 'general');
+      // If category is not provided, try to find existing config's info
+      const existing = queryFirst<any>('SELECT category, description, is_read_only FROM system_config WHERE key = ?', [key]);
+      const finalCategory = existing ? existing.category : 'general';
+      const finalDescription = description || (existing ? existing.description : null);
+      const finalIsReadOnly = isReadOnly !== undefined ? isReadOnlyInt : (existing ? existing.is_read_only : 0);
 
       queryRun(
-        `INSERT INTO system_config (key, value, data_type, category, updated_at)
-         VALUES (?, ?, ?, ?, ?)
+        `INSERT INTO system_config (key, value, data_type, category, description, is_read_only, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(key) DO UPDATE SET
            value = excluded.value,
            data_type = excluded.data_type,
            category = excluded.category,
+           description = excluded.description,
+           is_read_only = excluded.is_read_only,
            updated_at = excluded.updated_at`,
-        [key, stringValue, dataType, finalCategory, now]
+        [key, stringValue, dataType, finalCategory, finalDescription, finalIsReadOnly, now]
       );
     }
   }
@@ -158,6 +165,7 @@ export class SystemConfigService {
         category: 'log',
         dataType: 'number',
         description: 'Maximum number of logs to keep (favorited logs are exempt)',
+        isReadOnly: false,
       },
       {
         key: 'log_retention_days',
@@ -165,6 +173,7 @@ export class SystemConfigService {
         category: 'log',
         dataType: 'number',
         description: 'Number of days to keep logs before auto-cleanup',
+        isReadOnly: false,
       },
       {
         key: 'auto_cleanup_logs',
@@ -172,6 +181,7 @@ export class SystemConfigService {
         category: 'log',
         dataType: 'boolean',
         description: 'Automatically cleanup old logs when limit is reached',
+        isReadOnly: false,
       },
       {
         key: 'preserve_favorited_logs',
@@ -179,6 +189,7 @@ export class SystemConfigService {
         category: 'log',
         dataType: 'boolean',
         description: 'Never delete favorited logs during cleanup',
+        isReadOnly: false,
       },
       {
         key: 'rate_limit_enabled',
@@ -186,6 +197,7 @@ export class SystemConfigService {
         category: 'api',
         dataType: 'boolean',
         description: 'Enable API rate limiting',
+        isReadOnly: false,
       },
       {
         key: 'rate_limit_requests',
@@ -193,62 +205,54 @@ export class SystemConfigService {
         category: 'api',
         dataType: 'number',
         description: 'Maximum requests per rate limit window',
+        isReadOnly: false,
       },
       {
         key: 'rate_limit_window',
         value: '60',
         category: 'api',
         dataType: 'number',
-        description: 'Rate limit time window in seconds',
+        description: 'Rate limit window in seconds',
+        isReadOnly: false,
       },
       {
         key: 'request_timeout',
-        value: '120',
+        value: '300',
         category: 'api',
         dataType: 'number',
-        description: 'Request timeout in seconds',
+        description: 'Upstream request timeout in seconds',
+        isReadOnly: false,
       },
       {
         key: 'health_check_interval',
         value: '60',
         category: 'monitoring',
         dataType: 'number',
-        description: 'Health check interval in seconds',
+        description: 'Interval between health checks in seconds',
+        isReadOnly: false,
       },
       {
         key: 'performance_monitoring',
         value: 'true',
         category: 'monitoring',
         dataType: 'boolean',
-        description: 'Enable performance monitoring',
+        description: 'Enable performance monitoring and latency tracking',
+        isReadOnly: false,
       },
       {
         key: 'error_log_level',
         value: 'info',
         category: 'monitoring',
         dataType: 'string',
-        description: 'Error logging level (debug, info, warn, error)',
+        description: 'Minimum log level for error tracking (debug, info, warn, error)',
+        isReadOnly: false,
       },
     ];
 
-    const now = Math.floor(Date.now() / 1000);
-
-    for (const config of defaults) {
-      // Only insert if not exists
-      const exists = queryFirst<any>('SELECT 1 FROM system_config WHERE key = ?', [config.key]);
-      if (!exists) {
-        queryRun(
-          `INSERT INTO system_config (key, value, category, data_type, description, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?)`,
-          [
-            config.key,
-            config.value,
-            config.category,
-            config.dataType,
-            config.description,
-            now,
-          ]
-        );
+    for (const d of defaults) {
+      const existing = await this.getConfig(d.key);
+      if (!existing) {
+        await this.setConfig(d.key, d.value, d.dataType, d.category, d.description, d.isReadOnly);
       }
     }
   }
