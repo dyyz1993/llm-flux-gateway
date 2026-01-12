@@ -13,6 +13,17 @@ fi
 echo "✅ Type check passed (src/ directory: 0 errors)"
 
 echo ""
+echo "🔍 Running database migration validator..."
+npx tsx scripts/validators/database-migration-validator.ts
+VALIDATOR_EXIT=$?
+if [ $VALIDATOR_EXIT -ne 0 ]; then
+  echo "❌ Database migration validator failed. Please fix issues before committing."
+  echo ""
+  echo "Use /skill:database-migrations for guidance on database changes."
+  exit 1
+fi
+
+echo ""
 echo "🧪 Running tests..."
 npm test -- --run
 TEST_EXIT=$?
