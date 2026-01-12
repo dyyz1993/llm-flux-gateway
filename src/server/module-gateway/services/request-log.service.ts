@@ -29,6 +29,7 @@ export interface CreateLogParams {
   overwrittenFields?: any;
   originalRequestFormat?: string;
   originalRequestRaw?: string;
+  stream?: boolean; // Track if request was streaming
 }
 
 export interface UpdateLogParams {

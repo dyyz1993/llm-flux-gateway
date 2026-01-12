@@ -222,12 +222,19 @@ export const LogExplorer: React.FC = () => {
       
       if (!response.success) {
         console.error('[LogExplorer] Retry failed:', response);
-        alert('Retry failed. Please check backend logs.');
+        // Only alert if it's a real error, not just a timeout
+        alert(`Retry failed: ${response.error || 'Please check backend logs.'}`);
+      } else {
+        // Success! The new log will come in via SSE
+        console.log('[LogExplorer] Retry initiated successfully');
       }
-      // Note: We don't need to manually update logs here because SSE will push the new log
     } catch (error: any) {
       console.error('[LogExplorer] Retry error:', error);
-      alert(`Retry failed: ${error.message || 'Unknown error'}`);
+      // If it's a 401, the adminFetch will have already handled redirect to login
+      // Otherwise, only alert if it's not a background-ish error
+      if (error.message !== 'Not authenticated') {
+        alert(`Retry error: ${error.message || 'Unknown error'}`);
+      }
     }
   };
 

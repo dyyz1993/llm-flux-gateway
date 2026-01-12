@@ -85,6 +85,7 @@ export async function handleGatewayRequest(
     hasModel: !!body.model,
     hasMessages: !!body.messages,
     hasContents: !!body.contents,
+    hasNewResponse: typeof c.newResponse === 'function',
   });
 
   // Step 1: Convert source format to internal (OpenAI) format
@@ -258,7 +259,10 @@ export async function handleGatewayRequest(
     baseUrl: upstreamRequest.url,
     originalRequestFormat: sourceFormat,
     originalRequestRaw: JSON.stringify(body), // Capture 100% raw body
+    stream: stream,
   });
+
+
 
   const startTime = Date.now();
 
@@ -298,6 +302,7 @@ export async function handleGatewayRequest(
         // This allows reconstructing the full streaming response from logs
         // Declared outside try block to be accessible in finally block
         const rawSSEChunks: string[] = [];
+        const debugMode = process.env.DEBUG === '1' || process.env.NODE_ENV === 'development'; // Enable in dev or if DEBUG=1
 
         try {
           // Create a separate stream request to capture raw SSE
@@ -316,6 +321,10 @@ export async function handleGatewayRequest(
             receivedChunks++;  // Count all chunks from upstream
             currentRawSSE = rawSSE; // Store current raw SSE
             rawSSEChunks.push(rawSSE); // ✅ Collect all raw SSE data
+
+            if (debugMode) {
+              console.log(`[Gateway][DEBUG] Raw SSE Chunk #${receivedChunks}:`, rawSSE.substring(0, 200));
+            }
 
             // Extract data from SSE line
             const dataMatch = rawSSE.match(/^data:\s*(.+)\s*$/);
@@ -393,12 +402,18 @@ export async function handleGatewayRequest(
               }
 
               // Collect toolCalls from delta (for logging and tracking)
-              // Note: Internal format uses camelCase 'toolCalls', not snake_case 'tool_calls'
-              if (chunkData.choices?.[0]?.delta?.toolCalls) {
-                const newToolCalls = chunkData.choices[0].delta.toolCalls;
+              // Note: Internal format uses camelCase 'toolCalls'. Support tool_calls for GLM.
+              // Also check top-level of chunkData for non-standard formats
+              const delta = chunkData.choices?.[0]?.delta;
+              const newToolCalls = delta?.toolCalls || (delta as any)?.tool_calls || (chunkData as any).tool_calls || (chunkData as any).toolCalls;
+
+              if (newToolCalls && Array.isArray(newToolCalls)) {
+                if (debugMode) {
+                  console.log(`[Gateway][DEBUG] Found ${newToolCalls.length} tool calls in chunk #${receivedChunks}`);
+                }
                 newToolCalls.forEach((newCall: InternalToolCall, idx: number) => {
-                  // InternalToolCall doesn't have index field, use array index
-                  const index = idx;
+                  // Use index from chunk if available, fallback to array index
+                  const index = typeof (newCall as any).index === 'number' ? (newCall as any).index : idx;
                   const existing = accumulatedToolCalls.get(index);
 
                   if (!existing) {
