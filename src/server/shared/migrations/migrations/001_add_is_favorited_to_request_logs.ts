@@ -7,6 +7,7 @@ export const migration_001_add_is_favorited: Migration = {
   name: 'add_is_favorited_to_request_logs',
   risk: MigrationRisk.SAFE,
   description: 'Add is_favorited column to request_logs table for favoriting logs',
+  createdAt: '2025-01-12',
 
   up: async (db: DatabaseSync) => {
     const columns = db.prepare('PRAGMA table_info(request_logs)').all() as any[];

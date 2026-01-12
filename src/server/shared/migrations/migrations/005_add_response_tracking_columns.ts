@@ -7,6 +7,7 @@ export const migration_005_response_tracking: Migration = {
   name: 'add_response_tracking_columns',
   risk: MigrationRisk.SAFE,
   description: 'Add original_response, original_response_format, overwritten_attributes, response_tool_calls to request_logs',
+  createdAt: '2025-01-12',
 
   up: async (db: DatabaseSync) => {
     const columns = db.prepare('PRAGMA table_info(request_logs)').all() as any[];

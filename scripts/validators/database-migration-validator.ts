@@ -107,17 +107,17 @@ function checkDatabaseChanges(): ValidationResult {
       }
     }
 
-    // 检查迁移文件版本号是否连续
+    // 检查迁移文件版本号（仅对新创建的迁移）
     const migrationFiles = changedFiles.filter(f =>
       f.match(/src\/server\/shared\/migrations\/migrations\/\d+_.*\.ts/)
     );
 
     if (migrationFiles.length > 0) {
+      // 检查是否有重复版本号
       const versions = migrationFiles
         .map(f => parseInt(f.match(/(\d+)_/)?.[1] || '0', 10))
         .sort((a, b) => a - b);
 
-      // 检查是否有重复版本号
       const uniqueVersions = new Set(versions);
       if (uniqueVersions.size !== versions.length) {
         result.errors.push(
@@ -127,7 +127,7 @@ function checkDatabaseChanges(): ValidationResult {
         result.valid = false;
       }
 
-      // 读取现有迁移
+      // 读取现有迁移，找出真正的新迁移
       try {
         const indexContent = readFileSync('src/server/shared/migrations/index.ts', 'utf-8');
         const existingMatches = indexContent.matchAll(/migration_(\d+)_/g);
@@ -136,16 +136,20 @@ function checkDatabaseChanges(): ValidationResult {
           existingVersions.add(parseInt(match[1], 10));
         }
 
-        // 检查新版本号是否大于现有最大版本号
-        const maxExisting = Math.max(...existingVersions, 0);
-        const minNew = Math.min(...versions);
+        // 只对未注册的迁移文件进行版本号检查
+        const newMigrationVersions = versions.filter(v => !existingVersions.has(v));
 
-        if (minNew <= maxExisting) {
-          result.errors.push(
-            `❌ 新迁移版本号 (${minNew}) 必须大于现有最大版本号 (${maxExisting})\n` +
-            `   请使用版本号 ${maxExisting + 1} 或更大`
-          );
-          result.valid = false;
+        if (newMigrationVersions.length > 0) {
+          const maxExisting = Math.max(...existingVersions, 0);
+          const minNew = Math.min(...newMigrationVersions);
+
+          if (minNew <= maxExisting) {
+            result.errors.push(
+              `❌ 新迁移版本号 (${minNew}) 必须大于现有最大版本号 (${maxExisting})\n` +
+              `   请使用版本号 ${maxExisting + 1} 或更大`
+            );
+            result.valid = false;
+          }
         }
       } catch {
         // index.ts 可能不存在

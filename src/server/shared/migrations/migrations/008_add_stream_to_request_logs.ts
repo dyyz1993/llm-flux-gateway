@@ -7,6 +7,7 @@ export const migration_008_stream_column: Migration = {
   name: 'add_stream_to_request_logs',
   risk: MigrationRisk.SAFE,
   description: 'Add stream column to request_logs table for tracking streaming requests',
+  createdAt: '2025-01-12',
 
   up: async (db: DatabaseSync) => {
     const columns = db.prepare('PRAGMA table_info(request_logs)').all() as any[];

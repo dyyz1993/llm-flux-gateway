@@ -7,6 +7,7 @@ export const migration_006_remove_duplicates: Migration = {
   name: 'remove_duplicate_vendor_models',
   risk: MigrationRisk.MODERATE,
   description: 'Remove duplicate vendor_models entries (keeping oldest by id)',
+  createdAt: '2025-01-12',
 
   up: async (db: DatabaseSync) => {
     // 检查是否有重复

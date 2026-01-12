@@ -7,6 +7,7 @@ export const migration_007_system_config: Migration = {
   name: 'add_system_config_fields',
   risk: MigrationRisk.SAFE,
   description: 'Add description and is_read_only columns to system_config table',
+  createdAt: '2025-01-12',
 
   up: async (db: DatabaseSync) => {
     const columns = db.prepare('PRAGMA table_info(system_config)').all() as any[];

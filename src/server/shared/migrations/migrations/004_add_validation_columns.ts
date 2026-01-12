@@ -7,6 +7,7 @@ export const migration_004_validation_columns: Migration = {
   name: 'add_validation_columns',
   risk: MigrationRisk.SAFE,
   description: 'Add latency_ms and validated_at columns to asset_model_validations table',
+  createdAt: '2025-01-12',
 
   up: async (db: DatabaseSync) => {
     const columns = db.prepare('PRAGMA table_info(asset_model_validations)').all() as any[];

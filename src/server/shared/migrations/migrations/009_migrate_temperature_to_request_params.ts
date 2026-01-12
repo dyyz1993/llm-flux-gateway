@@ -7,6 +7,7 @@ export const migration_009_temperature_params: Migration = {
   name: 'migrate_temperature_to_request_params',
   risk: MigrationRisk.MODERATE,
   description: 'Migrate temperature column data to request_params JSON field',
+  createdAt: '2025-01-12',
 
   up: async (db: DatabaseSync) => {
     // Step 1: 检查是否需要迁移

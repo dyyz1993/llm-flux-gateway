@@ -24,6 +24,8 @@ export interface Migration {
   risk: MigrationRisk;
   /** 描述 */
   description: string;
+  /** 创建日期 (YYYY-MM-DD) */
+  createdAt: string;
   /** 执行迁移 */
   up: (db: DatabaseSync) => Promise<void> | void;
   /** 回滚迁移（可选） */

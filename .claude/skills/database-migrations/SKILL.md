@@ -86,6 +86,7 @@ export const migration_010_feature_x: Migration = {
   name: 'add_feature_x',
   risk: MigrationRisk.SAFE,  // 选择合适的危险等级
   description: 'Add new_column for feature X',
+  createdAt: '2025-01-12',  // 迁移创建日期 (YYYY-MM-DD)
 
   up: async (db: DatabaseSync) => {
     // ⚠️ 关键：先查询再执行，避免重复执行

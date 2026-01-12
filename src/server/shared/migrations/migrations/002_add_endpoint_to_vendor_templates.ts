@@ -7,6 +7,7 @@ export const migration_002_add_endpoint: Migration = {
   name: 'add_endpoint_to_vendor_templates',
   risk: MigrationRisk.SAFE,
   description: 'Add endpoint column to vendor_templates table for custom API endpoints',
+  createdAt: '2025-01-12',
 
   up: async (db: DatabaseSync) => {
     const columns = db.prepare('PRAGMA table_info(vendor_templates)').all() as any[];

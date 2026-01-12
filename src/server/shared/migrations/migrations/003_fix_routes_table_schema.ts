@@ -7,6 +7,7 @@ export const migration_003_routes_schema: Migration = {
   name: 'fix_routes_table_schema',
   risk: MigrationRisk.DANGEROUS,
   description: 'Handle legacy route_name column and add updated_at, config_type columns (may recreate table)',
+  createdAt: '2025-01-12',
 
   up: async (db: DatabaseSync) => {
     const columns = db.prepare('PRAGMA table_info(routes)').all() as any[];

@@ -48,11 +48,22 @@ function getRiskEmoji(risk: MigrationRisk): string {
  * 创建 _migrations 表
  */
 function createMigrationsTable(db: DatabaseSync): void {
+  // 创建表（如果不存在）
   db.exec(`CREATE TABLE IF NOT EXISTS _migrations (
     version TEXT PRIMARY KEY,
     name TEXT NOT NULL,
+    created_at TEXT NOT NULL,
     executed_at INTEGER NOT NULL
   );`);
+
+  // 迁移：添加 created_at 列（如果表存在但缺少该列）
+  const columns = db.prepare('PRAGMA table_info(_migrations)').all() as any[];
+  const hasCreatedAt = columns.some((col: any) => col.name === 'created_at');
+
+  if (!hasCreatedAt) {
+    console.log('[Migration] Adding created_at column to _migrations table...');
+    db.exec(`ALTER TABLE _migrations ADD COLUMN created_at TEXT NOT NULL DEFAULT '2025-01-12';`);
+  }
 }
 
 /**
@@ -72,8 +83,8 @@ function getExecutedMigrations(db: DatabaseSync): Set<string> {
  */
 function recordMigration(db: DatabaseSync, migration: Migration): void {
   const now = Math.floor(Date.now() / 1000);
-  db.prepare('INSERT INTO _migrations (version, name, executed_at) VALUES (?, ?, ?)')
-    .run(migration.version, migration.name, now);
+  db.prepare('INSERT INTO _migrations (version, name, created_at, executed_at) VALUES (?, ?, ?, ?)')
+    .run(migration.version, migration.name, migration.createdAt, now);
 }
 
 /**
@@ -85,6 +96,7 @@ async function executeMigration(
 ): Promise<MigrationResult> {
   const emoji = getRiskEmoji(migration.risk);
   console.log(`\n${emoji} [Migration ${migration.version}] ${migration.name}`);
+  console.log(`  Created: ${migration.createdAt}`);
   console.log(`  Description: ${migration.description}`);
 
   try {
