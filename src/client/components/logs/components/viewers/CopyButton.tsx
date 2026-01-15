@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CheckCircle, Copy } from 'lucide-react';
-import { copyToClipboard } from '../../utils/contentFormatters';
+import { copyToClipboard } from '@client/utils/clipboard';
 
 interface CopyButtonProps {
   text: string;
@@ -12,12 +12,12 @@ export const CopyButton: React.FC<CopyButtonProps> = ({ text, title = 'Copy', cl
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
-    const success = await copyToClipboard(text, () => {
+    try {
+      await copyToClipboard(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    });
-    if (!success) {
-      console.error('[CopyButton] Failed to copy to clipboard');
+    } catch (error) {
+      console.error('[CopyButton] Failed to copy to clipboard:', error);
     }
   };
 

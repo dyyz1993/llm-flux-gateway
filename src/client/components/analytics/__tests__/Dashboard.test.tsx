@@ -49,6 +49,10 @@ vi.mock('recharts', () => ({
   ),
   Cell: () => <div data-testid="cell" />,
   Legend: () => <div data-testid="legend" />,
+  LineChart: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="line-chart">{children}</div>
+  ),
+  Line: () => <div data-testid="line" />,
 }));
 
 const mockAnalyticsService = vi.mocked(analyticsService);
@@ -325,7 +329,8 @@ describe('Dashboard Component', () => {
       render(<Dashboard />);
 
       await waitFor(() => {
-        expect(screen.getByText('Production Key')!).toBeInTheDocument();
+        // "Production Key" appears in both the table and legend, so use getAllByText
+        expect(screen.getAllByText('Production Key').length).toBeGreaterThan(0);
         expect(screen.getByText('35')!).toBeInTheDocument(); // Request count
         expect(screen.getByText('85.0K')!).toBeInTheDocument(); // Tokens
         expect(screen.getByText('2.9%')!).toBeInTheDocument(); // Error rate (2.86.toFixed(1) = 2.9)

@@ -16,6 +16,7 @@ import { migration_007_system_config } from './migrations/007_add_system_config_
 import { migration_008_stream_column } from './migrations/008_add_stream_to_request_logs';
 import { migration_009_temperature_params } from './migrations/009_migrate_temperature_to_request_params';
 import { migration_010_original_request_columns } from './migrations/010_add_original_request_columns';
+import { migration_011_add_analytics_snapshots } from './migrations/011_add_analytics_snapshots';
 
 /**
  * 所有迁移列表
@@ -36,6 +37,7 @@ export const ALL_MIGRATIONS: Migration[] = [
   migration_008_stream_column,
   migration_009_temperature_params,
   migration_010_original_request_columns,
+  migration_011_add_analytics_snapshots,
 ];
 
 /**

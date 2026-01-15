@@ -266,4 +266,196 @@ describe('RouteMatcherService', () => {
       expect(result?.route.baseUrl).toBe('https://generativelanguage.googleapis.com/v1beta');
     });
   });
+
+  describe('前缀匹配 (Prefix Pattern Matching)', () => {
+    it('should match gpt-3.5-turbo with gpt-3.5* pattern', async () => {
+      const overrides = JSON.stringify([
+        {
+          field: 'model',
+          matchValues: ['gpt-3.5*'],
+          rewriteValue: 'gpt-3.5-flash',
+        },
+      ]);
+
+      mockQueryAll.mockReturnValue([
+        {
+          ...mockRoutesDbRow,
+          overrides,
+        },
+      ] as any);
+
+      const result = await service.findMatch('gpt-3.5-turbo');
+
+      expect(result?.rewrittenModel).toBe('gpt-3.5-flash');
+    });
+
+    it('should match gpt-4 with gpt-* pattern', async () => {
+      const overrides = JSON.stringify([
+        {
+          field: 'model',
+          matchValues: ['gpt-*'],
+          rewriteValue: 'gpt-fallback',
+        },
+      ]);
+
+      mockQueryAll.mockReturnValue([
+        {
+          ...mockRoutesDbRow,
+          overrides,
+        },
+      ] as any);
+
+      const result = await service.findMatch('gpt-4');
+
+      expect(result?.rewrittenModel).toBe('gpt-fallback');
+    });
+
+    it('should match gpt-4-turbo with gpt-4* pattern', async () => {
+      const overrides = JSON.stringify([
+        {
+          field: 'model',
+          matchValues: ['gpt-4*'],
+          rewriteValue: 'gpt-4-upgraded',
+        },
+      ]);
+
+      mockQueryAll.mockReturnValue([
+        {
+          ...mockRoutesDbRow,
+          overrides,
+        },
+      ] as any);
+
+      const result = await service.findMatch('gpt-4-turbo');
+
+      expect(result?.rewrittenModel).toBe('gpt-4-upgraded');
+    });
+
+    it('should not match gpt-4 with gpt-3.5* pattern', async () => {
+      const overrides = JSON.stringify([
+        {
+          field: 'model',
+          matchValues: ['gpt-3.5*', '*'],
+          rewriteValue: 'fallback',
+        },
+      ]);
+
+      mockQueryAll.mockReturnValue([
+        {
+          ...mockRoutesDbRow,
+          overrides,
+        },
+      ] as any);
+
+      const result = await service.findMatch('gpt-4');
+
+      // Should match with *, not gpt-3.5*
+      expect(result?.rewrittenModel).toBe('fallback');
+      expect(result?.matchedRules[0].matchValues).toEqual(['gpt-3.5*', '*']);
+    });
+  });
+
+  describe('模式优先级排序 (Pattern Priority Ordering)', () => {
+    it('should prioritize exact match over prefix pattern', async () => {
+      const overrides = JSON.stringify([
+        {
+          field: 'model',
+          matchValues: ['*', 'gpt-3.5*', 'gpt-3.5-turbo'],
+          rewriteValue: 'test-rewrite',
+        },
+      ]);
+
+      mockQueryAll.mockReturnValue([
+        {
+          ...mockRoutesDbRow,
+          overrides,
+        },
+      ] as any);
+
+      const result = await service.findMatch('gpt-3.5-turbo');
+
+      // Should match with exact pattern, not prefix or wildcard
+      expect(result?.rewrittenModel).toBe('test-rewrite');
+      expect(result?.matchedRules).toHaveLength(1);
+    });
+
+    it('should prioritize prefix pattern over wildcard', async () => {
+      const overrides = JSON.stringify([
+        {
+          field: 'model',
+          matchValues: ['*', 'gpt-3.5*'],
+          rewriteValue: 'prefix-rewrite',
+        },
+      ]);
+
+      mockQueryAll.mockReturnValue([
+        {
+          ...mockRoutesDbRow,
+          overrides,
+        },
+      ] as any);
+
+      const result = await service.findMatch('gpt-3.5-turbo');
+
+      // Should match with prefix pattern, not wildcard
+      expect(result?.rewrittenModel).toBe('prefix-rewrite');
+      expect(result?.matchedRules).toHaveLength(1);
+    });
+
+    it('should use wildcard when no other patterns match', async () => {
+      const overrides = JSON.stringify([
+        {
+          field: 'model',
+          matchValues: ['gpt-3.5*', '*'],
+          rewriteValue: 'wildcard-rewrite',
+        },
+      ]);
+
+      mockQueryAll.mockReturnValue([
+        {
+          ...mockRoutesDbRow,
+          overrides,
+        },
+      ] as any);
+
+      const result = await service.findMatch('claude-3-opus');
+
+      // Should match with wildcard
+      expect(result?.rewrittenModel).toBe('wildcard-rewrite');
+    });
+
+    it('should preserve user order within same priority level', async () => {
+      const overrides = JSON.stringify([
+        {
+          field: 'model',
+          matchValues: ['gpt-4*', 'gpt-3.5*', '*'],
+          rewriteValue: 'first-match',
+        },
+        {
+          field: 'model',
+          matchValues: ['claude-3*', 'claude-*'],
+          rewriteValue: 'second-match',
+        },
+      ]);
+
+      mockQueryAll.mockReturnValue([
+        {
+          ...mockRoutesDbRow,
+          overrides,
+        },
+      ] as any);
+
+      // gpt-4 matches with first-match's gpt-4* pattern
+      const result1 = await service.findMatch('gpt-4');
+      expect(result1?.rewrittenModel).toBe('first-match');
+
+      // claude-3-opus matches with second-match's claude-3* pattern (higher priority than * from first-match)
+      const result2 = await service.findMatch('claude-3-opus');
+      expect(result2?.rewrittenModel).toBe('second-match');
+
+      // Models that don't match any prefix should use the first rule's wildcard
+      const result3 = await service.findMatch('gemini-pro');
+      expect(result3?.rewrittenModel).toBe('first-match');
+    });
+  });
 });

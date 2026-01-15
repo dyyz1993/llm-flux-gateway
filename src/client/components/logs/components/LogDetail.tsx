@@ -16,16 +16,68 @@ import {
 import { ToolsViewer } from './tools';
 import { isStructuredContent, formatContent, tryParseToolCallsFromResponse, isStreamingRequest } from '../utils/contentFormatters';
 import { getMessageSplit } from '../utils/logHelpers';
+import { getRequestLogById } from '@client/services/analyticsService';
 
 interface LogDetailProps {
   selectedLog: RequestLog | null;
   apiKeys: ApiKey[];
   vendors: Vendor[];
   onRetry?: (logId: string) => Promise<void>;
+  onLogUpdate?: (log: RequestLog) => void;
 }
 
-export const LogDetail: React.FC<LogDetailProps> = ({ selectedLog, apiKeys, vendors, onRetry }) => {
+export const LogDetail: React.FC<LogDetailProps> = ({ selectedLog, apiKeys, vendors, onRetry, onLogUpdate }) => {
   const [isRetrying, setIsRetrying] = React.useState(false);
+
+  /**
+   * Polling effect for active requests
+   * When a log is in "requesting" state (statusCode === 0), poll for updates
+   */
+  React.useEffect(() => {
+    if (!selectedLog || selectedLog.statusCode !== 0) {
+      return; // Only poll for requesting logs
+    }
+
+    const pollInterval = 2000; // 2 seconds
+    let isActive = true;
+
+    const pollForUpdates = async () => {
+      try {
+        const updatedLog = await getRequestLogById(selectedLog.id!);
+
+        if (!isActive) return;
+
+        // Check if status has changed from requesting to completed/error
+        if (updatedLog.statusCode !== 0) {
+          // Status changed, notify parent to update state
+          onLogUpdate?.(updatedLog);
+          isActive = false; // Stop polling
+        } else if (
+          // Check if significant data has been updated
+          updatedLog.responseContent !== selectedLog.responseContent ||
+          updatedLog.messages !== selectedLog.messages ||
+          updatedLog.totalTokens !== selectedLog.totalTokens
+        ) {
+          // Data updated while still requesting, notify parent
+          onLogUpdate?.(updatedLog);
+        }
+      } catch (error) {
+        console.error('[LogDetail] Failed to poll for updates:', error);
+      }
+    };
+
+    // Initial poll
+    pollForUpdates();
+
+    // Set up interval
+    const intervalId = setInterval(pollForUpdates, pollInterval);
+
+    // Cleanup
+    return () => {
+      isActive = false;
+      clearInterval(intervalId);
+    };
+  }, [selectedLog, onLogUpdate]);
 
   if (!selectedLog) {
     return (

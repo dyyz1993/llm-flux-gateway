@@ -1,6 +1,53 @@
 import { queryAll } from '@server/shared/database';
 import { inferFormatFromVendorTemplate, type VendorTemplateForInference } from '../utils/format-inferer';
 import { ApiFormat } from '../../module-protocol-transpiler';
+import { parseWildcardPattern, matchesWildcardPattern, type WildcardPattern } from '@client/utils/wildcardUtils';
+
+/**
+ * Pattern priority levels (higher number = higher priority)
+ */
+enum PatternPriority {
+  WILDCARD_ALL = 0,    // * - lowest priority
+  WILDCARD_PREFIX = 1, // gpt-*
+  EXACT = 2,           // gpt-3.5-turbo - highest priority
+}
+
+/**
+ * Get priority level for a wildcard pattern
+ */
+function getPatternPriority(pattern: WildcardPattern): PatternPriority {
+  switch (pattern.type) {
+    case 'wildcard-all':
+      return PatternPriority.WILDCARD_ALL;
+    case 'wildcard-prefix':
+      return PatternPriority.WILDCARD_PREFIX;
+    case 'exact':
+      return PatternPriority.EXACT;
+  }
+}
+
+/**
+ * Sort matchValues by pattern priority (highest first)
+ * Within same priority level, preserves original order
+ */
+function sortMatchValuesByPriority(matchValues: string[]): string[] {
+  const indexedPatterns = matchValues.map((value, index) => ({
+    value,
+    originalIndex: index,
+    parsed: parseWildcardPattern(value),
+    priority: getPatternPriority(parseWildcardPattern(value)),
+  }));
+
+  // Sort by priority DESC (highest first), then original index ASC
+  indexedPatterns.sort((a, b) => {
+    if (a.priority !== b.priority) {
+      return b.priority - a.priority; // Higher priority first
+    }
+    return a.originalIndex - b.originalIndex; // Preserve order within same level
+  });
+
+  return indexedPatterns.map(p => p.value);
+}
 
 export interface RouteMatch {
   route: {
@@ -78,55 +125,91 @@ export class RouteMatcherService {
       };
       const inferredFormat = inferFormatFromVendorTemplate(vendorTemplate);
 
-      // Find model override rules (prioritize exact match over wildcard)
-      const exactMatchRules = overrides.filter(
-        (o: any) => o.field === 'model' && o.matchValues.includes(requestedModel)
-      );
-      const wildcardMatchRules = overrides.filter(
-        (o: any) => o.field === 'model' && o.matchValues.includes('*')
-      );
-      const modelRules = exactMatchRules.length > 0 ? exactMatchRules : wildcardMatchRules;
+      // Find model override rules
+      const modelOverrideRules = overrides.filter((o: any) => o.field === 'model');
 
-      // If there are matching override rules, use them
-      // Otherwise, pass through the original model (透传)
-      if (modelRules.length > 0) {
-        return {
-          route: {
-            id: route.id,
-            name: route.name,
-            baseUrl: route.base_url,
-            endpoint: route.endpoint || '/chat/completions',
-            upstreamModel: modelRules[0].rewriteValue,
-            upstreamApiKey: route.upstream_api_key,
-            isActive: route.is_active === 1,
-            overrides: overrides,
-            priority: route.priority,
-            requestFormat: inferredFormat,
-            responseFormat: inferredFormat,
-          },
-          matchedRules: modelRules,
-          rewrittenModel: modelRules[0].rewriteValue,
-        };
-      } else {
-        // No override rules found - pass through the original model
-        return {
-          route: {
-            id: route.id,
-            name: route.name,
-            baseUrl: route.base_url,
-            endpoint: route.endpoint || '/chat/completions',
-            upstreamModel: requestedModel,
-            upstreamApiKey: route.upstream_api_key,
-            isActive: route.is_active === 1,
-            overrides: overrides,
-            priority: route.priority,
-            requestFormat: inferredFormat,
-            responseFormat: inferredFormat,
-          },
-          matchedRules: [],
-          rewrittenModel: requestedModel,
-        };
+      if (modelOverrideRules.length > 0) {
+        // Collect all potential matches across all rules, then pick highest priority
+        interface MatchCandidate {
+          rule: any;
+          pattern: string;
+          priority: PatternPriority;
+        }
+
+        const candidates: MatchCandidate[] = [];
+
+        for (const rule of modelOverrideRules) {
+          // Sort matchValues by priority within this rule
+          const sortedMatchValues = sortMatchValuesByPriority(rule.matchValues);
+
+          for (const pattern of sortedMatchValues) {
+            const parsed = parseWildcardPattern(pattern);
+            if (matchesWildcardPattern(requestedModel, parsed)) {
+              candidates.push({
+                rule,
+                pattern,
+                priority: getPatternPriority(parsed),
+              });
+              // Only add the highest priority match from each rule
+              break;
+            }
+          }
+        }
+
+        if (candidates.length > 0) {
+          // Sort candidates by priority (highest first), then by original rule order
+          candidates.sort((a, b) => {
+            if (a.priority !== b.priority) {
+              return b.priority - a.priority; // Higher priority first
+            }
+            // If same priority, preserve original rule order
+            return modelOverrideRules.indexOf(a.rule) - modelOverrideRules.indexOf(b.rule);
+          });
+
+          // Use the highest priority match
+          const bestMatch = candidates[0];
+          if (!bestMatch) {
+            // Should never happen since candidates.length > 0
+            return null;
+          }
+          return {
+            route: {
+              id: route.id,
+              name: route.name,
+              baseUrl: route.base_url,
+              endpoint: route.endpoint || '/chat/completions',
+              upstreamModel: bestMatch.rule.rewriteValue,
+              upstreamApiKey: route.upstream_api_key,
+              isActive: route.is_active === 1,
+              overrides: overrides,
+              priority: route.priority,
+              requestFormat: inferredFormat,
+              responseFormat: inferredFormat,
+            },
+            matchedRules: [bestMatch.rule],
+            rewrittenModel: bestMatch.rule.rewriteValue,
+          };
+        }
       }
+
+      // No override rules matched - pass through the original model
+      return {
+        route: {
+          id: route.id,
+          name: route.name,
+          baseUrl: route.base_url,
+          endpoint: route.endpoint || '/chat/completions',
+          upstreamModel: requestedModel,
+          upstreamApiKey: route.upstream_api_key,
+          isActive: route.is_active === 1,
+          overrides: overrides,
+          priority: route.priority,
+          requestFormat: inferredFormat,
+          responseFormat: inferredFormat,
+        },
+        matchedRules: [],
+        rewrittenModel: requestedModel,
+      };
     }
 
     // No active route found

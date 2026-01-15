@@ -2,6 +2,7 @@ import { queryAll, queryFirst, queryRun } from '@server/shared/database';
 import { randomUUID } from 'node:crypto';
 import type { RequestLog } from '@shared/types';
 import { sseBroadcasterService } from './sse-broadcaster.service';
+import { analyticsService } from './analytics.service';
 
 // Maximum number of logs to keep (favorited logs are exempt)
 const MAX_LOGS_COUNT = parseInt(process.env.MAX_LOGS_COUNT || '5000');
@@ -461,6 +462,9 @@ export class RequestLogService {
   /**
    * Clear all non-favorited logs
    * Returns the number of logs deleted
+   *
+   * Note: Automatically snapshots today's statistics before clearing
+   * to preserve analytics data.
    */
   async clearAllNonFavorited(): Promise<{ deletedCount: number }> {
     try {
@@ -473,6 +477,14 @@ export class RequestLogService {
 
       if (countToDelete === 0) {
         return { deletedCount: 0 };
+      }
+
+      // Snapshot today's statistics before clearing logs
+      try {
+        await analyticsService.snapshotDailyStats();
+      } catch (snapshotError) {
+        console.error('[RequestLogService] Failed to snapshot stats:', snapshotError);
+        // Continue with deletion even if snapshot fails
       }
 
       // Delete all non-favorited logs

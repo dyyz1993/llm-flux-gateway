@@ -162,11 +162,17 @@ router.get('/errors', async (c) => {
  * Get time series data
  * Query params:
  * - days: number of days to look back (default: 7)
+ * - keyId: optional API key ID to filter by
  */
 router.get('/timeseries', async (c) => {
   try {
     const days = parseInt(c.req.query('days') || '7');
-    const stats = await analyticsService.getTimeSeriesStats(days);
+    const keyId = c.req.query('keyId');
+
+    const stats = keyId
+      ? await analyticsService.getKeyTimeSeriesStats(keyId, days)
+      : await analyticsService.getTimeSeriesStats(days);
+
     return c.json({
       success: true,
       data: stats,

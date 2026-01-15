@@ -117,8 +117,12 @@ export async function getErrorStats(): Promise<ErrorStats> {
  * Get time series statistics
  * @param days - Number of days to look back (default: 7)
  */
-export async function getTimeSeriesStats(days: number = 7): Promise<TimeSeriesStats[]> {
-  const response = await adminGet<{ success: boolean; data?: TimeSeriesStats[] }>(`/api/analytics/timeseries?days=${days}`);
+export async function getTimeSeriesStats(days: number = 7, keyId?: string): Promise<TimeSeriesStats[]> {
+  const queryParams = new URLSearchParams({ days: days.toString() });
+  if (keyId) {
+    queryParams.append('keyId', keyId);
+  }
+  const response = await adminGet<{ success: boolean; data?: TimeSeriesStats[] }>(`/api/analytics/timeseries?${queryParams.toString()}`);
   return handleApiResponse<TimeSeriesStats[]>(response);
 }
 

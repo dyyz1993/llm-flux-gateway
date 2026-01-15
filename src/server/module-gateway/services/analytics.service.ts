@@ -4,7 +4,7 @@
  * Provides statistical analysis of request logs
  */
 
-import { queryAll, queryFirst } from '../../shared/database';
+import { queryAll, queryFirst, queryRun } from '../../shared/database';
 
 /**
  * Overview Statistics
@@ -538,6 +538,176 @@ class AnalyticsService {
       avgTTFB: row.avg_ttfb || 0,
       errorCount: row.error_count,
     }));
+  }
+
+  /**
+   * Get time series statistics for a specific API key
+   */
+  async getKeyTimeSeriesStats(keyId: string, days: number = 7): Promise<TimeSeriesStats[]> {
+    const results = queryAll<{
+      date: string;
+      request_count: number;
+      total_tokens: number;
+      avg_latency: number;
+      avg_ttfb: number;
+      error_count: number;
+    }>(`
+      SELECT
+        DATE(timestamp, 'unixepoch') as date,
+        COUNT(*) as request_count,
+        SUM(total_tokens) as total_tokens,
+        AVG(latency_ms) as avg_latency,
+        AVG(time_to_first_byte_ms) as avg_ttfb,
+        SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) as error_count
+      FROM request_logs
+      WHERE api_key_id = ? AND timestamp >= strftime('%s', 'now', '-${days} days')
+      GROUP BY DATE(timestamp, 'unixepoch')
+      ORDER BY date ASC
+    `, [keyId]);
+
+    return results.map(row => ({
+      date: row.date,
+      requestCount: row.request_count,
+      totalTokens: row.total_tokens || 0,
+      avgLatency: row.avg_latency || 0,
+      avgTTFB: row.avg_ttfb || 0,
+      errorCount: row.error_count,
+    }));
+  }
+
+  /**
+   * Snapshot daily statistics to analytics_snapshots table
+   * Call this before clearing logs to preserve historical data
+   *
+   * @param targetDate - Date to snapshot (format: YYYY-MM-DD). Defaults to today.
+   */
+  async snapshotDailyStats(targetDate?: string): Promise<void> {
+    const date = targetDate || new Date().toISOString().split('T')[0];
+    const now = Math.floor(Date.now() / 1000);
+
+    // Get current day's statistics from request_logs
+    const stats = queryFirst<{
+      total_requests: number;
+      total_tokens: number;
+      total_prompt_tokens: number;
+      total_completion_tokens: number;
+      avg_latency: number;
+      avg_ttfb: number;
+      success_rate: number;
+      error_count: number;
+    }>(`
+      SELECT
+        COUNT(*) as total_requests,
+        SUM(total_tokens) as total_tokens,
+        SUM(prompt_tokens) as total_prompt_tokens,
+        SUM(completion_tokens) as total_completion_tokens,
+        AVG(latency_ms) as avg_latency,
+        AVG(time_to_first_byte_ms) as avg_ttfb,
+        SUM(CASE WHEN status_code >= 200 AND status_code < 300 THEN 1 ELSE 0 END) * 100.0 / COUNT(*) as success_rate,
+        SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) as error_count
+      FROM request_logs
+      WHERE DATE(timestamp, 'unixepoch') = ?
+    `, [date]);
+
+    if (!stats || stats.total_requests === 0) {
+      console.log(`[Analytics] No data to snapshot for date: ${date}`);
+      return;
+    }
+
+    // Use INSERT OR REPLACE to handle duplicate dates
+    queryRun(`
+      INSERT OR REPLACE INTO analytics_snapshots
+        (date, total_requests, total_tokens, total_prompt_tokens, total_completion_tokens,
+         avg_latency, avg_ttfb, success_rate, error_count, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      date,
+      stats.total_requests,
+      stats.total_tokens || 0,
+      stats.total_prompt_tokens || 0,
+      stats.total_completion_tokens || 0,
+      stats.avg_latency || 0,
+      stats.avg_ttfb || 0,
+      stats.success_rate || 0,
+      stats.error_count || 0,
+      now,
+    ]);
+
+    console.log(`[Analytics] Snapshotted ${stats.total_requests} requests for date: ${date}`);
+  }
+
+  /**
+   * Get overview statistics including historical snapshots
+   * Combines live data from request_logs with historical snapshots
+   */
+  async getOverviewStatsWithSnapshots(): Promise<OverviewStats> {
+    // Get recent live data (last 7 days)
+    const liveStats = await this.getOverviewStats();
+
+    // Get historical snapshot data (older than 7 days)
+    const snapshotStats = queryFirst<{
+      total_requests: number;
+      total_tokens: number;
+      total_prompt_tokens: number;
+      total_completion_tokens: number;
+      avg_latency: number;
+      avg_ttfb: number;
+      success_rate: number;
+      error_count: number;
+    }>(`
+      SELECT
+        SUM(total_requests) as total_requests,
+        SUM(total_tokens) as total_tokens,
+        SUM(total_prompt_tokens) as total_prompt_tokens,
+        SUM(total_completion_tokens) as total_completion_tokens,
+        SUM(avg_latency * total_requests) / SUM(total_requests) as avg_latency,
+        SUM(avg_ttfb * total_requests) / SUM(total_requests) as avg_ttfb,
+        SUM(success_rate * total_requests) / SUM(total_requests) as success_rate,
+        SUM(error_count) as error_count
+      FROM analytics_snapshots
+      WHERE date < DATE('now', '-7 days')
+    `);
+
+    if (!snapshotStats || !snapshotStats.total_requests) {
+      // No historical snapshot data, return live stats only
+      return liveStats;
+    }
+
+    // Combine live and snapshot data
+    const totalRequests = liveStats.totalRequests + snapshotStats.total_requests;
+    const totalTokens = liveStats.totalTokens + snapshotStats.total_tokens;
+    const totalPromptTokens = liveStats.totalPromptTokens + (snapshotStats.total_prompt_tokens || 0);
+    const totalCompletionTokens = liveStats.totalCompletionTokens + (snapshotStats.total_completion_tokens || 0);
+
+    // Weighted averages
+    const avgLatency = (
+      (liveStats.avgLatency * liveStats.totalRequests + (snapshotStats.avg_latency || 0) * snapshotStats.total_requests) /
+      totalRequests
+    );
+    const avgTTFB = (
+      (liveStats.avgTTFB * liveStats.totalRequests + (snapshotStats.avg_ttfb || 0) * snapshotStats.total_requests) /
+      totalRequests
+    );
+    const successRate = (
+      (liveStats.successRate * liveStats.totalRequests + (snapshotStats.success_rate || 0) * snapshotStats.total_requests) /
+      totalRequests
+    );
+    const errorCount = liveStats.errorRate * liveStats.totalRequests / 100 + (snapshotStats.error_count || 0);
+    const errorRate = (errorCount / totalRequests) * 100;
+
+    return {
+      totalRequests,
+      totalTokens,
+      totalPromptTokens,
+      totalCompletionTokens,
+      promptRatio: totalRequests > 0 ? (totalPromptTokens / totalTokens) * 100 : 0,
+      completionRatio: totalRequests > 0 ? (totalCompletionTokens / totalTokens) * 100 : 0,
+      avgLatency,
+      avgTTFB,
+      successRate,
+      errorRate,
+      costEstimate: (totalTokens / 1000) * 0.002, // Simplified cost estimate
+    };
   }
 }
 

@@ -390,6 +390,20 @@ export const LogExplorer: React.FC = () => {
         apiKeys={apiKeys}
         vendors={vendors}
         onRetry={handleRetry}
+        onLogUpdate={(updatedLog) => {
+          // Update the selected log when polling detects changes
+          setSelectedLog(updatedLog);
+          // Also update the log in the list
+          setLogs(prevLogs => {
+            const index = prevLogs.findIndex(l => l.id === updatedLog.id);
+            if (index !== -1) {
+              const nextLogs = [...prevLogs];
+              nextLogs[index] = updatedLog;
+              return nextLogs;
+            }
+            return prevLogs;
+          });
+        }}
       />
     </div>
   );

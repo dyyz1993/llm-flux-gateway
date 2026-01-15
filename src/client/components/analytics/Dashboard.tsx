@@ -33,6 +33,8 @@ import {
   Pie,
   Cell,
   // Legend,
+  LineChart,
+  Line,
 } from 'recharts';
 import {
   TrendingUp,
@@ -89,6 +91,10 @@ export const Dashboard: React.FC = () => {
   const [logs, setLogs] = useState<RequestLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Key trend chart state - store trend data for all keys
+  const [allKeysTimeSeries, setAllKeysTimeSeries] = useState<Record<string, TimeSeriesStats[]>>({});
+  const [isLoadingKeyTrend, setIsLoadingKeyTrend] = useState(false);
+
   useEffect(() => {
     async function loadData() {
       setIsLoading(true);
@@ -121,6 +127,28 @@ export const Dashboard: React.FC = () => {
         setCacheStats(cacheData);
         setTimeSeriesStats(timeSeriesData);
         setLogs(logsData);
+
+        // Load trend data for all API keys
+        if (keyData.length > 0) {
+          setIsLoadingKeyTrend(true);
+          const trendDataPromises = keyData.map(async (key) => {
+            try {
+              const trend = await getTimeSeriesStats(7, key.keyId);
+              return { keyId: key.keyId, trend };
+            } catch (error) {
+              console.error(`Failed to load trend for key ${key.keyId}:`, error);
+              return { keyId: key.keyId, trend: [] };
+            }
+          });
+
+          const results = await Promise.all(trendDataPromises);
+          const trendDataMap: Record<string, TimeSeriesStats[]> = {};
+          for (const result of results) {
+            trendDataMap[result.keyId] = result.trend;
+          }
+          setAllKeysTimeSeries(trendDataMap);
+          setIsLoadingKeyTrend(false);
+        }
       } catch (error) {
         console.error('Failed to load analytics:', error);
       } finally {
@@ -150,6 +178,40 @@ export const Dashboard: React.FC = () => {
     requests: item.requestCount,
     latency: item.avgLatency,
   }));
+
+  // Combined API key trend chart data - merge all keys' data into single chart
+  // Get all unique dates from all keys' trend data
+  const allDates = new Set<string>();
+  for (const keyId of Object.keys(allKeysTimeSeries)) {
+    const trend = allKeysTimeSeries[keyId];
+    if (trend) {
+      for (const item of trend) {
+        allDates.add(item.date);
+      }
+    }
+  }
+  const sortedDates = Array.from(allDates).sort();
+
+  // Build combined chart data where each date has token values for all keys
+  const combinedKeyChartData = sortedDates.map((date) => {
+    const dataPoint: Record<string, any> = {
+      date: new Date(date).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+      }),
+    };
+    // Add token count for each key
+    for (const keyId of Object.keys(allKeysTimeSeries)) {
+      const trend = allKeysTimeSeries[keyId];
+      if (trend) {
+        const dayData = trend.find((t) => t.date === date);
+        dataPoint[keyId] = dayData?.totalTokens || 0;
+      } else {
+        dataPoint[keyId] = 0;
+      }
+    }
+    return dataPoint;
+  });
 
   const modelChartData = modelStats.slice(0, 5).map((stat) => ({
     name: stat.model,
@@ -445,59 +507,140 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* API Key Statistics */}
+      {/* API Key Statistics & Trend Chart */}
       {keyStats.length > 0 && (
-        <div className="bg-[#0a0a0a] border border-[#262626] rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-white mb-6">API Key Statistics</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[#262626]">
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">Key Name</th>
-                  <th className="text-right py-3 px-4 text-gray-400 font-medium">Requests</th>
-                  <th className="text-right py-3 px-4 text-gray-400 font-medium">Tokens</th>
-                  <th className="text-right py-3 px-4 text-gray-400 font-medium">Avg Latency</th>
-                  <th className="text-right py-3 px-4 text-gray-400 font-medium">Avg TTFB</th>
-                  <th className="text-right py-3 px-4 text-gray-400 font-medium">Errors</th>
-                  <th className="text-right py-3 px-4 text-gray-400 font-medium">Error Rate</th>
-                </tr>
-              </thead>
-              <tbody>
-                {keyStats.map((stat) => (
-                  <tr key={stat.keyId} className="border-b border-[#1a1a1a] hover:bg-[#111]">
-                    <td className="py-3 px-4 text-white font-medium">{stat.keyName}</td>
-                    <td className="py-3 px-4 text-right text-gray-300">
-                      {stat.requestCount.toLocaleString()}
-                    </td>
-                    <td className="py-3 px-4 text-right text-gray-300">
-                      {formatNumber(stat.totalTokens)}
-                    </td>
-                    <td className="py-3 px-4 text-right text-gray-300">
-                      {formatLatency(stat.avgLatency)}
-                    </td>
-                    <td className="py-3 px-4 text-right text-gray-300">
-                      {formatLatency(stat.avgTTFB)}
-                    </td>
-                    <td className="py-3 px-4 text-right text-gray-300">
-                      {stat.errorCount.toLocaleString()}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <span
-                        className={`px-2 py-1 rounded text-xs ${
-                          stat.errorRate > 5
-                            ? 'bg-red-900/30 text-red-400'
-                            : 'bg-green-900/30 text-green-400'
-                        }`}
-                      >
-                        {stat.errorRate.toFixed(1)}%
-                      </span>
-                    </td>
+        <>
+          <div className="bg-[#0a0a0a] border border-[#262626] rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-white mb-6">API Key Statistics</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#262626]">
+                    <th className="text-left py-3 px-4 text-gray-400 font-medium">Key Name</th>
+                    <th className="text-right py-3 px-4 text-gray-400 font-medium">Requests</th>
+                    <th className="text-right py-3 px-4 text-gray-400 font-medium">Tokens</th>
+                    <th className="text-right py-3 px-4 text-gray-400 font-medium">Avg Latency</th>
+                    <th className="text-right py-3 px-4 text-gray-400 font-medium">Avg TTFB</th>
+                    <th className="text-right py-3 px-4 text-gray-400 font-medium">Errors</th>
+                    <th className="text-right py-3 px-4 text-gray-400 font-medium">Error Rate</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {keyStats.map((stat) => (
+                    <tr key={stat.keyId} className="border-b border-[#1a1a1a] hover:bg-[#111]">
+                      <td className="py-3 px-4 text-white font-medium">{stat.keyName}</td>
+                      <td className="py-3 px-4 text-right text-gray-300">
+                        {stat.requestCount.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4 text-right text-gray-300">
+                        {formatNumber(stat.totalTokens)}
+                      </td>
+                      <td className="py-3 px-4 text-right text-gray-300">
+                        {formatLatency(stat.avgLatency)}
+                      </td>
+                      <td className="py-3 px-4 text-right text-gray-300">
+                        {formatLatency(stat.avgTTFB)}
+                      </td>
+                      <td className="py-3 px-4 text-right text-gray-300">
+                        {stat.errorCount.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <span
+                          className={`px-2 py-1 rounded text-xs ${
+                            stat.errorRate > 5
+                              ? 'bg-red-900/30 text-red-400'
+                              : 'bg-green-900/30 text-green-400'
+                          }`}
+                        >
+                          {stat.errorRate.toFixed(1)}%
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+
+          {/* API Key Trend Chart - Combined */}
+          {/* Only show trend chart if we have trend data for at least one key */}
+          {Object.keys(allKeysTimeSeries).length > 0 && Object.values(allKeysTimeSeries).some(data => data.length > 0) && (
+            <div className="bg-[#0a0a0a] border border-[#262626] rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-white mb-6">
+                API Key Token Usage Trend (7 days)
+              </h3>
+              <div className="h-[300px] w-full">
+                {isLoadingKeyTrend ? (
+                  <div className="h-[300px] flex items-center justify-center">
+                    <div className="text-gray-500">Loading trend data...</div>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={combinedKeyChartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#262626" vertical={false} />
+                      <XAxis
+                        dataKey="date"
+                        stroke="#525252"
+                        fontSize={12}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        stroke="#525252"
+                        fontSize={12}
+                        tickLine={false}
+                        axisLine={false}
+                        tickFormatter={(value) =>
+                          value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value.toString()
+                        }
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#171717',
+                          borderColor: '#404040',
+                          color: '#fff',
+                        }}
+                        itemStyle={{ color: '#fff' }}
+                      />
+                      {keyStats.map((stat, index) => {
+                        const color = COLORS[index % COLORS.length];
+                        const keyData = allKeysTimeSeries[stat.keyId];
+                        if (!keyData || keyData.length === 0) return null;
+                        return (
+                          <Line
+                            key={stat.keyId}
+                            type="monotone"
+                            dataKey={stat.keyId}
+                            stroke={color}
+                            strokeWidth={2}
+                            dot={{ fill: color, r: 3 }}
+                            activeDot={{ r: 5 }}
+                            name={stat.keyName}
+                            connectNulls={false}
+                          />
+                        );
+                      })}
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+              {/* Legend */}
+              <div className="mt-4 flex flex-wrap gap-4">
+                {keyStats.map((stat, index) => {
+                  const color = COLORS[index % COLORS.length];
+                  const keyData = allKeysTimeSeries[stat.keyId];
+                  const hasData = keyData && keyData.length > 0;
+                  return (
+                    <div key={stat.keyId} className={`flex items-center gap-2 ${hasData ? 'opacity-100' : 'opacity-30'}`}>
+                      <div className="w-3 h-3 rounded" style={{ backgroundColor: color }} />
+                      <span className="text-sm text-gray-400">{stat.keyName}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Recent Requests */}
