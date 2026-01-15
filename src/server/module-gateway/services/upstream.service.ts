@@ -252,15 +252,102 @@ export interface UsageInfo {
 export class UpstreamService {
   private persistentAgent: Agent;
 
+  /**
+   * 获取厂商特定的超时配置
+   * 某些厂商（如 GLM）可能需要更长的超时时间
+   */
+  private getVendorTimeout(url: string): {
+    connectTimeout: number;
+    headersTimeout: number;
+    bodyTimeout: number;
+  } {
+    // GLM API (Zhipu AI - bigmodel.cn) 连接建立较慢
+    if (url.includes('bigmodel.cn')) {
+      console.log(`[Upstream] 检测到 GLM API，使用扩展超时配置`);
+      return {
+        connectTimeout: 180000,  // 3 分钟
+        headersTimeout: 600000,  // 10 分钟
+        bodyTimeout: 600000,     // 10 分钟
+      };
+    }
+
+    // 默认超时配置
+    return {
+      connectTimeout: 120000,  // 2 分钟
+      headersTimeout: 600000,  // 10 分钟
+      bodyTimeout: 600000,     // 10 分钟
+    };
+  }
+
+  /**
+   * 分类错误类型以便更好地处理
+   */
+  private classifyError(error: Error): {
+    isRetryable: boolean;
+    errorType: 'timeout' | 'network' | 'upstream' | 'unknown';
+    description: string;
+  } {
+    const message = error.message.toLowerCase();
+
+    if (message.includes('etimedout') || message.includes('timeout')) {
+      return {
+        isRetryable: true,
+        errorType: 'timeout',
+        description: '连接超时 - 可能是网络延迟或上游响应慢',
+      };
+    }
+
+    if (message.includes('econnrefused')) {
+      return {
+        isRetryable: true,
+        errorType: 'network',
+        description: '连接被拒绝 - 上游服务可能不可用',
+      };
+    }
+
+    if (message.includes('enotfound')) {
+      return {
+        isRetryable: true,
+        errorType: 'network',
+        description: 'DNS 解析失败 - 域名可能不正确或 DNS 服务问题',
+      };
+    }
+
+    if (message.includes('econnreset') || message.includes('socket hang up')) {
+      return {
+        isRetryable: true,
+        errorType: 'network',
+        description: '连接被重置 - 可能是网络不稳定或上游断开连接',
+      };
+    }
+
+    if (message.includes('upstream api error')) {
+      return {
+        isRetryable: false,
+        errorType: 'upstream',
+        description: '上游 API 返回错误',
+      };
+    }
+
+    return {
+      isRetryable: false,
+      errorType: 'unknown',
+      description: '未知错误',
+    };
+  }
+
   constructor() {
     /**
      * 创建持久化 Agent 以处理长连接
-     * 显式设置超长的 headersTimeout 和 bodyTimeout 以防止 Node.js 默认在 60s/70s 断开连接
+     * ⚠️ Docker 环境注意事项：
+     * - 容器网络增加了额外的延迟
+     * - connectTimeout 从 60s 增加到 120s (2分钟)
+     * - 实际请求时会根据厂商 URL 动态调整
      */
     this.persistentAgent = new Agent({
       headersTimeout: 600000, // 10 分钟
       bodyTimeout: 600000,    // 10 分钟
-      connectTimeout: 60000,  // 1 分钟
+      connectTimeout: 120000, // 2 分钟 (increased for Docker)
       keepAliveTimeout: 60000, // 1 分钟
     });
   }
@@ -274,65 +361,109 @@ export class UpstreamService {
   async *streamRequest(options: StreamOptions): AsyncGenerator<string, void, unknown> {
     const { url, apiKey, body } = options;
 
-    console.log('[Upstream] Starting stream request to:', url);
-
-    // Using undici.request instead of fetch for more robust timeout control in Docker/ESM
-    const { statusCode, body: responseBody } = await request(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-        'Connection': 'keep-alive',
-        'Accept': 'text/event-stream',
-      },
-      body: JSON.stringify({
-        ...body,
-        stream: true,
-      }),
-      dispatcher: this.persistentAgent,
-      // Explicitly set very long timeouts at the request level
-      headersTimeout: 600000, // 10 minutes
-      bodyTimeout: 0,         // No timeout for the stream body itself
+    // 获取厂商特定超时配置
+    const vendorTimeout = this.getVendorTimeout(url);
+    console.log('[Upstream] Starting stream request to:', url, {
+      vendorTimeout: `${vendorTimeout.connectTimeout}ms connect, ${vendorTimeout.headersTimeout}ms headers`,
+      isGLM: url.includes('bigmodel.cn'),
     });
 
-    if (statusCode >= 400) {
-      const errorText = await responseBody.text();
-      throw new Error(`Upstream API error: ${statusCode} ${errorText}`);
-    }
-
-    if (!responseBody) {
-      throw new Error('No response body');
-    }
-
-    // Read and yield raw SSE text lines
-    // undici body is already a ReadableStream or can be consumed as one
-    const decoder = new TextDecoder();
-    let buffer = '';
+    const startTime = Date.now();
 
     try {
-      // @ts-ignore - undici body is a Dispatcher.ResponseData['body'] which has symbol-based async iterator
-      for await (const chunk of responseBody) {
-        // Decode chunk and add to buffer
-        buffer += decoder.decode(chunk as Buffer, { stream: true });
+      // Using undici.request instead of fetch for more robust timeout control in Docker/ESM
+      const { statusCode, body: responseBody } = await request(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+          'Connection': 'keep-alive',
+          'Accept': 'text/event-stream',
+        },
+        body: JSON.stringify({
+          ...body,
+          stream: true,
+        }),
+        dispatcher: this.persistentAgent,
+        // 使用厂商特定的超时配置
+        // 注意: connectTimeout 是 Agent 级别配置，已在 persistentAgent 中设置
+        headersTimeout: vendorTimeout.headersTimeout,
+        bodyTimeout: 0,         // 流式响应体本身不设超时
+      });
 
-        // Process complete SSE lines
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+      const connectionTime = Date.now() - startTime;
+      console.log('[Upstream] Stream connection established:', {
+        url,
+        statusCode,
+        connectionTime: `${connectionTime}ms`,
+        vendorTimeout,
+      });
 
-        for (const line of lines) {
-          if (line.includes('data:')) {
-            // Yield complete SSE lines
-            yield line + '\n';
+      if (statusCode >= 400) {
+        const errorText = await responseBody.text();
+        throw new Error(`Upstream API error: ${statusCode} ${errorText}`);
+      }
+
+      if (!responseBody) {
+        throw new Error('No response body');
+      }
+
+      // Read and yield raw SSE text lines
+      // undici body is already a ReadableStream or can be consumed as one
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      try {
+        // @ts-ignore - undici body is a Dispatcher.ResponseData['body'] which has symbol-based async iterator
+        for await (const chunk of responseBody) {
+          // Decode chunk and add to buffer
+          buffer += decoder.decode(chunk as Buffer, { stream: true });
+
+          // Process complete SSE lines
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+          for (const line of lines) {
+            if (line.includes('data:')) {
+              // Yield complete SSE lines
+              yield line + '\n';
+            }
           }
         }
-      }
-      
-      // Flush any remaining data in buffer
-      if (buffer.trim()) {
-        yield buffer;
+
+        // Flush any remaining data in buffer
+        if (buffer.trim()) {
+          yield buffer;
+        }
+      } catch (err: any) {
+        const elapsed = Date.now() - startTime;
+        const errorInfo = this.classifyError(err);
+
+        console.error('[Upstream] Stream consumption error:', {
+          errorType: errorInfo.errorType,
+          description: errorInfo.description,
+          isRetryable: errorInfo.isRetryable,
+          url,
+          elapsed: `${elapsed}ms`,
+          errorMessage: err.message,
+        });
+
+        throw err;
       }
     } catch (err: any) {
-      console.error('[Upstream] Stream consumption error:', err);
+      const elapsed = Date.now() - startTime;
+      const errorInfo = this.classifyError(err);
+
+      console.error('[Upstream] Stream request failed:', {
+        errorType: errorInfo.errorType,
+        description: errorInfo.description,
+        isRetryable: errorInfo.isRetryable,
+        url,
+        elapsed: `${elapsed}ms`,
+        errorMessage: err.message,
+        errorCode: err.code,
+      });
+
       throw err;
     }
   }
@@ -504,37 +635,72 @@ export class UpstreamService {
   }> {
     const { url, apiKey, body } = options;
 
+    // 获取厂商特定超时配置
+    const vendorTimeout = this.getVendorTimeout(url);
+
     // Get dynamic timeout from config (default 120s)
     const baseTimeout = await systemConfigService.getEffectiveValue<number>('request_timeout') || config.requestTimeout;
-    
+
     // For non-streaming requests, we allow a generous timeout (default 5 minutes)
     // especially for reasoning models that may take a long time to respond
     const timeout = Math.max(baseTimeout, 300);
 
-    const { statusCode, body: responseBody } = await request(url, {
-      method: 'POST', 
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-        'Connection': 'keep-alive',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify({
-        ...body,
-        stream: false,
-      }),
-      dispatcher: this.persistentAgent,
-      headersTimeout: timeout * 1000,
-      bodyTimeout: timeout * 1000,
+    console.log('[Upstream] Starting non-streaming request to:', url, {
+      vendorTimeout: `${vendorTimeout.connectTimeout}ms connect, ${timeout * 1000}ms body`,
+      isGLM: url.includes('bigmodel.cn'),
     });
 
-    if (statusCode >= 400) {
-      const errorText = await responseBody.text();
-      throw new Error(`Upstream API error: ${statusCode} ${errorText}`);
-    }
+    const startTime = Date.now();
 
-    const data = await responseBody.json() as any;
-    return data;
+    try {
+      const { statusCode, body: responseBody } = await request(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+          'Connection': 'keep-alive',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          ...body,
+          stream: false,
+        }),
+        dispatcher: this.persistentAgent,
+        // 注意: connectTimeout 是 Agent 级别配置，已在 persistentAgent 中设置
+        headersTimeout: timeout * 1000,
+        bodyTimeout: timeout * 1000,
+      });
+
+      const connectionTime = Date.now() - startTime;
+      console.log('[Upstream] Non-streaming request completed:', {
+        url,
+        statusCode,
+        connectionTime: `${connectionTime}ms`,
+      });
+
+      if (statusCode >= 400) {
+        const errorText = await responseBody.text();
+        throw new Error(`Upstream API error: ${statusCode} ${errorText}`);
+      }
+
+      const data = await responseBody.json() as any;
+      return data;
+    } catch (err: any) {
+      const elapsed = Date.now() - startTime;
+      const errorInfo = this.classifyError(err);
+
+      console.error('[Upstream] Non-streaming request failed:', {
+        errorType: errorInfo.errorType,
+        description: errorInfo.description,
+        isRetryable: errorInfo.isRetryable,
+        url,
+        elapsed: `${elapsed}ms`,
+        errorMessage: err.message,
+        errorCode: err.code,
+      });
+
+      throw err;
+    }
   }
 }
 

@@ -6,7 +6,7 @@ services:
       dockerfile: Dockerfile
     image: llm-flux-gateway:local
     container_name: llm-flux-gateway
-    restart: always
+    restart: unless-stopped  # 更精确的重启策略
     ports:
       - "3000:3000"
     environment:
@@ -26,6 +26,34 @@ services:
     volumes:
       - ./data:/app/data
       - ./config:/app/config
+
+    # ⚠️ 超时问题修复：添加健康检查
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s    # 每 30 秒检查一次
+      timeout: 10s     # 健康检查超时 10 秒
+      retries: 3       # 失败 3 次后标记为不健康
+      start_period: 40s  # 容器启动后 40 秒才开始健康检查
+
+    # 资源限制，防止容器被系统杀死
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+    # 网络配置
+    networks:
+      - gateway-network
+
+networks:
+  gateway-network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: br-gateway
 
 volumes:
   data:

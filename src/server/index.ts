@@ -20,10 +20,15 @@ import { vendorsService } from './module-vendors/services/vendors.service';
 
 // Configure global fetch agent to prevent 60s/70s timeouts (undici defaults)
 // This is critical for LLM reasoning models that take a long time to start responding
+//
+// ⚠️ Docker 环境注意事项：
+// - 容器网络增加了额外的延迟
+// - connectTimeout 从 60s 增加到 180s (3分钟) 以适应 Docker + GLM API
+// - GLM API (bigmodel.cn) 连接建立较慢，需要更长的超时时间
 setGlobalDispatcher(new Agent({
   headersTimeout: 600000, // 10 minutes
   bodyTimeout: 600000,    // 10 minutes
-  connectTimeout: 60000,  // 1 minute
+  connectTimeout: 180000, // 3 minutes (increased for Docker + GLM API)
   keepAliveTimeout: 60000, // 1 minute
 }));
 
