@@ -605,4 +605,192 @@ describe('RouteMatcherService', () => {
       expect(result3?.rewrittenModel).toBe('test-rewrite');
     });
   });
+
+  describe('大量规则组合测试 (Large Rule Combinations)', () => {
+    it('should prioritize specific rules over * wildcard regardless of order', async () => {
+      const overrides = JSON.stringify([
+        {
+          field: 'model',
+          matchValues: ['*'],  // Wildcard at the beginning
+          rewriteValue: 'fallback-model',
+        },
+        {
+          field: 'model',
+          matchValues: ['glm-4.6'],
+          rewriteValue: 'exact-glm-4.6',
+        },
+        {
+          field: 'model',
+          matchValues: ['glm-4.7'],
+          rewriteValue: 'exact-glm-4.7',
+        },
+        {
+          field: 'model',
+          matchValues: ['claude-3-opus*', 'claude-3-5-sonnet*'],
+          rewriteValue: 'claude-high-end',
+        },
+        {
+          field: 'model',
+          matchValues: ['claude-3-sonnet*', 'claude-3-haiku*', 'claude-3-5-haiku*'],
+          rewriteValue: 'claude-mid-tier',
+        },
+        {
+          field: 'model',
+          matchValues: ['gpt-4o'],
+          rewriteValue: 'gpt-4o-exact',
+        },
+        {
+          field: 'model',
+          matchValues: ['gpt-4*', 'gpt-4o-mini'],
+          rewriteValue: 'gpt-4-family',
+        },
+      ]);
+
+      mockQueryAll.mockReturnValue([
+        {
+          ...mockRoutesDbRow,
+          overrides,
+        },
+      ] as any);
+
+      // Exact matches should work despite wildcard being first
+      const result1 = await service.findMatch('glm-4.6');
+      expect(result1?.rewrittenModel).toBe('exact-glm-4.6');
+
+      const result2 = await service.findMatch('glm-4.7');
+      expect(result2?.rewrittenModel).toBe('exact-glm-4.7');
+
+      const result3 = await service.findMatch('gpt-4o');
+      expect(result3?.rewrittenModel).toBe('gpt-4o-exact');
+
+      const result4 = await service.findMatch('gpt-4o-mini');
+      expect(result4?.rewrittenModel).toBe('gpt-4-family');
+
+      // Prefix matches should work
+      const result5 = await service.findMatch('claude-3-opus-20240229');
+      expect(result5?.rewrittenModel).toBe('claude-high-end');
+
+      const result6 = await service.findMatch('claude-3-5-sonnet-20241022');
+      expect(result6?.rewrittenModel).toBe('claude-high-end');
+
+      const result7 = await service.findMatch('claude-3-sonnet-20240229');
+      expect(result7?.rewrittenModel).toBe('claude-mid-tier');
+
+      const result8 = await service.findMatch('gpt-4-turbo');
+      expect(result8?.rewrittenModel).toBe('gpt-4-family');
+
+      // Wildcard should only match when nothing else matches
+      const result9 = await service.findMatch('gemini-1.5-pro');
+      expect(result9?.rewrittenModel).toBe('fallback-model');
+    });
+
+    it('should handle user-provided real-world configuration', async () => {
+      const overrides = JSON.stringify([
+        {
+          field: 'model',
+          matchValues: ['glm-4.6'],
+          rewriteValue: 'glm-4.6',
+        },
+        {
+          field: 'model',
+          matchValues: ['glm-4.7'],
+          rewriteValue: 'glm-4.7',
+        },
+        {
+          field: 'model',
+          matchValues: ['claude-3-opus*', 'claude-3-5-sonnet*'],
+          rewriteValue: 'glm-4.6',
+        },
+        {
+          field: 'model',
+          matchValues: ['claude-3-sonnet*', 'claude-3-haiku*', 'claude-3-5-haiku*'],
+          rewriteValue: 'glm-4.6',
+        },
+        {
+          field: 'model',
+          matchValues: ['gpt-4o'],
+          rewriteValue: 'glm-4.7',
+        },
+        {
+          field: 'model',
+          matchValues: ['gpt-4*', 'gpt-4o-mini'],
+          rewriteValue: 'glm-4.6',
+        },
+        {
+          field: 'model',
+          matchValues: ['*'],
+          rewriteValue: 'glm-4.5-air',
+        },
+      ]);
+
+      mockQueryAll.mockReturnValue([
+        {
+          ...mockRoutesDbRow,
+          overrides,
+        },
+      ] as any);
+
+      // Test exact matches
+      expect((await service.findMatch('glm-4.6'))?.rewrittenModel).toBe('glm-4.6');
+      expect((await service.findMatch('glm-4.7'))?.rewrittenModel).toBe('glm-4.7');
+      expect((await service.findMatch('gpt-4o'))?.rewrittenModel).toBe('glm-4.7');
+      expect((await service.findMatch('gpt-4o-mini'))?.rewrittenModel).toBe('glm-4.6');
+
+      // Test prefix matches
+      expect((await service.findMatch('claude-3-opus'))?.rewrittenModel).toBe('glm-4.6');
+      expect((await service.findMatch('claude-3-opus-20240229'))?.rewrittenModel).toBe('glm-4.6');
+      expect((await service.findMatch('claude-3-5-sonnet-20241022'))?.rewrittenModel).toBe('glm-4.6');
+      expect((await service.findMatch('claude-3-sonnet-20240229'))?.rewrittenModel).toBe('glm-4.6');
+      expect((await service.findMatch('claude-3-haiku-20240307'))?.rewrittenModel).toBe('glm-4.6');
+      expect((await service.findMatch('claude-3-5-haiku-20241022'))?.rewrittenModel).toBe('glm-4.6');
+      expect((await service.findMatch('gpt-4-turbo'))?.rewrittenModel).toBe('glm-4.6');
+      expect((await service.findMatch('gpt-4'))?.rewrittenModel).toBe('glm-4.6');
+
+      // Test fallback wildcard
+      expect((await service.findMatch('gemini-1.5-pro'))?.rewrittenModel).toBe('glm-4.5-air');
+      expect((await service.findMatch('llama-3-70b'))?.rewrittenModel).toBe('glm-4.5-air');
+    });
+
+    it('should handle wildcard in middle of rules correctly', async () => {
+      const overrides = JSON.stringify([
+        {
+          field: 'model',
+          matchValues: ['exact-model-1'],
+          rewriteValue: 'target-1',
+        },
+        {
+          field: 'model',
+          matchValues: ['*'],  // Wildcard in the middle
+          rewriteValue: 'fallback',
+        },
+        {
+          field: 'model',
+          matchValues: ['exact-model-2'],
+          rewriteValue: 'target-2',
+        },
+        {
+          field: 'model',
+          matchValues: ['prefix-*'],
+          rewriteValue: 'prefix-target',
+        },
+      ]);
+
+      mockQueryAll.mockReturnValue([
+        {
+          ...mockRoutesDbRow,
+          overrides,
+        },
+      ] as any);
+
+      // Exact matches should still work despite wildcard in middle
+      expect((await service.findMatch('exact-model-1'))?.rewrittenModel).toBe('target-1');
+      expect((await service.findMatch('exact-model-2'))?.rewrittenModel).toBe('target-2');
+
+      // Prefix match should work
+      expect((await service.findMatch('prefix-123'))?.rewrittenModel).toBe('prefix-target');
+
+      // Wildcard should only match unmatched models
+      expect((await service.findMatch('unknown-model'))?.rewrittenModel).toBe('fallback');
+    });
+  });
 });
