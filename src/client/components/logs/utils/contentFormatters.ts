@@ -93,6 +93,11 @@ export function tryParseToolCallsFromResponse(responseContent: string | undefine
  * Converts content to a string representation suitable for display
  */
 export function formatContent(content: string | unknown): string {
+  // Handle null/undefined
+  if (content == null) {
+    return '';
+  }
+
   // If it's already a string, return as-is
   if (typeof content === 'string') {
     // Try to parse as JSON in case it's a stringified content array
@@ -179,8 +184,14 @@ export function formatContent(content: string | unknown): string {
  * Handles both string content and structured content (arrays)
  */
 export function shouldTruncate(content: string | unknown, maxLength = 500, maxLines = 10): boolean {
-  // Convert non-string content to string for length check
+  // Handle null/undefined content early
+  if (content == null) {  // catches both null and undefined
+    return false;
+  }
+
   const contentStr = typeof content === 'string' ? content : JSON.stringify(content);
+  if (!contentStr) return false;  // Handle empty string or undefined from JSON.stringify
+
   if (contentStr.length > maxLength) return true;
   const lines = contentStr.split('\n');
   return lines.length > maxLines;

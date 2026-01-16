@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import {
   Search, Filter, XCircle, MessageSquare, Key, Bell, Eye, Star, ChevronDown, Settings, Trash2, RefreshCw, Loader2
 } from 'lucide-react';
@@ -16,6 +16,8 @@ interface LogListProps {
 
   // UI State
   isLoading: boolean;
+  isLoadingMore?: boolean;
+  hasMore?: boolean;
   searchTerm: string;
   selectedApiKey: string;
   viewMode: 'all' | 'favorites';
@@ -48,6 +50,7 @@ interface LogListProps {
   onClearNewLogs: () => void;
   onClearReadLogs: () => void;
   onClearHistory: () => void;
+  onLoadMore?: () => void;
 }
 
 export const LogList: React.FC<LogListProps> = ({
@@ -57,6 +60,8 @@ export const LogList: React.FC<LogListProps> = ({
   uniqueModels,
   newLogIds,
   isLoading,
+  isLoadingMore = false,
+  hasMore = true,
   searchTerm,
   selectedApiKey,
   viewMode,
@@ -80,9 +85,24 @@ export const LogList: React.FC<LogListProps> = ({
   onClearNewLogs,
   onClearReadLogs,
   onClearHistory,
+  onLoadMore,
 }) => {
   const clearMenuRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const [retryingIds, setRetryingIds] = useState<Set<string>>(new Set());
+
+  // Scroll handler for infinite loading
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    if (!onLoadMore || isLoadingMore || !hasMore) return;
+
+    const target = e.target as HTMLDivElement;
+    const scrollBottom = target.scrollHeight - target.scrollTop - target.clientHeight;
+
+    // Load more when user is within 100px of the bottom
+    if (scrollBottom < 100) {
+      onLoadMore();
+    }
+  }, [onLoadMore, isLoadingMore, hasMore]);
 
   // Close clear menu when clicking outside
   useEffect(() => {
@@ -358,13 +378,18 @@ export const LogList: React.FC<LogListProps> = ({
       )}
 
       {/* Log List */}
-      <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar">
+      <div
+        ref={listRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto space-y-2 custom-scrollbar"
+      >
         {isLoading ? (
           <div className="text-center py-10 text-gray-600 text-sm">Loading logs...</div>
         ) : filteredLogs.length === 0 ? (
           <div className="text-center py-10 text-gray-600 text-sm">No logs found matching filters.</div>
         ) : (
-          filteredLogs.map(log => (
+          <>
+            {filteredLogs.map(log => (
             <div
               key={log.id}
               onClick={() => onLogSelect(log)}
@@ -465,7 +490,23 @@ export const LogList: React.FC<LogListProps> = ({
                 </div>
               )}
             </div>
-          ))
+          ))}
+
+            {/* Loading More Indicator */}
+            {isLoadingMore && (
+              <div className="text-center py-4 text-gray-600 text-sm flex items-center justify-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Loading more logs...</span>
+              </div>
+            )}
+
+            {/* End of List Indicator */}
+            {!hasMore && filteredLogs.length > 0 && !isLoadingMore && (
+              <div className="text-center py-4 text-gray-700 text-xs">
+                No more logs to load
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

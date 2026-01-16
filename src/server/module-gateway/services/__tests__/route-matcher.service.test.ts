@@ -458,4 +458,151 @@ describe('RouteMatcherService', () => {
       expect(result3?.rewrittenModel).toBe('first-match');
     });
   });
+
+  describe('gpt-3.5 匹配问题 (Specific gpt-3.5 Matching)', () => {
+    it('should match gpt-3.5-turbo with gpt-3.5* pattern', async () => {
+      const overrides = JSON.stringify([
+        {
+          field: 'model',
+          matchValues: ['gpt-3.5*'],
+          rewriteValue: 'gpt-3.5-flash',
+        },
+      ]);
+
+      mockQueryAll.mockReturnValue([
+        {
+          ...mockRoutesDbRow,
+          overrides,
+        },
+      ] as any);
+
+      const result = await service.findMatch('gpt-3.5-turbo');
+
+      expect(result?.rewrittenModel).toBe('gpt-3.5-flash');
+      expect(result?.matchedRules[0].matchValues).toEqual(['gpt-3.5*']);
+    });
+
+    it('should match gpt-3.5 with gpt-3.5* pattern', async () => {
+      const overrides = JSON.stringify([
+        {
+          field: 'model',
+          matchValues: ['gpt-3.5*'],
+          rewriteValue: 'gpt-3.5-target',
+        },
+      ]);
+
+      mockQueryAll.mockReturnValue([
+        {
+          ...mockRoutesDbRow,
+          overrides,
+        },
+      ] as any);
+
+      const result = await service.findMatch('gpt-3.5');
+
+      expect(result?.rewrittenModel).toBe('gpt-3.5-target');
+      expect(result?.matchedRules[0].matchValues).toEqual(['gpt-3.5*']);
+    });
+
+    it('should match gpt-3.5-turbo-16k with gpt-3.5* pattern', async () => {
+      const overrides = JSON.stringify([
+        {
+          field: 'model',
+          matchValues: ['gpt-3.5*'],
+          rewriteValue: 'gpt-3.5-upgrade',
+        },
+      ]);
+
+      mockQueryAll.mockReturnValue([
+        {
+          ...mockRoutesDbRow,
+          overrides,
+        },
+      ] as any);
+
+      const result = await service.findMatch('gpt-3.5-turbo-16k');
+
+      expect(result?.rewrittenModel).toBe('gpt-3.5-upgrade');
+    });
+
+    it('should NOT match gpt-3.5 with gpt-3.5-turbo pattern (exact match only)', async () => {
+      const overrides = JSON.stringify([
+        {
+          field: 'model',
+          matchValues: ['gpt-3.5-turbo'],
+          rewriteValue: 'exact-only',
+        },
+        {
+          field: 'model',
+          matchValues: ['*'],
+          rewriteValue: 'fallback',
+        },
+      ]);
+
+      mockQueryAll.mockReturnValue([
+        {
+          ...mockRoutesDbRow,
+          overrides,
+        },
+      ] as any);
+
+      const result = await service.findMatch('gpt-3.5');
+
+      // Should match with fallback, not exact-only
+      expect(result?.rewrittenModel).toBe('fallback');
+      expect(result?.matchedRules[0].matchValues).toContain('*');
+    });
+
+    it('should prioritize exact gpt-3.5-turbo over prefix gpt-3.5*', async () => {
+      const overrides = JSON.stringify([
+        {
+          field: 'model',
+          matchValues: ['gpt-3.5*', 'gpt-3.5-turbo'],
+          rewriteValue: 'same-target',
+        },
+      ]);
+
+      mockQueryAll.mockReturnValue([
+        {
+          ...mockRoutesDbRow,
+          overrides,
+        },
+      ] as any);
+
+      const result = await service.findMatch('gpt-3.5-turbo');
+
+      // Should still match (same target)
+      expect(result?.rewrittenModel).toBe('same-target');
+      expect(result?.matchedRules).toHaveLength(1);
+    });
+
+    it('should handle * at beginning of matchValues correctly', async () => {
+      const overrides = JSON.stringify([
+        {
+          field: 'model',
+          matchValues: ['*', 'gpt-3.5*', 'gpt-3.5-turbo'],
+          rewriteValue: 'test-rewrite',
+        },
+      ]);
+
+      mockQueryAll.mockReturnValue([
+        {
+          ...mockRoutesDbRow,
+          overrides,
+        },
+      ] as any);
+
+      // Exact match should still work
+      const result1 = await service.findMatch('gpt-3.5-turbo');
+      expect(result1?.rewrittenModel).toBe('test-rewrite');
+
+      // Prefix match should work
+      const result2 = await service.findMatch('gpt-3.5-turbo-16k');
+      expect(result2?.rewrittenModel).toBe('test-rewrite');
+
+      // Wildcard should work for non-matching models
+      const result3 = await service.findMatch('claude-3-opus');
+      expect(result3?.rewrittenModel).toBe('test-rewrite');
+    });
+  });
 });

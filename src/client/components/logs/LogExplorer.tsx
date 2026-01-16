@@ -23,6 +23,11 @@ export const LogExplorer: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'all' | 'favorites'>('all');
 
+  // Pagination state for scroll-to-load-more
+  const [currentPage, setCurrentPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
   // Advanced filter states
   const [showAdvancedFilter, setShowAdvancedFilter] = useState(false);
   const [filterStatusCode, setFilterStatusCode] = useState<string>('');
@@ -262,30 +267,75 @@ export const LogExplorer: React.FC = () => {
 
   // Load logs when selectedApiKey or viewMode changes
   useEffect(() => {
-    async function loadLogs() {
-      setIsLoading(true);
+    async function loadLogs(resetPagination = true) {
+      if (resetPagination) {
+        setIsLoading(true);
+        setCurrentPage(0);
+        setHasMore(true);
+      } else {
+        setIsLoadingMore(true);
+      }
+
       try {
         let data: RequestLog[];
 
         if (viewMode === 'favorites') {
           data = await getFavoriteLogs(1000);
+          setLogs(data);
+          setHasMore(false); // Favorites mode loads all at once
         } else {
+          const page = resetPagination ? 0 : currentPage;
           data = await getRequestLogs({
             apiKeyId: selectedApiKey || undefined,
             limit: 20,
+            offset: page * 20,
           });
-        }
 
-        setLogs(data);
+          if (resetPagination) {
+            setLogs(data);
+          } else {
+            setLogs(prevLogs => [...prevLogs, ...data]);
+          }
+
+          // If we got less than 20 items, there are no more logs
+          setHasMore(data.length === 20);
+        }
       } catch (err) {
         console.error('[LogExplorer] Failed to load logs:', err);
-        setLogs([]);
+        if (resetPagination) {
+          setLogs([]);
+        }
       } finally {
         setIsLoading(false);
+        setIsLoadingMore(false);
       }
     }
-    loadLogs();
+    loadLogs(true);
   }, [selectedApiKey, viewMode]);
+
+  // Load more logs when page changes
+  useEffect(() => {
+    if (currentPage > 0) {
+      async function loadMore() {
+        setIsLoadingMore(true);
+        try {
+          const data = await getRequestLogs({
+            apiKeyId: selectedApiKey || undefined,
+            limit: 20,
+            offset: currentPage * 20,
+          });
+
+          setLogs(prevLogs => [...prevLogs, ...data]);
+          setHasMore(data.length === 20);
+        } catch (err) {
+          console.error('[LogExplorer] Failed to load more logs:', err);
+        } finally {
+          setIsLoadingMore(false);
+        }
+      };
+      loadMore();
+    }
+  }, [currentPage]);
 
   // SSE connection for real-time logs
   useEffect(() => {
@@ -302,9 +352,17 @@ export const LogExplorer: React.FC = () => {
           // Also update selected log if it's the one being updated
           setSelectedLog(prevSelected => {
             if (prevSelected && prevSelected.id === newLog.id) {
-              // Merge existing full data with new summary data if needed
-              // Usually the summary is enough for the list, but for details we might want to keep the full content
-              return { ...prevSelected, ...newLog };
+              // Only update summary fields, protect full data fields from being overwritten
+              // SSE broadcasts summary data (messages: [], responseContent: '') which would overwrite full data
+              const { messages, responseContent, responseToolCalls, ...summaryFields } = newLog;
+              return {
+                ...prevSelected,
+                ...summaryFields,  // Only merge summary fields (statusCode, latencyMs, tokens, etc.)
+                // Preserve full data if it exists, otherwise use new values
+                messages: (prevSelected.messages?.length ?? 0) > 0 ? prevSelected.messages : messages,
+                responseContent: prevSelected.responseContent || responseContent,
+                responseToolCalls: (prevSelected.responseToolCalls?.length ?? 0) > 0 ? prevSelected.responseToolCalls : responseToolCalls,
+              };
             }
             return prevSelected;
           });
@@ -338,6 +396,8 @@ export const LogExplorer: React.FC = () => {
         uniqueModels={uniqueModels}
         newLogIds={newLogIds}
         isLoading={isLoading}
+        isLoadingMore={isLoadingMore}
+        hasMore={hasMore}
         searchTerm={searchTerm}
         selectedApiKey={selectedApiKey}
         viewMode={viewMode}
@@ -363,6 +423,11 @@ export const LogExplorer: React.FC = () => {
           if (filters.model !== undefined) setFilterModel(filters.model);
           if (filters.timeRange !== undefined) setFilterTimeRange(filters.timeRange);
           if (filters.hasTools !== undefined) setFilterHasTools(filters.hasTools);
+        }}
+        onLoadMore={() => {
+          if (hasMore && !isLoadingMore) {
+            setCurrentPage(prev => prev + 1);
+          }
         }}
         onLogSelect={async (log) => {
           // Set selected log immediately with summary data for UI responsiveness
