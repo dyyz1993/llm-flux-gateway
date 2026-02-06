@@ -10,16 +10,22 @@ export async function corsMiddleware(c: Context, next: Next): Promise<void | Res
   const origin = c.req.header('Origin');
 
   // Check if origin is allowed
-  if (origin && allowedOrigins.includes(origin)) {
-    c.res.headers.set('Access-Control-Allow-Origin', origin);
+  if (origin) {
+    if (allowedOrigins.includes('*')) {
+      c.res.headers.set('Access-Control-Allow-Origin', '*');
+    } else if (allowedOrigins.includes(origin)) {
+      c.res.headers.set('Access-Control-Allow-Origin', origin);
+    }
   }
 
   c.res.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  c.res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  c.res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
   c.res.headers.set('Access-Control-Max-Age', '86400');
 
   // Handle preflight requests
   if (c.req.method === 'OPTIONS') {
+    // If it's a preflight request and origin is allowed, but we didn't set the header yet (e.g. wildcard allowed)
+    // Actually the logic above handles it.
     return c.body(null, 204);
   }
 
