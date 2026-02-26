@@ -113,7 +113,7 @@ describe('RouteMatcherService', () => {
       expect(result?.matchedRules[0].matchValues).toEqual(['*']);
     });
 
-    it('should prioritize exact match over wildcard', async () => {
+    it('should use first matching rule in configuration order', async () => {
       const overrides = JSON.stringify([
         {
           field: 'model',
@@ -134,10 +134,11 @@ describe('RouteMatcherService', () => {
         },
       ] as any);
 
+      // 新逻辑：按配置顺序，第一个匹配的是 *，所以返回 fallback-model
       const result = await service.findMatch('glm-4-air');
 
-      expect(result?.rewrittenModel).toBe('exact-match-model');
-      expect(result?.matchedRules[0].matchValues).toEqual(['glm-4-air']);
+      expect(result?.rewrittenModel).toBe('fallback-model');
+      expect(result?.matchedRules[0].matchValues).toEqual(['*']);
     });
   });
 
@@ -424,7 +425,7 @@ describe('RouteMatcherService', () => {
       expect(result?.rewrittenModel).toBe('wildcard-rewrite');
     });
 
-    it('should preserve user order within same priority level', async () => {
+    it('should use configuration order: first rule first', async () => {
       const overrides = JSON.stringify([
         {
           field: 'model',
@@ -445,17 +446,17 @@ describe('RouteMatcherService', () => {
         },
       ] as any);
 
-      // gpt-4 matches with first-match's gpt-4* pattern
+      // 新逻辑：按配置顺序，规则1在前
+      // gpt-4 匹配规则1的 gpt-4* → 返回 first-match
       const result1 = await service.findMatch('gpt-4');
       expect(result1?.rewrittenModel).toBe('first-match');
 
-      // claude-3-opus matches with second-match's claude-3* pattern (higher priority than * from first-match)
+      // claude-3-opus 先检查规则1: gpt-4* 不匹配，gpt-3.5* 不匹配，* 匹配 → 返回 first-match
+      // 新逻辑：按顺序匹配，规则1先匹配到*，所以返回 first-match
       const result2 = await service.findMatch('claude-3-opus');
-      expect(result2?.rewrittenModel).toBe('second-match');
+      expect(result2?.rewrittenModel).toBe('first-match');
 
-      // Models that don't match any prefix should use the first rule's wildcard
-      const result3 = await service.findMatch('gemini-pro');
-      expect(result3?.rewrittenModel).toBe('first-match');
+      // 如果想让 claude-3-opus 匹配规则2，需要把规则2放在规则1前面
     });
   });
 
@@ -607,11 +608,11 @@ describe('RouteMatcherService', () => {
   });
 
   describe('大量规则组合测试 (Large Rule Combinations)', () => {
-    it('should prioritize specific rules over * wildcard regardless of order', async () => {
+    it('should use configuration order - first rule that matches wins', async () => {
       const overrides = JSON.stringify([
         {
           field: 'model',
-          matchValues: ['*'],  // Wildcard at the beginning
+          matchValues: ['*'],  // Wildcard first - will match everything!
           rewriteValue: 'fallback-model',
         },
         {
@@ -624,25 +625,44 @@ describe('RouteMatcherService', () => {
           matchValues: ['glm-4.7'],
           rewriteValue: 'exact-glm-4.7',
         },
+      ]);
+
+      mockQueryAll.mockReturnValue([
+        {
+          ...mockRoutesDbRow,
+          overrides,
+        },
+      ] as any);
+
+      // 新逻辑：按配置顺序，第一个规则是 *，所以所有请求都会匹配到 *
+      // 用户需要把更具体的规则放在前面
+      const result1 = await service.findMatch('glm-4.6');
+      expect(result1?.rewrittenModel).toBe('fallback-model'); // 因为 * 在前面
+
+      const result2 = await service.findMatch('glm-4.7');
+      expect(result2?.rewrittenModel).toBe('fallback-model');
+
+      const result9 = await service.findMatch('gemini-1.5-pro');
+      expect(result9?.rewrittenModel).toBe('fallback-model');
+    });
+
+    it('should work correctly when specific rules are placed first', async () => {
+      // 正确的配置方式：更具体的规则放在前面
+      const overrides = JSON.stringify([
         {
           field: 'model',
-          matchValues: ['claude-3-opus*', 'claude-3-5-sonnet*'],
-          rewriteValue: 'claude-high-end',
+          matchValues: ['glm-4.6'],
+          rewriteValue: 'exact-glm-4.6',
         },
         {
           field: 'model',
-          matchValues: ['claude-3-sonnet*', 'claude-3-haiku*', 'claude-3-5-haiku*'],
-          rewriteValue: 'claude-mid-tier',
+          matchValues: ['glm-4.7'],
+          rewriteValue: 'exact-glm-4.7',
         },
         {
           field: 'model',
-          matchValues: ['gpt-4o'],
-          rewriteValue: 'gpt-4o-exact',
-        },
-        {
-          field: 'model',
-          matchValues: ['gpt-4*', 'gpt-4o-mini'],
-          rewriteValue: 'gpt-4-family',
+          matchValues: ['*'],  // Wildcard last - only matches when nothing else matches
+          rewriteValue: 'fallback-model',
         },
       ]);
 
@@ -653,33 +673,14 @@ describe('RouteMatcherService', () => {
         },
       ] as any);
 
-      // Exact matches should work despite wildcard being first
+      // 更具体的规则在前面，精确匹配会先匹配
       const result1 = await service.findMatch('glm-4.6');
       expect(result1?.rewrittenModel).toBe('exact-glm-4.6');
 
       const result2 = await service.findMatch('glm-4.7');
       expect(result2?.rewrittenModel).toBe('exact-glm-4.7');
 
-      const result3 = await service.findMatch('gpt-4o');
-      expect(result3?.rewrittenModel).toBe('gpt-4o-exact');
-
-      const result4 = await service.findMatch('gpt-4o-mini');
-      expect(result4?.rewrittenModel).toBe('gpt-4-family');
-
-      // Prefix matches should work
-      const result5 = await service.findMatch('claude-3-opus-20240229');
-      expect(result5?.rewrittenModel).toBe('claude-high-end');
-
-      const result6 = await service.findMatch('claude-3-5-sonnet-20241022');
-      expect(result6?.rewrittenModel).toBe('claude-high-end');
-
-      const result7 = await service.findMatch('claude-3-sonnet-20240229');
-      expect(result7?.rewrittenModel).toBe('claude-mid-tier');
-
-      const result8 = await service.findMatch('gpt-4-turbo');
-      expect(result8?.rewrittenModel).toBe('gpt-4-family');
-
-      // Wildcard should only match when nothing else matches
+      // 只有不匹配更具体的规则时，才会匹配 *
       const result9 = await service.findMatch('gemini-1.5-pro');
       expect(result9?.rewrittenModel).toBe('fallback-model');
     });
@@ -751,7 +752,7 @@ describe('RouteMatcherService', () => {
       expect((await service.findMatch('llama-3-70b'))?.rewrittenModel).toBe('glm-4.5-air');
     });
 
-    it('should handle wildcard in middle of rules correctly', async () => {
+    it('should use configuration order - wildcard in middle affects later rules', async () => {
       const overrides = JSON.stringify([
         {
           field: 'model',
@@ -760,7 +761,7 @@ describe('RouteMatcherService', () => {
         },
         {
           field: 'model',
-          matchValues: ['*'],  // Wildcard in the middle
+          matchValues: ['*'],  // Wildcard in the middle - will match everything after this rule
           rewriteValue: 'fallback',
         },
         {
@@ -782,14 +783,17 @@ describe('RouteMatcherService', () => {
         },
       ] as any);
 
-      // Exact matches should still work despite wildcard in middle
+      // exact-model-1 匹配规则1 → 返回 target-1 ✓
       expect((await service.findMatch('exact-model-1'))?.rewrittenModel).toBe('target-1');
-      expect((await service.findMatch('exact-model-2'))?.rewrittenModel).toBe('target-2');
 
-      // Prefix match should work
-      expect((await service.findMatch('prefix-123'))?.rewrittenModel).toBe('prefix-target');
+      // exact-model-2: 先检查规则1（不匹配），再检查规则2（* 匹配！）→ 返回 fallback
+      // 因为 * 在规则2，会先匹配到
+      expect((await service.findMatch('exact-model-2'))?.rewrittenModel).toBe('fallback');
 
-      // Wildcard should only match unmatched models
+      // prefix-123: 先检查规则1（不匹配），再检查规则2（* 匹配！）→ 返回 fallback
+      expect((await service.findMatch('prefix-123'))?.rewrittenModel).toBe('fallback');
+
+      // unknown-model: 匹配规则2的 * → 返回 fallback
       expect((await service.findMatch('unknown-model'))?.rewrittenModel).toBe('fallback');
     });
   });
