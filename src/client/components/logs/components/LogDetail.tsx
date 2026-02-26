@@ -309,7 +309,7 @@ export const LogDetail: React.FC<LogDetailProps> = ({ selectedLog, apiKeys, vend
                     <div className="flex items-center gap-2">
                       <ProtocolBadge format={log.originalResponseFormat} />
                       {log.routeId && (
-                        <span className="text-[9px] px-1.5 py-0.5 rounded border bg-purple-500/10 text-purple-400 border-purple-500/20" title={`Route ID: ${log.routeId}`}>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded border bg-purple-500/10 text-purple-400 border-purple-500/20 max-w-[120px] truncate" title={`Route ID: ${log.routeId}`}>
                           Route: {log.routeId}
                         </span>
                       )}

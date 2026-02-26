@@ -469,7 +469,7 @@ export const LogList: React.FC<LogListProps> = ({
               {/* Protocol, Vendor, and Streaming Badges */}
               <ProtocolBadge format={log.originalResponseFormat} />
               {log.routeId && (
-                <span className="text-[9px] px-1 py-0.5 rounded border bg-purple-500/10 text-purple-400 border-purple-500/20" title={`Route ID: ${log.routeId}`}>
+                <span className="text-[9px] px-1 py-0.5 rounded border bg-purple-500/10 text-purple-400 border-purple-500/20 max-w-[120px] truncate" title={`Route ID: ${log.routeId}`}>
                   {log.routeId}
                 </span>
               )}

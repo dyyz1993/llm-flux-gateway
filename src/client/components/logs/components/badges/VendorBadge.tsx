@@ -15,7 +15,7 @@ export const VendorBadge: React.FC<VendorBadgeProps> = ({ modelName, vendors }) 
   return (
     <span
       data-class-id="VendorBadge"
-      className="text-[9px] px-1.5 py-0.5 rounded border flex items-center gap-1"
+      className="text-[9px] px-1.5 py-0.5 rounded border flex items-center gap-1 max-w-[150px]"
       style={{
         backgroundColor: '#1a1a1a',
         borderColor: '#404040',
@@ -24,9 +24,9 @@ export const VendorBadge: React.FC<VendorBadgeProps> = ({ modelName, vendors }) 
       title={`Vendor: ${vendor.displayName || vendor.name}`}
     >
       {vendor.iconUrl && (
-        <img src={vendor.iconUrl} className="w-3 h-3" alt={vendor.name} />
+        <img src={vendor.iconUrl} className="w-3 h-3 flex-shrink-0" alt={vendor.name} />
       )}
-      <span className="font-medium">{vendor.displayName || vendor.name}</span>
+      <span className="font-medium truncate">{vendor.displayName || vendor.name}</span>
     </span>
   );
 };
