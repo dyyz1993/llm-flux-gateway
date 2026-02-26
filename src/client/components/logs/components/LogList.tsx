@@ -468,6 +468,11 @@ export const LogList: React.FC<LogListProps> = ({
               )}
               {/* Protocol, Vendor, and Streaming Badges */}
               <ProtocolBadge format={log.originalResponseFormat} />
+              {log.routeId && (
+                <span className="text-[9px] px-1 py-0.5 rounded border bg-purple-500/10 text-purple-400 border-purple-500/20" title={`Route ID: ${log.routeId}`}>
+                  {log.routeId}
+                </span>
+              )}
               <VendorBadge modelName={log.originalModel} vendors={vendors} />
               <StreamingBadge isStreaming={isStreamingRequest(log)} />
             </div>
