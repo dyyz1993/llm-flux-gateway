@@ -89,10 +89,11 @@ export class AnthropicConverter implements FormatConverter {
             // Use field-normalizer to convert cacheControl to cache_control
             const normalizedBlock = normalizeToSnakeCase(block, true);
             const blockRec = normalizedBlock as Record<string, unknown>;
+            const cacheControl = blockRec.cache_control as { type: string } | undefined;
             return {
               type: String(blockRec.type || 'text'),
               text: blockRec.type === 'text' ? String(blockRec.text || blockRec.content || '') : '',
-              ...((blockRec.cache_control as any) && { cache_control: blockRec.cache_control }),
+              ...(cacheControl && { cache_control: cacheControl }),
             };
           }
           return { type: 'text', text: String(block) };
@@ -117,10 +118,11 @@ export class AnthropicConverter implements FormatConverter {
               // Use field-normalizer to convert cacheControl to cache_control
               const normalizedBlock = normalizeToSnakeCase(block, true);
               const blockRec = normalizedBlock as Record<string, unknown>;
+              const cacheControl = blockRec.cache_control as { type: string } | undefined;
               return {
                 type: String(blockRec.type || 'text'),
                 text: blockRec.type === 'text' ? String(blockRec.text || '') : '',
-                ...((blockRec.cache_control as any) && { cache_control: blockRec.cache_control }),
+                ...(cacheControl && { cache_control: cacheControl }),
               };
             }
             return { type: 'text', text: String(block) };
@@ -239,11 +241,39 @@ export class AnthropicConverter implements FormatConverter {
           });
         }
       } else if (msg.role === 'user' && Array.isArray(msg.content)) {
-        // Handle user messages with array content - use field-normalizer
+        // Handle user messages with array content - convert image_url to Anthropic image format
         const processedContent = msg.content.map(block => {
           if (typeof block === 'string') {
             return block;
           } else if (block && typeof block === 'object') {
+            const blockObj = block as Record<string, unknown>;
+            // Convert OpenAI image_url to Anthropic image format
+            if (blockObj.type === 'image_url' && blockObj.image_url && typeof blockObj.image_url === 'object') {
+              const imageUrl = blockObj.image_url as Record<string, unknown>;
+              if (typeof imageUrl.url === 'string') {
+                const url = imageUrl.url;
+                // Check if it's a base64 data URL
+                const base64Match = url.match(/^data:(image\/[^;]+);base64,(.+)$/);
+                if (base64Match) {
+                  return {
+                    type: 'image',
+                    source: {
+                      type: 'base64',
+                      media_type: base64Match[1],
+                      data: base64Match[2],
+                    },
+                  };
+                }
+                // It's a regular URL
+                return {
+                  type: 'image',
+                  source: {
+                    type: 'url',
+                    url: url,
+                  },
+                };
+              }
+            }
             // Use field-normalizer to convert cacheControl to cache_control
             return normalizeToSnakeCase(block, true);
           }
@@ -502,6 +532,28 @@ export class AnthropicConverter implements FormatConverter {
               name: block.tool_use_id,
             } as InternalMessage);
             continue;
+          }
+
+          // Convert Anthropic image to OpenAI image_url format
+          if (block.type === 'image' && block.source) {
+            if (block.source.type === 'url' && block.source.url) {
+              processedBlocks.push({
+                type: 'image_url',
+                image_url: {
+                  url: block.source.url,
+                },
+              });
+              continue;
+            } else if (block.source.type === 'base64' && block.source.data) {
+              const mediaType = block.source.media_type || 'image/png';
+              processedBlocks.push({
+                type: 'image_url',
+                image_url: {
+                  url: `data:${mediaType};base64,${block.source.data}`,
+                },
+              });
+              continue;
+            }
           }
 
           processedBlocks.push(block);

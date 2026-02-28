@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   getRequestLogs, 
   toggleLogFavorite, 
@@ -243,6 +243,20 @@ export const LogExplorer: React.FC = () => {
     }
   };
 
+  // Handle log update from polling (memoized to prevent infinite loops)
+  const handleLogUpdate = useCallback((updatedLog: RequestLog) => {
+    setSelectedLog(updatedLog);
+    setLogs(prevLogs => {
+      const index = prevLogs.findIndex(l => l.id === updatedLog.id);
+      if (index !== -1) {
+        const nextLogs = [...prevLogs];
+        nextLogs[index] = updatedLog;
+        return nextLogs;
+      }
+      return prevLogs;
+    });
+  }, []);
+
   // Load API Keys on mount
   useEffect(() => {
     fetchKeys()
@@ -455,20 +469,7 @@ export const LogExplorer: React.FC = () => {
         apiKeys={apiKeys}
         vendors={vendors}
         onRetry={handleRetry}
-        onLogUpdate={(updatedLog) => {
-          // Update the selected log when polling detects changes
-          setSelectedLog(updatedLog);
-          // Also update the log in the list
-          setLogs(prevLogs => {
-            const index = prevLogs.findIndex(l => l.id === updatedLog.id);
-            if (index !== -1) {
-              const nextLogs = [...prevLogs];
-              nextLogs[index] = updatedLog;
-              return nextLogs;
-            }
-            return prevLogs;
-          });
-        }}
+        onLogUpdate={handleLogUpdate}
       />
     </div>
   );

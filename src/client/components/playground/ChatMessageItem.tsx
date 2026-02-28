@@ -1,7 +1,14 @@
 import React from 'react';
-import { User, Bot } from 'lucide-react';
+import { User, Bot, ImageIcon } from 'lucide-react';
 import type { ChatMessage } from '@shared/types';
 import { ToolCallsDisplay } from './ToolCallsDisplay';
+
+interface ContentBlock {
+  type: string;
+  text?: string;
+  image_url?: { url: string; detail?: string };
+  source?: { type: string; url?: string; media_type?: string; data?: string };
+}
 
 interface ChatMessageItemProps {
   message: ChatMessage;
@@ -9,40 +16,123 @@ interface ChatMessageItemProps {
 }
 
 /**
- * Format content that may be a string or an array of content blocks (Anthropic format)
- * Converts content to a string representation suitable for display
+ * Parse content that may be a string or an array of content blocks
  */
-function formatContent(content: string | any): string {
-  // If it's already a string, return as-is
+function parseContent(content: string | unknown): ContentBlock[] {
+  // If it's already a string
   if (typeof content === 'string') {
+    // Try to parse as JSON array (for multimodal content stored as string)
+    try {
+      const parsed = JSON.parse(content);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch {
+      // Not JSON, return as text block
+    }
+    return [{ type: 'text', text: content }];
+  }
+
+  // If it's an array
+  if (Array.isArray(content)) {
     return content;
   }
 
-  // If it's an array (Anthropic content blocks format), format it
-  if (Array.isArray(content)) {
-    return content.map((block) => {
-      if (typeof block === 'string') {
-        return block;
-      }
-      if (block?.type === 'text') {
-        return block.text || '';
-      }
-      if (block?.type === 'image') {
-        return `[Image: ${block.source?.type || 'unknown'}]`;
-      }
-      if (block?.type === 'tool_use') {
-        return `[Tool Use: ${block.name || 'unknown'}]`;
-      }
-      if (block?.type === 'tool_result') {
-        return `[Tool Result: ${block.tool_use_id || 'unknown'}]`;
-      }
-      // Fallback for unknown block types
-      return `[${block?.type || 'unknown'}]`;
-    }).join('\n');
+  // Fallback
+  return [{ type: 'text', text: String(content) }];
+}
+
+/**
+ * Render an image block with preview
+ */
+function ImagePreview({ block }: { block: ContentBlock }) {
+  let imageUrl = '';
+  
+  // OpenAI format
+  if (block.image_url?.url) {
+    imageUrl = block.image_url.url;
+  }
+  // Anthropic format
+  else if (block.source?.url) {
+    imageUrl = block.source.url;
+  }
+  // Anthropic base64 format
+  else if (block.source?.type === 'base64' && block.source.data && block.source.media_type) {
+    imageUrl = `data:${block.source.media_type};base64,${block.source.data}`;
   }
 
-  // Fallback: convert to JSON string
-  return JSON.stringify(content, null, 2);
+  if (!imageUrl) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 bg-[#262626] rounded-lg text-gray-400 text-xs">
+        <ImageIcon className="w-4 h-4" />
+        <span>[Image unavailable]</span>
+      </div>
+    );
+  }
+
+  // Check if it's a base64 image or URL
+  const isBase64 = imageUrl.startsWith('data:image');
+  const displayUrl = isBase64 ? imageUrl : imageUrl;
+
+  return (
+    <div className="my-1">
+      <img
+        src={displayUrl}
+        alt="Attached image"
+        className="max-w-[200px] max-h-[200px] object-cover rounded-lg border border-[#333]"
+        onError={(e) => {
+          // Hide broken image and show placeholder
+          e.currentTarget.style.display = 'none';
+          const parent = e.currentTarget.parentElement;
+          if (parent) {
+            parent.innerHTML = `
+              <div class="flex items-center gap-2 px-3 py-2 bg-[#262626] rounded-lg text-gray-400 text-xs">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                <span>[Image failed to load]</span>
+              </div>
+            `;
+          }
+        }}
+      />
+      {!isBase64 && (
+        <a
+          href={imageUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block mt-1 text-[10px] text-gray-500 hover:text-gray-400 truncate max-w-[200px]"
+        >
+          {imageUrl}
+        </a>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Format content blocks for display
+ */
+function formatContent(content: string | unknown): string {
+  const blocks = parseContent(content);
+  
+  return blocks.map((block) => {
+    if (block.type === 'text') {
+      return block.text || '';
+    }
+    if (block.type === 'image_url' || block.type === 'image') {
+      return '[Image]';
+    }
+    if (block.type === 'tool_use') {
+      return `[Tool: ${block.text || 'unknown'}]`;
+    }
+    if (block.type === 'tool_result') {
+      return `[Tool Result]`;
+    }
+    return '';
+  }).filter(Boolean).join('\n');
 }
 
 /**
@@ -67,6 +157,12 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, allMe
       </div>
     );
   }
+
+  // Parse content blocks
+  const contentBlocks = React.useMemo(() => parseContent(message.content), [message.content]);
+
+  // Check if message has images
+  const hasImages = contentBlocks.some(b => b.type === 'image_url' || b.type === 'image');
 
   // Collect tool results if this is an assistant message with tool calls
   const toolResults = React.useMemo(() => {
@@ -117,7 +213,23 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, allMe
             : 'bg-[#1a1a1a] text-gray-100 border border-[#262626]'
         }`}>
           <div className="text-sm whitespace-pre-wrap leading-relaxed">
-            {formatContent(message.content)}
+            {/* Render content blocks */}
+            {contentBlocks.map((block, index) => {
+              if (block.type === 'text') {
+                return <span key={index}>{block.text}</span>;
+              }
+              if (block.type === 'image_url' || block.type === 'image') {
+                return <ImagePreview key={index} block={block} />;
+              }
+              if (block.type === 'tool_use') {
+                return (
+                  <span key={index} className="text-gray-400 text-xs">
+                    [Tool: {block.text || 'unknown'}]
+                  </span>
+                );
+              }
+              return null;
+            })}
             {message.isStreaming && (
               <span className="inline-block w-2 h-4 bg-current opacity-50 animate-pulse ml-1" />
             )}
@@ -139,6 +251,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, allMe
         {/* Timestamp */}
         <div className="mt-1 text-[10px] text-gray-600">
           {new Date(message.timestamp).toLocaleTimeString()}
+          {hasImages && ' • 🖼️'}
         </div>
       </div>
     </div>

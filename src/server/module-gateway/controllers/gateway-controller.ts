@@ -183,11 +183,23 @@ export async function handleGatewayRequest(
   const targetFormat = (match.route as any).requestFormat as RouteConfigFormat as VendorType;
 
   // Step 5: Convert internal format to target format
-  const targetRequestResult = protocolTranspiler.transpile(
-    rewriteResult.rewrittenRequest,
-    'openai',   // Internal format
-    targetFormat
-  );
+  // ⭐ FIX: Always use converter directly to ensure proper field normalization
+  // The transpile() method has a fast-path that skips conversion when fromVendor === toVendor
+  // But we still need to normalize camelCase → snake_case for OpenAI API
+  const targetConverter = (protocolTranspiler as any).converters?.get(targetFormat);
+  let targetRequestResult;
+
+  if (targetConverter && typeof targetConverter.convertRequestFromInternal === 'function') {
+    // Direct converter call - ensures full normalization including nested objects
+    targetRequestResult = targetConverter.convertRequestFromInternal(rewriteResult.rewrittenRequest);
+  } else {
+    // Fallback: try transpile
+    targetRequestResult = protocolTranspiler.transpile(
+      rewriteResult.rewrittenRequest,
+      'openai',   // Internal format
+      targetFormat
+    );
+  }
 
   // Log Step 3: Internal format → Target format
   transformationLogger.logStep3_InternalToTarget(

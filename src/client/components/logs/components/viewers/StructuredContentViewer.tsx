@@ -10,7 +10,7 @@ interface StructuredContentViewerProps {
 
 export const StructuredContentViewer: React.FC<StructuredContentViewerProps> = ({ content, className = '' }) => {
   const blocks = useMemo(() => parseContentBlocks(content), [content]);
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['thinking', 'tool_use', 'text']));
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['thinking', 'tool_use', 'text', 'images']));
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => {
@@ -162,17 +162,60 @@ export const StructuredContentViewer: React.FC<StructuredContentViewerProps> = (
 
       {/* Image Blocks */}
       {blocks.imageBlocks.length > 0 && (
-        <div className="bg-[#0a0a0a] border border-green-500/20 rounded-lg p-3">
-          <div className="flex items-center gap-2 text-green-400 mb-2">
-            <Eye className="w-4 h-4" />
-            <span className="text-sm font-medium">Images</span>
-            <span className="text-xs text-gray-500">({blocks.imageBlocks.length})</span>
-          </div>
-          {blocks.imageBlocks.map((img, idx) => (
-            <div key={idx} className="text-xs text-gray-400 break-all font-mono">
-              {img.url.slice(0, 80)}...
+        <div className="bg-[#0a0a0a] border border-green-500/20 rounded-lg overflow-hidden">
+          <button
+            onClick={() => toggleSection('images')}
+            className="w-full px-3 py-2 flex items-center justify-between bg-green-500/5 hover:bg-green-500/10 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Eye className="w-4 h-4 text-green-400" />
+              <span className="text-sm font-medium text-green-400">Images</span>
+              <span className="text-xs text-gray-500">({blocks.imageBlocks.length})</span>
             </div>
-          ))}
+            {expandedSections.has('images') ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
+          </button>
+          {expandedSections.has('images') && (
+            <div className="p-3 border-t border-green-500/10">
+              <div className="flex flex-wrap gap-3">
+                {blocks.imageBlocks.map((img, idx) => {
+                  const isBase64 = img.url.startsWith('data:image');
+                  const displayUrl = isBase64 ? img.url : img.url;
+                  
+                  return (
+                    <div key={idx} className="relative group">
+                      <img
+                        src={displayUrl}
+                        alt={`Image ${idx + 1}`}
+                        className="w-24 h-24 object-cover rounded-lg border border-[#333] hover:border-green-500/50 transition-colors cursor-pointer"
+                        onClick={() => window.open(displayUrl, '_blank')}
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          const parent = e.currentTarget.parentElement;
+                          if (parent) {
+                            parent.innerHTML = `
+                              <div class="w-24 h-24 flex items-center justify-center bg-[#1a1a1a] rounded-lg border border-[#333] text-gray-500">
+                                <span class="text-xs text-center p-2">Failed to load</span>
+                              </div>
+                            `;
+                          }
+                        }}
+                      />
+                      {!isBase64 && (
+                        <a
+                          href={img.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="absolute bottom-0 left-0 right-0 bg-black/70 text-[8px] text-gray-300 truncate px-1 py-0.5 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          {img.url.slice(0, 30)}...
+                        </a>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

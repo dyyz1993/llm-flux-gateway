@@ -77,7 +77,7 @@ export const LogDetail: React.FC<LogDetailProps> = ({ selectedLog, apiKeys, vend
       isActive = false;
       clearInterval(intervalId);
     };
-  }, [selectedLog, onLogUpdate]);
+  }, [selectedLog?.id, onLogUpdate]);
 
   if (!selectedLog) {
     return (

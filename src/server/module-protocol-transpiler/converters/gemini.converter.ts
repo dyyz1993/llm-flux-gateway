@@ -70,9 +70,51 @@ export class GeminiConverter implements FormatConverter {
         // Build parts array
         const parts: any[] = [];
 
+        // Handle content - support both string and array formats
         if (msg.content) {
-          const contentText = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
-          parts.push({ text: contentText });
+          if (typeof msg.content === 'string') {
+            if (msg.content) {
+              parts.push({ text: msg.content });
+            }
+          } else if (Array.isArray(msg.content)) {
+            // Handle content blocks array
+            for (const block of msg.content) {
+              if (typeof block === 'string') {
+                parts.push({ text: block });
+              } else if (block && typeof block === 'object') {
+                const blockObj = block as Record<string, unknown>;
+                if (blockObj.type === 'text' && typeof blockObj.text === 'string') {
+                  parts.push({ text: blockObj.text });
+                } else if (blockObj.type === 'image_url' && blockObj.image_url && typeof blockObj.image_url === 'object') {
+                  // Convert OpenAI image_url to Gemini inlineData
+                  const imageUrl = blockObj.image_url as Record<string, unknown>;
+                  if (typeof imageUrl.url === 'string') {
+                    const url = imageUrl.url;
+                    const base64Match = url.match(/^data:(image\/[^;]+);base64,(.+)$/);
+                    if (base64Match) {
+                      parts.push({
+                        inlineData: {
+                          mimeType: base64Match[1],
+                          data: base64Match[2],
+                        },
+                      });
+                    } else {
+                      // For URL images, we need to note that Gemini may not support direct URLs
+                      // Some implementations use fileData for URLs, but for now we'll skip
+                      // or could potentially download and convert to base64
+                      // As a fallback, we add a text placeholder
+                      parts.push({ text: `[Image: ${url}]` });
+                    }
+                  }
+                } else {
+                  // Unknown block type, stringify it
+                  parts.push({ text: JSON.stringify(block) });
+                }
+              }
+            }
+          } else {
+            parts.push({ text: JSON.stringify(msg.content) });
+          }
         }
 
         // Handle tool calls in assistant messages
@@ -240,16 +282,43 @@ export class GeminiConverter implements FormatConverter {
       const role = content.role === 'model' ? 'assistant' : content.role;
       const parts = content.parts || [];
 
-      // Build message content
-      let messageContent: string | InternalContentBlock[] = '';
+      // Build message content - use array for multiple parts including images
+      const contentBlocks: InternalContentBlock[] = [];
       const tool_calls: InternalToolCall[] = [];
+      let hasNonTextParts = false;
 
       for (const part of parts) {
         if (part.text) {
-          if (messageContent === '') {
-            messageContent = part.text;
-          } else {
-            messageContent += '\n' + part.text;
+          contentBlocks.push({ type: 'text', text: part.text });
+        }
+
+        // Handle inlineData (images, etc.)
+        if (part.inlineData) {
+          hasNonTextParts = true;
+          const mimeType = part.inlineData.mimeType || 'image/png';
+          const data = part.inlineData.data;
+          if (data) {
+            contentBlocks.push({
+              type: 'image_url',
+              image_url: {
+                url: `data:${mimeType};base64,${data}`,
+              },
+            });
+          }
+        }
+
+        // Handle fileData (external files)
+        if (part.fileData) {
+          hasNonTextParts = true;
+          const fileUri = part.fileData.fileUri;
+          if (fileUri) {
+            // Gemini fileData uses file URIs, convert to a reference
+            contentBlocks.push({
+              type: 'image_url',
+              image_url: {
+                url: fileUri,
+              },
+            });
           }
         }
 
@@ -271,6 +340,21 @@ export class GeminiConverter implements FormatConverter {
             name: part.functionResponse.name,
           });
         }
+      }
+
+      // Determine final content format
+      let messageContent: string | InternalContentBlock[];
+      if (hasNonTextParts || contentBlocks.length > 1) {
+        // Use array format for multimodal content
+        messageContent = contentBlocks;
+      } else if (contentBlocks.length === 1 && contentBlocks[0]?.type === 'text') {
+        // Single text block - use simple string format
+        const textBlock = contentBlocks[0] as { type: 'text'; text: string };
+        messageContent = textBlock.text;
+      } else if (contentBlocks.length === 0) {
+        messageContent = '';
+      } else {
+        messageContent = contentBlocks;
       }
 
       if (role !== 'tool') {

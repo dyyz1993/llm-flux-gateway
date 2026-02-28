@@ -8,7 +8,7 @@ import { ModelSelector, ModelSelectorValue } from '@client/components/playground
 import { FormatSelector } from '@client/components/playground/FormatSelector';
 import { ChatSidebar } from '@client/components/playground/ChatSidebar';
 import { ChatMessages } from '@client/components/playground/ChatMessages';
-import { ChatInput } from '@client/components/playground/ChatInput';
+import { ChatInput, ImageAttachment } from '@client/components/playground/ChatInput';
 import { SystemPromptPanel } from '@client/components/playground/SystemPromptPanel';
 import { DebugPanel } from '@client/components/playground/DebugPanel';
 import { TOOL_TEMPLATES } from '@client/components/playground/toolTemplates';
@@ -214,7 +214,7 @@ export const RoutePlayground: React.FC = () => {
     chatStore.clearCurrentSession();
   };
 
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = async (content: string, images?: ImageAttachment[]) => {
     // 🔒 防止并发：如果正在加载，忽略新请求
     if (isLoading) {
       console.warn('[RoutePlayground] Request already in progress, ignoring');
@@ -239,11 +239,38 @@ export const RoutePlayground: React.FC = () => {
       console.log('[RoutePlayground] Created session:', currentSession);
     }
 
+    // Build user message content
+    let userMessageContent: string | Array<{ type: string; text?: string; image_url?: { url: string } }>;
+    
+    if (images && images.length > 0) {
+      // Multimodal content with images
+      userMessageContent = [];
+      
+      // Add images first
+      for (const img of images) {
+        userMessageContent.push({
+          type: 'image_url',
+          image_url: { url: img.url },
+        });
+      }
+      
+      // Add text if provided
+      if (content.trim()) {
+        userMessageContent.push({
+          type: 'text',
+          text: content.trim(),
+        });
+      }
+    } else {
+      // Text-only content
+      userMessageContent = content;
+    }
+
     // Add user message
     const userMessage: ChatMessage = {
       id: generateUniqueId(),
       role: 'user',
-      content,
+      content: typeof userMessageContent === 'string' ? userMessageContent : JSON.stringify(userMessageContent),
       timestamp: Date.now(),
     };
 
@@ -272,7 +299,7 @@ export const RoutePlayground: React.FC = () => {
       // This can happen when user switches between formats (e.g., Anthropic → GLM)
       if (Array.isArray(msg.content)) {
         // Check if this is an Anthropic content block format with tool_use
-        const hasToolUse = msg.content.some((block: any) => block.type === 'tool_use');
+        const hasToolUse = msg.content.some((block: unknown) => typeof block === 'object' && block !== null && (block as Record<string, unknown>).type === 'tool_use');
 
         if (hasToolUse && msg.tool_calls && msg.tool_calls.length > 0) {
           // If we have tool_calls, use empty string as content (OpenAI format)
@@ -280,8 +307,8 @@ export const RoutePlayground: React.FC = () => {
         } else {
           // Otherwise, extract text from content blocks
           msg.content = msg.content
-            .filter((block: any) => block.type === 'text' || typeof block === 'string')
-            .map((block: any) => typeof block === 'string' ? block : (block.text || ''))
+            .filter((block: unknown) => typeof block === 'string' || (typeof block === 'object' && block !== null && (block as Record<string, unknown>).type === 'text'))
+            .map((block: unknown) => typeof block === 'string' ? block : ((block as Record<string, unknown>).text || ''))
             .join('\n');
         }
       }
@@ -292,7 +319,7 @@ export const RoutePlayground: React.FC = () => {
     // Add current user message to the history
     messages.push({
       role: Role.USER,
-      content,
+      content: typeof userMessageContent === 'string' ? userMessageContent : JSON.stringify(userMessageContent),
     });
 
     // Now add to store

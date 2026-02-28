@@ -142,3 +142,12 @@ vendors:
       - deepseek-reasoner  # DeepSeek-V3.2-Exp思考模式，适合复杂推理{insert\_element\_1\_}
       - deepseek-coder  # 代码生成模型，支持代码补全、解释等{insert\_element\_2\_}
       - deepseek-vl  # 多模态模型，支持图文理解
+
+  - name: Alibaba Qwen
+    baseUrl: https://coding.dashscope.aliyuncs.com/v1
+    endpoint: /chat/completions
+    iconUrl: /icons/alibaba.svg
+    models:
+      - qwen3.5-plus
+      - qwen-vl-plus
+      - qwen-vl-max
