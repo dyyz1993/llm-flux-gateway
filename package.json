@@ -21,7 +21,9 @@
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx}\""
+    "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
+    "screenshot": "tsx scripts/e2e-screenshot.ts",
+    "screenshot:headless": "HEADLESS=true tsx scripts/e2e-screenshot.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
