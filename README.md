@@ -2,6 +2,26 @@
 
 企业级多协议 LLM API 网关，通过统一的 Internal Format 抽象层，支持多种 LLM 厂商 API（OpenAI、Anthropic、Gemini、GLM 等）。
 
+## 界面预览
+
+### 数据分析仪表盘
+
+![Dashboard](./docs/screenshots/02-dashboard/01-overview.png)
+
+### Playground 聊天测试
+
+![Playground](./docs/screenshots/07-playground/01-chat-interface.png)
+
+### 资产管理
+
+![Assets](./docs/screenshots/04-assets/01-asset-list.png)
+
+### 日志查询
+
+![Logs](./docs/screenshots/08-logs/01-log-list.png)
+
+> 📷 更多截图请查看 [完整截图文档](./docs/screenshots/README.md)
+
 ## 特性
 
 - **协议无关性**: 统一的 API 格式，自动在不同厂商间转换
@@ -32,17 +52,15 @@ npm run dev
 - 用户名: `admin`
 - 密码: `changeme`
 
-## 使用指南
+## 首次配置流程（约 2 分钟）
 
-详细的使用说明和截图文档请查看: [docs/screenshots/README.md](./docs/screenshots/README.md)
-
-### 首次配置流程（约 2 分钟）
-
-1. **同步厂商** - Vendors 页面 → "Sync from YAML"
-2. **创建资产** - Assets 页面 → "Add Asset" → 输入 API Key
-3. **创建路由** - Routes 页面 → 输入名称 → 选择资产
-4. **生成密钥** - Keys 页面 → 输入名称 → 关联路由
-5. **测试验证** - Playground 页面 → 发送消息测试
+| 步骤 | 操作 | 截图 |
+|------|------|------|
+| 1. 同步厂商 | Vendors 页面 → "Sync from YAML" | ![同步厂商](./docs/screenshots/10-workflows/01-first-time-setup/step1-sync-vendors.png) |
+| 2. 创建资产 | Assets 页面 → "Add Asset" → 输入 API Key | ![创建资产](./docs/screenshots/10-workflows/01-first-time-setup/step2-create-asset.png) |
+| 3. 创建路由 | Routes 页面 → 输入名称 → 选择资产 | ![创建路由](./docs/screenshots/10-workflows/01-first-time-setup/step3-create-route.png) |
+| 4. 生成密钥 | Keys 页面 → 输入名称 → 关联路由 | ![生成密钥](./docs/screenshots/10-workflows/01-first-time-setup/step4-generate-key.png) |
+| 5. 测试验证 | Playground 页面 → 发送消息测试 | ![测试验证](./docs/screenshots/10-workflows/01-first-time-setup/step5-test.png) |
 
 ## API 调用示例
 
@@ -60,7 +78,7 @@ curl https://your-gateway.com/v1/chat/completions \
 
 - [快速开始指南](./docs/guides/quick-start.md)
 - [使用场景说明](./docs/guides/usage-scenarios.md)
-- [截图文档](./docs/screenshots/README.md)
+- [完整截图文档](./docs/screenshots/README.md)
 - [项目需求文档](./docs/development/project-requirements.md)
 - [协议转换架构](./docs/protocol/protocol-transformation-architecture.md)
 
