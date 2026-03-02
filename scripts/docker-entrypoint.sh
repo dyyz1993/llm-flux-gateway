@@ -24,4 +24,6 @@ mkdir -p /app/data
 # 无需 drizzle-kit push，因为它需要 better-sqlite3 原生绑定
 
 # 启动应用
-exec npm start
+# 注意：直接使用 node 而不是 npm start，因为 npm 会吞掉 SIGTERM 信号
+# 导致优雅关闭无法正常工作
+exec node dist-server/index.js
