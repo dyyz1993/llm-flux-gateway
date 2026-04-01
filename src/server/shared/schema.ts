@@ -207,10 +207,19 @@ export interface KeyRouteAssociation {
   id: string;
   apiKeyId: string;
   routeId: string;
+  priority: number;
+  weight: number;
+  healthStatus: 'healthy' | 'unhealthy' | 'degraded';
+  failCount: number;
+  successCount: number;
+  lastCheckAt: number | null;
+  lastSuccessAt: number | null;
+  lastFailAt: number | null;
+  avgLatencyMs: number | null;
   createdAt: number;
 }
 
-export type NewKeyRouteAssociation = Omit<KeyRouteAssociation, 'id' | 'createdAt'>;
+export type NewKeyRouteAssociation = Omit<KeyRouteAssociation, 'id' | 'createdAt' | 'failCount' | 'successCount' | 'lastCheckAt' | 'lastSuccessAt' | 'lastFailAt' | 'avgLatencyMs'>;
 
 // ============================================
 // Request Logs

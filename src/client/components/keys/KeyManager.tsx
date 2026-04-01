@@ -36,6 +36,7 @@ export const KeyManager: React.FC = () => {
   // Edit routes state
   const [editingKey, setEditingKey] = useState<ApiKey | null>(null as any);
   const [editRouteIds, setEditRouteIds] = useState<string[]>([]);
+  const [editRouteWeights, setEditRouteWeights] = useState<Record<string, number>>({});
 
   // Create key form
   const [createForm, setCreateForm] = useState({
@@ -129,15 +130,25 @@ export const KeyManager: React.FC = () => {
   const handleEditRoutes = (key: ApiKey) => {
     setEditingKey(key);
     setEditRouteIds(key.routes?.map(r => r.routeId) || []);
+    const weights: Record<string, number> = {};
+    key.routes?.forEach(r => {
+      weights[r.routeId] = r.weight ?? 100;
+    });
+    setEditRouteWeights(weights);
   };
 
   const handleSaveRoutes = async () => {
     if (!editingKey) return;
 
-    const success = await updateKeyRoutes(editingKey.id, editRouteIds);
+    const routeWeights = editRouteIds.map(routeId => ({
+      routeId,
+      weight: editRouteWeights[routeId] ?? 100,
+    }));
+    const success = await updateKeyRoutes(editingKey.id, editRouteIds, routeWeights);
     if (success) {
       setEditingKey(null);
       setEditRouteIds([]);
+      setEditRouteWeights({});
     } else {
       alert('Failed to update routes');
     }
@@ -146,6 +157,7 @@ export const KeyManager: React.FC = () => {
   const handleCancelEdit = () => {
     setEditingKey(null);
     setEditRouteIds([]);
+    setEditRouteWeights({});
   };
 
   const toggleEditRouteSelection = (routeId: string) => {
@@ -392,11 +404,20 @@ export const KeyManager: React.FC = () => {
                         {k.routes.map((assoc) => {
                           const route = routes.find(r => r.id === assoc.routeId);
                           const asset = route ? assets.find(a => a.id === route.assetId) : null;
+                          const healthColor = 
+                            assoc.healthStatus === 'healthy' ? 'bg-emerald-500' :
+                            assoc.healthStatus === 'degraded' ? 'bg-amber-500' : 'bg-red-500';
+                          const healthText = 
+                            assoc.healthStatus === 'healthy' ? 'Healthy' :
+                            assoc.healthStatus === 'degraded' ? 'Degraded' : 'Unhealthy';
                           const tooltipInfo = [
                             `Route: ${assoc.routeName}`,
                             asset && `Asset: ${asset.name}`,
                             asset && `Vendor: ${asset.vendorDisplayName}`,
                             `Priority: ${assoc.priority}`,
+                            `Weight: ${assoc.weight}`,
+                            `Status: ${healthText}`,
+                            assoc.failCount > 0 && `Failures: ${assoc.failCount}`,
                             route && route.isActive ? '● Active' : '○ Disabled',
                           ].filter(Boolean).join('\n');
 
@@ -410,7 +431,9 @@ export const KeyManager: React.FC = () => {
                               className="flex items-center gap-1 text-xs bg-indigo-500/10 text-indigo-400 px-2 py-1 rounded border border-indigo-500/20 cursor-pointer hover:bg-indigo-500/20 hover:border-indigo-500/30 transition-colors"
                               title={tooltipInfo}
                             >
+                              <div className={`w-2 h-2 rounded-full ${healthColor}`} title={healthText} />
                               {assoc.routeName}
+                              <span className="text-gray-500 text-[10px]">w:{assoc.weight}</span>
                               <ExternalLink className="w-3 h-3 opacity-60" />
                             </button>
                           );
@@ -484,10 +507,10 @@ export const KeyManager: React.FC = () => {
       {/* Edit Routes Dialog */}
       {editingKey && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-[#0a0a0a] border border-[#262626] rounded-xl p-6 max-w-2xl w-full mx-4">
+          <div className="bg-[#0a0a0a] border border-[#262626] rounded-xl p-6 max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h3 className="text-xl font-bold text-white">Edit Routes</h3>
+                <h3 className="text-xl font-bold text-white">Edit Routes & Load Balancing</h3>
                 <p className="text-sm text-gray-400 mt-1">
                   {editingKey.name} • {formatKeyToken(editingKey.keyToken)}
                 </p>
@@ -502,44 +525,93 @@ export const KeyManager: React.FC = () => {
 
             <div className="mb-4">
               <label className="text-xs text-gray-500 uppercase font-semibold mb-2 block">
-                Select Routes
+                Select Routes & Configure Weights
               </label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+              <div className="space-y-2 max-h-80 overflow-y-auto">
                 {routes.map((route) => {
                   const isSelected = editRouteIds.includes(route.id);
                   const isCurrentlyAssociated = editingKey.routes?.some(r => r.routeId === route.id);
+                  const currentAssoc = editingKey.routes?.find(r => r.routeId === route.id);
+                  const healthColor = 
+                    currentAssoc?.healthStatus === 'healthy' ? 'bg-emerald-500' :
+                    currentAssoc?.healthStatus === 'degraded' ? 'bg-amber-500' : 'bg-red-500';
 
                   return (
-                    <button
+                    <div
                       key={route.id}
-                      type="button"
-                      onClick={() => toggleEditRouteSelection(route.id)}
-                      className={`text-left px-3 py-2 rounded-md border transition-colors ${
+                      className={`p-3 rounded-lg border transition-colors ${
                         isSelected
-                          ? 'bg-indigo-600/20 border-indigo-500/50 text-white'
-                          : 'bg-[#1a1a1a] border-[#333] text-gray-400 hover:border-[#404040]'
+                          ? 'bg-indigo-600/10 border-indigo-500/50'
+                          : 'bg-[#1a1a1a] border-[#333] hover:border-[#404040]'
                       }`}
                     >
-                      <div className="flex items-center gap-2">
-                        <div className={`w-3 h-3 rounded-full ${route.isActive ? 'bg-emerald-500' : 'bg-gray-600'}`} />
-                        <span className="text-sm font-medium">{route.name}</span>
-                        {isCurrentlyAssociated && !isSelected && (
-                          <span className="text-xs text-amber-500">(Will be removed)</span>
-                        )}
-                        {!isCurrentlyAssociated && isSelected && (
-                          <span className="text-xs text-emerald-500">(New)</span>
+                      <div className="flex items-center justify-between">
+                        <button
+                          type="button"
+                          onClick={() => toggleEditRouteSelection(route.id)}
+                          className="flex items-center gap-3 flex-1 text-left"
+                        >
+                          <div className={`w-3 h-3 rounded-full ${route.isActive ? 'bg-emerald-500' : 'bg-gray-600'}`} />
+                          <div>
+                            <span className="text-sm font-medium text-white">{route.name}</span>
+                            <div className="text-xs text-gray-500 mt-0.5">
+                              {route.assetName} • {route.assetVendorDisplayName}
+                            </div>
+                          </div>
+                        </button>
+                        
+                        {isSelected && (
+                          <div className="flex items-center gap-3">
+                            {currentAssoc && (
+                              <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${
+                                currentAssoc.healthStatus === 'healthy' 
+                                  ? 'bg-emerald-500/10 text-emerald-400' 
+                                  : currentAssoc.healthStatus === 'degraded'
+                                  ? 'bg-amber-500/10 text-amber-400'
+                                  : 'bg-red-500/10 text-red-400'
+                              }`}>
+                                <div className={`w-2 h-2 rounded-full ${healthColor}`} />
+                                {currentAssoc.healthStatus}
+                                {currentAssoc.failCount > 0 && ` (${currentAssoc.failCount} fails)`}
+                              </div>
+                            )}
+                            <div className="flex items-center gap-2">
+                              <label className="text-xs text-gray-500">Weight:</label>
+                              <input
+                                type="number"
+                                min="0"
+                                max="1000"
+                                value={editRouteWeights[route.id] ?? 100}
+                                onChange={(e) => setEditRouteWeights(prev => ({
+                                  ...prev,
+                                  [route.id]: parseInt(e.target.value) || 100
+                                }))}
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-20 bg-[#0a0a0a] border border-[#333] text-white text-sm px-2 py-1 rounded focus:border-indigo-500 focus:outline-none"
+                              />
+                            </div>
+                          </div>
                         )}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {route.assetName} • {route.assetVendorDisplayName}
-                      </div>
-                    </button>
+                      
+                      {isCurrentlyAssociated && !isSelected && (
+                        <div className="mt-2 text-xs text-amber-500">Will be removed</div>
+                      )}
+                      {!isCurrentlyAssociated && isSelected && (
+                        <div className="mt-2 text-xs text-emerald-500">New route</div>
+                      )}
+                    </div>
                   );
                 })}
               </div>
               {editRouteIds.length === 0 && (
                 <p className="text-xs text-amber-500 mt-2">
                   Warning: Key with no routes will not be able to access any endpoints
+                </p>
+              )}
+              {editRouteIds.length > 1 && (
+                <p className="text-xs text-gray-500 mt-2">
+                  💡 Tip: Higher weight = more traffic. Routes with equal weights will receive equal traffic.
                 </p>
               )}
             </div>

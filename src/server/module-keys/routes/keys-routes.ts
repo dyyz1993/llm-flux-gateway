@@ -18,6 +18,10 @@ const updateKeySchema = z.object({
   name: z.string().min(1).optional(),
   status: z.enum(['active', 'revoked']).optional(),
   routeIds: z.array(z.string()).optional(),
+  routeWeights: z.array(z.object({
+    routeId: z.string(),
+    weight: z.number().min(0).max(1000),
+  })).optional(),
 });
 
 // ============================================

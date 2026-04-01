@@ -2,6 +2,7 @@ import { queryAll } from '@server/shared/database';
 import { inferFormatFromVendorTemplate, type VendorTemplateForInference } from '../utils/format-inferer';
 import { ApiFormat } from '../../module-protocol-transpiler';
 import { parseWildcardPattern, matchesWildcardPattern } from '@client/utils/wildcardUtils';
+import type { LoadBalancerMember, HealthStatus } from './load-balancer.service';
 
 export interface RouteMatch {
   route: {
@@ -19,6 +20,12 @@ export interface RouteMatch {
   };
   matchedRules: any[];
   rewrittenModel: string;
+}
+
+export interface RouteMatchWithLBInfo extends RouteMatch {
+  lbMemberId?: string;
+  lbWeight?: number;
+  lbHealthStatus?: HealthStatus;
 }
 
 /**
@@ -177,6 +184,192 @@ export class RouteMatcherService {
         priority: r.priority,
         requestFormat: inferredFormat,
         responseFormat: inferredFormat,
+      };
+    });
+  }
+
+  /**
+   * Find all matching routes for a given model (for load balancing)
+   * Returns all routes that match the model, along with LB metadata
+   * @param requestedModel - The model requested by the client
+   * @param apiKeyId - API key ID for route isolation
+   */
+  async findAllMatches(requestedModel: string, apiKeyId?: string): Promise<RouteMatchWithLBInfo[]> {
+    let sql = `
+      SELECT
+        r.id,
+        r.name,
+        v.base_url,
+        v.endpoint,
+        a.api_key as upstream_api_key,
+        r.is_active,
+        r.overrides,
+        r.priority,
+        akr.id as lb_member_id,
+        akr.weight as lb_weight,
+        akr.health_status as lb_health_status
+      FROM routes r
+      INNER JOIN assets a ON r.asset_id = a.id
+      INNER JOIN vendor_templates v ON a.vendor_id = v.id
+    `;
+
+    const params: any[] = [];
+
+    if (apiKeyId) {
+      sql += `
+        INNER JOIN api_key_routes akr ON r.id = akr.route_id
+        WHERE r.is_active = 1 AND akr.api_key_id = ?
+      `;
+      params.push(apiKeyId);
+    } else {
+      sql += `WHERE r.is_active = 1`;
+    }
+
+    sql += ` ORDER BY r.priority DESC`;
+
+    const routes = queryAll<any>(sql, params);
+    const matches: RouteMatchWithLBInfo[] = [];
+
+    for (const route of routes) {
+      const overrides = JSON.parse(route.overrides || '[]');
+
+      const vendorTemplate: VendorTemplateForInference = {
+        baseUrl: route.base_url,
+        endpoint: route.endpoint || '/chat/completions',
+      };
+      const inferredFormat = inferFormatFromVendorTemplate(vendorTemplate);
+
+      const modelOverrideRules = overrides.filter((o: any) => o.field === 'model');
+
+      let matched = false;
+      for (const rule of modelOverrideRules) {
+        for (const pattern of rule.matchValues) {
+          const parsed = parseWildcardPattern(pattern);
+          if (matchesWildcardPattern(requestedModel, parsed)) {
+            matches.push({
+              route: {
+                id: route.id,
+                name: route.name,
+                baseUrl: route.base_url,
+                endpoint: route.endpoint || '/chat/completions',
+                upstreamModel: rule.rewriteValue,
+                upstreamApiKey: route.upstream_api_key,
+                isActive: route.is_active === 1,
+                overrides: overrides,
+                priority: route.priority,
+                requestFormat: inferredFormat,
+                responseFormat: inferredFormat,
+              },
+              matchedRules: [rule],
+              rewrittenModel: rule.rewriteValue,
+              lbMemberId: route.lb_member_id,
+              lbWeight: route.lb_weight ?? 100,
+              lbHealthStatus: (route.lb_health_status as HealthStatus) ?? 'healthy',
+            });
+            matched = true;
+            break;
+          }
+        }
+        if (matched) break;
+      }
+
+      if (!matched) {
+        matches.push({
+          route: {
+            id: route.id,
+            name: route.name,
+            baseUrl: route.base_url,
+            endpoint: route.endpoint || '/chat/completions',
+            upstreamModel: requestedModel,
+            upstreamApiKey: route.upstream_api_key,
+            isActive: route.is_active === 1,
+            overrides: overrides,
+            priority: route.priority,
+            requestFormat: inferredFormat,
+            responseFormat: inferredFormat,
+          },
+          matchedRules: [],
+          rewrittenModel: requestedModel,
+          lbMemberId: route.lb_member_id,
+          lbWeight: route.lb_weight ?? 100,
+          lbHealthStatus: (route.lb_health_status as HealthStatus) ?? 'healthy',
+        });
+      }
+    }
+
+    return matches;
+  }
+
+  /**
+   * Get load balancer members for a given API key
+   * @param apiKeyId - API key ID
+   */
+  async getLBMembers(apiKeyId: string): Promise<LoadBalancerMember[]> {
+    const rows = queryAll<any>(
+      `
+      SELECT
+        akr.id,
+        akr.api_key_id,
+        akr.route_id,
+        akr.priority,
+        akr.weight,
+        akr.health_status,
+        akr.fail_count,
+        akr.success_count,
+        akr.last_check_at,
+        akr.last_success_at,
+        akr.last_fail_at,
+        akr.avg_latency_ms,
+        r.name as route_name,
+        r.overrides,
+        r.is_active,
+        v.base_url,
+        v.endpoint,
+        a.api_key as upstream_api_key
+      FROM api_key_routes akr
+      INNER JOIN routes r ON akr.route_id = r.id
+      INNER JOIN assets a ON r.asset_id = a.id
+      INNER JOIN vendor_templates v ON a.vendor_id = v.id
+      WHERE akr.api_key_id = ?
+      ORDER BY akr.priority ASC
+      `,
+      [apiKeyId]
+    );
+
+    return rows.map((row) => {
+      const vendorTemplate: VendorTemplateForInference = {
+        baseUrl: row.base_url,
+        endpoint: row.endpoint || '/chat/completions',
+      };
+      const inferredFormat = inferFormatFromVendorTemplate(vendorTemplate);
+      const overrides = JSON.parse(row.overrides || '[]');
+
+      return {
+        id: row.id,
+        apiKeyId: row.api_key_id,
+        routeId: row.route_id,
+        priority: row.priority,
+        weight: row.weight ?? 100,
+        healthStatus: (row.health_status as HealthStatus) ?? 'healthy',
+        failCount: row.fail_count ?? 0,
+        successCount: row.success_count ?? 0,
+        lastCheckAt: row.last_check_at,
+        lastSuccessAt: row.last_success_at,
+        lastFailAt: row.last_fail_at,
+        avgLatencyMs: row.avg_latency_ms,
+        route: {
+          id: row.route_id,
+          name: row.route_name,
+          baseUrl: row.base_url,
+          endpoint: row.endpoint || '/chat/completions',
+          upstreamModel: '',
+          upstreamApiKey: row.upstream_api_key,
+          isActive: row.is_active === 1,
+          overrides: overrides,
+          priority: row.priority,
+          requestFormat: inferredFormat,
+          responseFormat: inferredFormat,
+        },
       };
     });
   }

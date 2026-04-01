@@ -118,6 +118,14 @@ export interface KeyRouteAssociation {
   routeId: string;
   routeName: string;
   priority: number;
+  weight: number;
+  healthStatus: 'healthy' | 'unhealthy' | 'degraded';
+  failCount: number;
+  successCount: number;
+  lastCheckAt?: Date;
+  lastSuccessAt?: Date;
+  lastFailAt?: Date;
+  avgLatencyMs?: number;
 }
 
 export interface RequestLog {

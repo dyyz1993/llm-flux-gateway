@@ -28,8 +28,8 @@ const mockKeys: ApiKey[] = [
     keyToken: 'sk-flux-pro987654321zyxwvutsrqponmlk',
     status: 'active',
     routes: [
-      { routeId: 'route-001', routeName: 'GPT-4 Turbo', priority: 100 },
-      { routeId: 'route-002', routeName: 'Claude 3 Opus', priority: 90 },
+      { routeId: 'route-001', routeName: 'GPT-4 Turbo', priority: 100, weight: 100, healthStatus: 'healthy', failCount: 0, successCount: 0 },
+      { routeId: 'route-002', routeName: 'Claude 3 Opus', priority: 90, weight: 100, healthStatus: 'healthy', failCount: 0, successCount: 0 },
     ],
     createdAt: new Date('2024-01-02T00:00:00Z'),
     lastUsedAt: null,
@@ -241,6 +241,10 @@ class MockStore {
       routeId: rid,
       routeName: rid,
       priority: 100,
+      weight: 100,
+      healthStatus: 'healthy',
+      failCount: 0,
+      successCount: 0,
     }));
     const newKey: ApiKey = {
       id: this.generateId('key'),
@@ -272,6 +276,10 @@ class MockStore {
             routeId: route.id,
             routeName: route.name,
             priority: 0,
+            weight: 100,
+            healthStatus: 'healthy' as const,
+            failCount: 0,
+            successCount: 0,
           };
         })
         .filter((r): r is NonNullable<typeof r> => r !== null);

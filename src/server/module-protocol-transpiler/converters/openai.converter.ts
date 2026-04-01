@@ -87,6 +87,22 @@ export class OpenAIConverter implements FormatConverter {
     // Internal format uses camelCase (toolCalls, finishReason)
     const normalizedRequest = normalizeToCamelCase(req, true) as InternalRequest;
 
+    // ⭐ FIX: Validate and fix message content format
+    // OpenAI API requires content to be:
+    // - string: "Hello"
+    // - array of objects: [{type: 'text', text: 'Hello'}]
+    // NOT a single object: {type: 'text', text: 'Hello'}
+    if (normalizedRequest.messages && Array.isArray(normalizedRequest.messages)) {
+      for (let i = 0; i < normalizedRequest.messages.length; i++) {
+        const msg = normalizedRequest.messages[i];
+        if (msg && typeof msg.content === 'object' && !Array.isArray(msg.content) && msg.content !== null) {
+          // Content is a single object - wrap it in an array
+          console.warn(`[OpenAIConverter] Fixing message[${i}].content: single object -> array`);
+          msg.content = [msg.content];
+        }
+      }
+    }
+
     const metadata: TranspileMetadata = {
       fromVendor: 'openai',
       toVendor: 'openai',
@@ -114,6 +130,22 @@ export class OpenAIConverter implements FormatConverter {
     // Internal format uses camelCase (toolCalls, finishReason)
     // OpenAI API uses snake_case (tool_calls, finish_reason)
     const normalizedRequest = normalizeToSnakeCase(request, true);
+
+    // ⭐ FIX: Validate and fix message content format
+    // OpenAI API requires content to be:
+    // - string: "Hello"
+    // - array of objects: [{type: 'text', text: 'Hello'}]
+    // NOT a single object: {type: 'text', text: 'Hello'}
+    if (normalizedRequest.messages && Array.isArray(normalizedRequest.messages)) {
+      for (let i = 0; i < normalizedRequest.messages.length; i++) {
+        const msg = normalizedRequest.messages[i];
+        if (msg && typeof msg.content === 'object' && !Array.isArray(msg.content) && msg.content !== null) {
+          // Content is a single object - wrap it in an array
+          console.warn(`[OpenAIConverter] Fixing message[${i}].content: single object -> array`);
+          msg.content = [msg.content];
+        }
+      }
+    }
 
     const metadata: TranspileMetadata = {
       fromVendor: 'openai',

@@ -28,12 +28,21 @@ export interface KeyRouteAssociation {
   routeId: string;
   routeName: string;
   priority: number;
+  weight: number;
+  healthStatus: 'healthy' | 'unhealthy' | 'degraded';
+  failCount: number;
+  successCount: number;
+  lastCheckAt: number | null;
+  lastSuccessAt: number | null;
+  lastFailAt: number | null;
+  avgLatencyMs: number | null;
 }
 
 export interface UpdateApiKeyInput {
   name?: string;
   status?: ApiKeyStatus;
-  routeIds?: string[]; // Route IDs to associate with this key (will replace existing associations)
+  routeIds?: string[];
+  routeWeights?: { routeId: string; weight: number }[];
 }
 
 // ============================================
@@ -153,13 +162,14 @@ export class KeysService {
     if (input.routeIds && input.routeIds.length > 0) {
       for (let i = 0; i < input.routeIds.length; i++) {
         const associationId = randomUUID();
-        const priority = i + 1; // Priority based on order
+        const priority = i + 1;
+        const weight = 100;
         queryRun(
           `
-          INSERT INTO api_key_routes (id, api_key_id, route_id, priority, created_at)
-          VALUES (?, ?, ?, ?, ?)
+          INSERT INTO api_key_routes (id, api_key_id, route_id, priority, weight, health_status, fail_count, success_count, created_at)
+          VALUES (?, ?, ?, ?, ?, 'healthy', 0, 0, ?)
           `,
-          [associationId, id, input.routeIds[i], priority, now]
+          [associationId, id, input.routeIds[i], priority, weight, now]
         );
       }
     }
@@ -225,9 +235,11 @@ export class KeysService {
       if (input.routeIds.length > 0) {
         const now = Math.floor(Date.now() / 1000);
         for (let i = 0; i < input.routeIds.length; i++) {
+          const routeWeight = input.routeWeights?.find((rw) => rw.routeId === input.routeIds![i]);
+          const weight = routeWeight?.weight ?? 100;
           queryRun(
-            `INSERT INTO api_key_routes (api_key_id, route_id, priority, created_at) VALUES (?, ?, ?, ?)`,
-            [id, input.routeIds[i], i, now]
+            `INSERT INTO api_key_routes (id, api_key_id, route_id, priority, weight, health_status, fail_count, success_count, created_at) VALUES (?, ?, ?, ?, ?, 'healthy', 0, 0, ?)`,
+            [randomUUID(), id, input.routeIds[i], i, weight, now]
           );
         }
       }
@@ -268,7 +280,15 @@ export class KeysService {
       SELECT
         kr.route_id as routeId,
         rt.name as routeName,
-        kr.priority as priority
+        kr.priority as priority,
+        kr.weight as weight,
+        kr.health_status as healthStatus,
+        kr.fail_count as failCount,
+        kr.success_count as successCount,
+        kr.last_check_at as lastCheckAt,
+        kr.last_success_at as lastSuccessAt,
+        kr.last_fail_at as lastFailAt,
+        kr.avg_latency_ms as avgLatencyMs
       FROM api_key_routes kr
       INNER JOIN routes rt ON kr.route_id = rt.id
       WHERE kr.api_key_id = ?
@@ -281,6 +301,14 @@ export class KeysService {
       routeId: row.routeId,
       routeName: row.routeName,
       priority: row.priority,
+      weight: row.weight ?? 100,
+      healthStatus: row.healthStatus ?? 'healthy',
+      failCount: row.failCount ?? 0,
+      successCount: row.successCount ?? 0,
+      lastCheckAt: row.lastCheckAt,
+      lastSuccessAt: row.lastSuccessAt,
+      lastFailAt: row.lastFailAt,
+      avgLatencyMs: row.avgLatencyMs,
     }));
   }
 
