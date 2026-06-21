@@ -12,6 +12,7 @@ import type {
   InternalMessage,
 } from '../../module-protocol-transpiler/interfaces';
 import { assertInternalResponse, assertInternalRequest } from '../../module-protocol-transpiler/interfaces/internal-format';
+import { isVisionModel, stripImagesFromInternalRequest } from '../utils/vision-filter';
 import { randomUUID } from 'node:crypto';
 
 // Route config format type (excludes 'custom')
@@ -182,6 +183,22 @@ export async function handleGatewayRequest(
   // Step 4: Get target format from route config
   const targetFormat = (match.route as any).requestFormat as RouteConfigFormat as VendorType;
 
+  // ⭐ VISION CHECK: Determine if the target model supports image inputs
+  // Models like DeepSeek don't support vision and will error on image_url blocks
+  const targetModel = rewriteResult.rewrittenRequest.model;
+  const supportsVision = isVisionModel(targetModel);
+  const conversionOptions: Record<string, any> = {};
+  if (!supportsVision) {
+    conversionOptions.stripImages = true;
+    console.warn(`[Gateway] Model "${targetModel}" does not support vision; will strip image_url blocks`);
+
+    // ⭐ DEEPSEEK FIX: Strip image_url blocks BEFORE the converter runs.
+    // Filtering at the internal-format layer (before convertRequestFromInternal)
+    // guarantees that no path can leak an image_url block to the upstream,
+    // regardless of how the target converter normalizes/recurses the content.
+    stripImagesFromInternalRequest(rewriteResult.rewrittenRequest);
+  }
+
   // Step 5: Convert internal format to target format
   // ⭐ FIX: Always use converter directly to ensure proper field normalization
   // The transpile() method has a fast-path that skips conversion when fromVendor === toVendor
@@ -191,7 +208,10 @@ export async function handleGatewayRequest(
 
   if (targetConverter && typeof targetConverter.convertRequestFromInternal === 'function') {
     // Direct converter call - ensures full normalization including nested objects
-    targetRequestResult = targetConverter.convertRequestFromInternal(rewriteResult.rewrittenRequest);
+    targetRequestResult = targetConverter.convertRequestFromInternal(
+      rewriteResult.rewrittenRequest,
+      conversionOptions
+    );
   } else {
     // Fallback: try transpile
     targetRequestResult = protocolTranspiler.transpile(

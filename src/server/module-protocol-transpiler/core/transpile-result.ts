@@ -357,4 +357,15 @@ export interface ConversionOptions {
 
   /** Maximum depth for nested object conversion */
   maxDepth?: number;
+
+  /**
+   * Whether to strip image_url content blocks from messages
+   *
+   * When true, any content blocks with type 'image_url' will be removed
+   * from message content arrays. This is useful when targeting models
+   * (like DeepSeek) that don't support vision/image inputs.
+   *
+   * If all blocks in a message are image_url, the content will be set to null.
+   */
+  stripImages?: boolean;
 }

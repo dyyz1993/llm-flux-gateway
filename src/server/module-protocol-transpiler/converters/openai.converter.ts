@@ -144,6 +144,27 @@ export class OpenAIConverter implements FormatConverter {
           console.warn(`[OpenAIConverter] Fixing message[${i}].content: single object -> array`);
           msg.content = [msg.content];
         }
+
+        // ⭐ DEEPSEEK/VISION: Strip image_url blocks for models that don't support vision
+        // Some models (e.g., DeepSeek) don't support image inputs and will error
+        // if image_url blocks are present. When stripImages is true, remove them.
+        if (_options?.stripImages && msg && Array.isArray(msg.content)) {
+          const originalLength = msg.content.length;
+          msg.content = msg.content.filter(
+            (block: any) => !(block?.type === 'image_url')
+          );
+          if (msg.content.length !== originalLength) {
+            const removedCount = originalLength - msg.content.length;
+            console.warn(
+              `[OpenAIConverter] Stripped ${removedCount} image_url block(s) from message[${i}] ` +
+              `(model does not support vision)`
+            );
+          }
+          // If all content blocks were images, set content to null (OpenAI standard)
+          if (msg.content.length === 0) {
+            msg.content = null;
+          }
+        }
       }
     }
 
