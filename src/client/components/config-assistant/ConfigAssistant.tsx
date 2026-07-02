@@ -54,7 +54,7 @@ export function ConfigAssistant() {
     Promise.all([
       fetch('/api/config-assistant/models').then(r => r.json()),
       fetch('/api/config-assistant/providers').then(r => r.json()),
-      fetch('/api/keys').then(r => r.json()).then(d => d.data || []).catch(() => []),
+      fetch('/api/config-assistant/keys').then(r => r.json()).then(d => d.data || []),
     ]).then(([modelsData, providersData, keysData]) => {
       setModels(modelsData.data || []);
       if (modelsData.data?.length > 0) setSelectedModel(modelsData.data[0].id);

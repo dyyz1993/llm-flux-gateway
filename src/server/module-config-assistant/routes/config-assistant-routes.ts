@@ -487,6 +487,15 @@ router.post('/chat', async (c) => {
   }
 });
 
+// 获取可用平台 Key（路由模式用）
+router.get('/keys', async (c) => {
+  try {
+    const { queryAll } = await import('../../shared/database');
+    const keys = queryAll('SELECT id, name, key_token, status FROM api_keys ORDER BY name') as any[];
+    return c.json({ data: keys.map((k: any) => ({ id: k.id, name: k.name, keyPrefix: (k.key_token || '').slice(0, 16) + '...', status: k.status })) });
+  } catch { return c.json({ data: [] }); }
+});
+
 // 获取可用模型列表
 router.get('/models', async (c) => {
   const models = await getAvailableModels();
