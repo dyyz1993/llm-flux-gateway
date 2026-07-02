@@ -261,6 +261,67 @@ const agentTools: AgentTool[] = [
       }
     },
   },
+  // ========================================
+  // 删除操作
+  // ========================================
+  {
+    name: 'delete_vendor',
+    label: '删除厂商',
+    description: '删除一个厂商。如果厂商下有资产或路由会阻止删除。',
+    parameters: Type.Object({
+      vendorId: Type.String({ description: '厂商 ID，如 opencode-go' }),
+    }),
+    execute: async (_id, args) => {
+      const r = await tools.deleteVendor(args.vendorId);
+      return { content: [{ type: 'text', text: r.success ? `✅ 已删除厂商 ${args.vendorId}` : `❌ ${r.error}` }] };
+    },
+  },
+  {
+    name: 'delete_route',
+    label: '删除路由',
+    description: '删除一个路由',
+    parameters: Type.Object({
+      routeId: Type.String({ description: '路由 ID' }),
+    }),
+    execute: async (_id, args) => {
+      const r = await tools.deleteRoute(args.routeId);
+      return { content: [{ type: 'text', text: r.success ? '✅ 已删除路由' : `❌ ${r.error}` }] };
+    },
+  },
+  {
+    name: 'delete_asset',
+    label: '删除资产',
+    description: '删除一个上游 API Key（资产）',
+    parameters: Type.Object({
+      assetId: Type.String({ description: '资产 ID' }),
+    }),
+    execute: async (_id, args) => {
+      const { queryRun, queryFirst } = await import('../../shared/database');
+      const asset = queryFirst('SELECT name FROM assets WHERE id = ?', [args.assetId]);
+      if (!asset) return { content: [{ type: 'text', text: '❌ 资产不存在' }] };
+      // 检查是否有路由在使用
+      const routes = queryFirst('SELECT id FROM routes WHERE asset_id = ? LIMIT 1', [args.assetId]);
+      if (routes) return { content: [{ type: 'text', text: '❌ 该资产下有路由在使用，请先删除路由' }] };
+      queryRun('DELETE FROM assets WHERE id = ?', [args.assetId]);
+      return { content: [{ type: 'text', text: `✅ 已删除资产` }] };
+    },
+  },
+  {
+    name: 'delete_platform_key',
+    label: '删除平台 Key',
+    description: '删除一个平台 Key（客户端认证用）',
+    parameters: Type.Object({
+      keyId: Type.String({ description: '平台 Key ID' }),
+    }),
+    execute: async (_id, args) => {
+      const { queryRun, queryFirst } = await import('../../shared/database');
+      const key = queryFirst('SELECT name FROM api_keys WHERE id = ?', [args.keyId]);
+      if (!key) return { content: [{ type: 'text', text: '❌ Key 不存在' }] };
+      queryRun('DELETE FROM api_key_routes WHERE api_key_id = ?', [args.keyId]);
+      queryRun('DELETE FROM api_keys WHERE id = ?', [args.keyId]);
+      return { content: [{ type: 'text', text: `✅ 已删除 Key "${key.name}"` }] };
+    },
+  },
 ];
 
 // ============================================================
