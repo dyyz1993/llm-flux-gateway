@@ -126,34 +126,46 @@ const agentTools: AgentTool[] = [
 // 获取模型（优先用已注册的 provider，否则用 pi-ai 内置）
 // ============================================================
 
-async function getModel(requestedModel?: string): Promise<{ model: Model<Api>; apiKey?: string } | null> {
+async function getModel(requestedModel?: string, requestedProvider?: string): Promise<{ model: Model<Api>; apiKey?: string } | null> {
   try {
-    // 如果指定了模型，按模型查找
+    const { builtinModels } = await import('@earendil-works/pi-ai/providers/all');
+    const builtin = builtinModels();
+    const { queryFirst } = await import('../../shared/database');
+
+    // 如果指定了 provider，用它的 key
+    if (requestedProvider) {
+      const asset = queryFirst('SELECT api_key FROM assets WHERE vendor_id = ? LIMIT 1', [requestedProvider]);
+      if (asset) {
+        // 找该 provider 下的模型
+        const m = requestedModel
+          ? builtin.getModel(requestedProvider, requestedModel)
+          : builtin.getModels(requestedProvider)[0];
+        if (m) return { model: m, apiKey: asset.api_key };
+      }
+    }
+
+    // 如果指定了模型，在所有 provider 中查找
     if (requestedModel) {
-      const { builtinModels } = await import('@earendil-works/pi-ai/providers/all');
-      const builtin = builtinModels();
-      // 在所有 provider 中查找指定模型
       for (const p of builtin.getProviders()) {
         const m = builtin.getModel(p.id, requestedModel);
         if (m) {
-          const { queryFirst } = await import('../../shared/database');
           const asset = queryFirst('SELECT api_key FROM assets WHERE vendor_id = ? LIMIT 1', [p.id]);
-          return { model: m, apiKey: asset?.api_key };
+          if (asset) return { model: m, apiKey: asset.api_key };
+          return { model: m }; // 没 key 也能试试
         }
       }
     }
 
-    // 默认：找 opencode-go → deepseek-v4-flash
-    const { builtinModels } = await import('@earendil-works/pi-ai/providers/all');
-    const builtin = builtinModels();
-    let m = builtin.getModel('opencode-go', 'deepseek-v4-flash')
-      || builtin.getModels().find(x => x.reasoning);
+    // 默认：找有 key 的 provider
+    const assets = queryAll('SELECT DISTINCT vendor_id FROM assets WHERE status = ?', ['active']) as any[];
+    for (const a of assets) {
+      const models = builtin.getModels(a.vendor_id);
+      if (models.length > 0) {
+        return { model: models[0]!, apiKey: a.api_key };
+      }
+    }
 
-    if (!m) return null;
-
-    const { queryFirst } = await import('../../shared/database');
-    const asset = queryFirst('SELECT api_key FROM assets WHERE vendor_id = ? LIMIT 1', [m.provider]);
-    return { model: m, apiKey: asset?.api_key };
+    return null;
   } catch { return null; }
 }
 
@@ -186,11 +198,11 @@ async function getAvailableModels(): Promise<{ id: string; name: string; provide
 // ============================================================
 
 router.post('/chat', async (c) => {
-  const { message, history, modelId } = await c.req.json();
+  const { message, history, modelId, providerId } = await c.req.json();
   if (!message) return c.json({ reply: '请说点什么。' });
 
-  // 获取模型（支持指定模型）
-  const modelInfo = await getModel(modelId);
+  // 获取模型（支持指定模型和供应商）
+  const modelInfo = await getModel(modelId, providerId);
   if (!modelInfo) {
     // 没有 AI 模型可用 → 规则降级
     return c.json({ reply: await fallbackReply(message) });
@@ -258,6 +270,27 @@ router.post('/chat', async (c) => {
 router.get('/models', async (c) => {
   const models = await getAvailableModels();
   return c.json({ data: models });
+});
+
+// 获取有 Key 的供应商列表
+router.get('/providers', async (c) => {
+  try {
+    const { queryAll } = await import('../../shared/database');
+    const assets = queryAll(`
+      SELECT DISTINCT a.vendor_id as id, v.name, v.base_url, a.api_key
+      FROM assets a
+      JOIN vendor_templates v ON a.vendor_id = v.id
+      WHERE a.status = 'active'
+    `) as any[];
+    return c.json({
+      data: assets.map((a: any) => ({
+        id: a.id,
+        name: a.name,
+        keyPrefix: (a.api_key || '').slice(0, 16) + '...',
+        baseUrl: a.base_url,
+      })),
+    });
+  } catch { return c.json({ data: [] }); }
 });
 
 // ============================================================

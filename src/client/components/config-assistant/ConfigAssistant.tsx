@@ -5,7 +5,7 @@
  * 支持快速配置、查看、备份、恢复等操作。
  */
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Settings } from 'lucide-react';
+import { Send, Bot, User, Settings, Key } from 'lucide-react';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -17,6 +17,12 @@ interface ModelOption {
   id: string;
   name: string;
   provider: string;
+}
+
+interface ProviderOption {
+  id: string;
+  name: string;
+  keyPrefix: string;
 }
 
 const QUICK_ACTIONS = [
@@ -35,17 +41,21 @@ export function ConfigAssistant() {
   const [loading, setLoading] = useState(false);
   const [models, setModels] = useState<ModelOption[]>([]);
   const [selectedModel, setSelectedModel] = useState('');
+  const [providers, setProviders] = useState<ProviderOption[]>([]);
+  const [selectedProvider, setSelectedProvider] = useState('');
   const chatEnd = useRef<HTMLDivElement>(null);
 
-  // 加载可用模型
+  // 加载可用模型和供应商
   useEffect(() => {
-    fetch('/api/config-assistant/models')
-      .then(r => r.json())
-      .then(d => {
-        setModels(d.data || []);
-        if (d.data?.length > 0) setSelectedModel(d.data[0].id);
-      })
-      .catch(() => {});
+    Promise.all([
+      fetch('/api/config-assistant/models').then(r => r.json()),
+      fetch('/api/config-assistant/providers').then(r => r.json()),
+    ]).then(([modelsData, providersData]) => {
+      setModels(modelsData.data || []);
+      if (modelsData.data?.length > 0) setSelectedModel(modelsData.data[0].id);
+      setProviders(providersData.data || []);
+      if (providersData.data?.length > 0) setSelectedProvider(providersData.data[0].id);
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -68,6 +78,7 @@ export function ConfigAssistant() {
           message: content,
           history: messages.map(m => ({ role: m.role, content: m.content })),
           modelId: selectedModel || undefined,
+          providerId: selectedProvider || undefined,
         }),
       });
       const data = await res.json();
@@ -146,6 +157,16 @@ export function ConfigAssistant() {
           <select value={selectedModel} onChange={e => setSelectedModel(e.target.value)}>
             {models.map(m => (
               <option key={m.id} value={m.id}>{m.name} ({m.provider})</option>
+            ))}
+          </select>
+        </div>
+      )}
+      {providers.length > 0 && (
+        <div className="ca-model-selector">
+          <label><Key size={14} /> Key</label>
+          <select value={selectedProvider} onChange={e => setSelectedProvider(e.target.value)}>
+            {providers.map(p => (
+              <option key={p.id} value={p.id}>{p.name} — {p.keyPrefix}</option>
             ))}
           </select>
         </div>
