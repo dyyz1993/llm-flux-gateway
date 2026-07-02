@@ -74,8 +74,8 @@ const AGENT_SYSTEM_PROMPT = `你是网关 LLM Flux Gateway 的配置助手。你
 
 第1步: 调用 list_vendors 检查厂商是否已存在（如果已存在则跳过 1）
 第2步: 调用 quick_setup(providerId, apiKey) → 添加厂商+资产+路由
-第3步: 调用 add_platform_key(name, key) → 创建一个平台 Key
-       - key 值用 sk-flux-{随机6位} 格式
+第3步: 调用 add_platform_key(name, key?=自动生成) → 创建一个平台 Key
+       - key 参数不用传，工具会自动生成 sk-flux-{随机16位}
        - 名称用 "{厂商名} 测试 Key"
 第4步: 调用 run_bash 测试连接:
        curl -s -X POST http://localhost:3001/v1/chat/completions \
@@ -256,20 +256,22 @@ const agentTools: AgentTool[] = [
   {
     name: 'add_platform_key',
     label: '添加平台 Key',
-    description: '添加客户端调用网关时使用的认证 Key。Key 值建议用 sk-flux- 开头加随机字符，如 sk-flux-a1b2c3d4。',
+    description: '添加客户端调用网关时使用的认证 Key。Key 值自动生成，格式 sk-flux-{随机12位}。',
     parameters: Type.Object({
       name: Type.String({ description: 'Key 名称，建议包含用途说明，如 "opencode-go 测试 Key"' }),
-      key: Type.String({ description: 'Key 值，建议格式 sk-flux-{随机字符}' }),
+      key: Type.Optional(Type.String({ description: '自定义 Key 值（可选），不传则自动生成 sk-flux-{随机12位}' })),
     }),
     execute: async (_id, args) => {
+      const { randomBytes } = await import('node:crypto');
+      const keyValue = args.key || `sk-flux-${randomBytes(8).toString('hex')}`;
       const { queryRun } = await import('../../shared/database');
       const now = Math.floor(Date.now() / 1000);
       const id = `key-${Date.now()}`;
       queryRun(
         'INSERT INTO api_keys (id, key_token, name, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
-        [id, args.key, args.name, 'active', now, now]
+        [id, keyValue, args.name, 'active', now, now]
       );
-      return { content: [{ type: 'text', text: `✅ 平台 Key "${args.name}" 已添加` }] };
+      return { content: [{ type: 'text', text: `✅ 平台 Key "${args.name}" 已添加\nKey 值: \`${keyValue}\`\n⚠️ 请复制保存，不再显示` }] };
     },
   },
   // ========================================
