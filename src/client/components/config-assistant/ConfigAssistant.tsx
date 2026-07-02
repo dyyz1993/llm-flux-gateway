@@ -26,16 +26,17 @@ interface ProviderOption {
 }
 
 const QUICK_ACTIONS = [
-  { label: '查看厂商', message: '查看厂商' },
-  { label: '查看 Key', message: '查看 API Key' },
-  { label: '创建备份', message: '创建备份' },
-  { label: '帮助', message: '帮助' },
+  { label: '厂商', message: '查看厂商' },
+  { label: '资产(上游Key)', message: '查看资产' },
+  { label: 'Key(平台)', message: '查看平台 Key' },
+  { label: '路由', message: '查看路由' },
+  { label: '备份', message: '创建备份' },
 ];
 
 export function ConfigAssistant() {
   const [messages, setMessages] = useState<Message[]>([{
     role: 'assistant',
-    content: '🤖 你好！我是配置助手。你可以对我说：\n\n• "快速配置 opencode-go，key=sk-xxx" — 一键接入厂商\n• "查看厂商" — 列出所有厂商\n• "创建备份" — 备份当前配置\n• "帮助" — 查看我能做什么',
+    content: '🤖 你好！我是配置助手。\n\n点上面的快捷按钮查看配置，或者直接对我说：\n\n• "帮我接入 opencode-go，key=sk-xxx"\n• "加个平台 Key sk-xxx"\n• "添加路由 gpt-4 → deepseek"\n• "备份一下"',
   }]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);

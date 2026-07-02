@@ -17,9 +17,40 @@ import * as tools from '../../config-manager/tools';
 
 const router = new Hono();
 
-// ============================================================
-// AgentTool 定义
-// ============================================================
+const AGENT_SYSTEM_PROMPT = `你是网关 LLM Flux Gateway 的配置助手。你的职责是通过调用工具来管理网关配置。
+
+## 核心概念
+
+网关有四个核心配置对象：
+
+1. **厂商 (Vendor)** — 上游 LLM 供应商，如 OpenAI、Anthropic、opencode-go
+   - 每个厂商有 baseUrl（API 地址）和 endpoint（接口路径）
+   - 厂商信息存储在 vendor_templates 表
+
+2. **资产 (Asset)** — 上游供应商的 API Key
+   - 每个资产关联一个厂商（vendor_id）
+   - 存在 assets 表
+   - 资产是网关调用上游 API 时使用的 Key
+
+3. **平台 Key (ApiKey)** — 客户端调用网关时使用的认证 Key
+   - 存在 api_keys 表
+   - 客户端请求时在 Authorization header 中传递
+   - 每个 Key 可以绑定到不同的路由
+
+4. **路由 (Route)** — 模型到上游的映射规则
+   - 定义哪个模型名匹配到哪个上游厂商的哪个模型
+   - 通过 overrides 字段配置映射规则
+   - 通过 api_key_routes 表绑定到平台 Key
+
+## 数据流
+
+客户端请求 → 平台 Key 鉴权 → 路由匹配(model名) → 找到对应厂商 → 用资产 Key 调上游
+
+## 常用操作
+
+- quick_setup: 一键添加厂商+资产+路由，适合快速接入
+- 添加平台 Key 后需要通过 bind_route_to_key 绑定路由才能使用
+- 操作前会自动备份，失败了可以 restore_config 恢复`;
 
 const agentTools: AgentTool[] = [
   {
@@ -120,6 +151,116 @@ const agentTools: AgentTool[] = [
       return { content: [{ type: 'text', text }] };
     },
   },
+  // ========================================
+  // 资产（上游 API Key）
+  // ========================================
+  {
+    name: 'list_assets',
+    label: '列出资产',
+    description: '列出所有上游 API Key（资产），每个资产关联一个厂商',
+    parameters: Type.Object({}),
+    execute: async () => {
+      const { queryAll } = await import('../../shared/database');
+      const assets = queryAll(`
+        SELECT a.name, a.api_key, v.name as vendor, a.status
+        FROM assets a JOIN vendor_templates v ON a.vendor_id = v.id
+        ORDER BY v.name
+      `) as any[];
+      const text = assets.length
+        ? assets.map((a: any) => `• ${a.name} → ${a.vendor} (${a.status}): ${(a.api_key||'').slice(0,16)}...`).join('\n')
+        : '暂无资产';
+      return { content: [{ type: 'text', text }] };
+    },
+  },
+  {
+    name: 'add_asset',
+    label: '添加资产',
+    description: '添加上游 API Key（资产），需要指定厂商和 Key',
+    parameters: Type.Object({
+      vendorId: Type.String({ description: '厂商 ID，如 opencode-go、openai' }),
+      apiKey: Type.String({ description: 'API Key' }),
+      name: Type.Optional(Type.String({ description: '资产名称（可选）' })),
+    }),
+    execute: async (_id, args) => {
+      const { queryRun, queryFirst } = await import('../../shared/database');
+      const now = Math.floor(Date.now() / 1000);
+      const id = `asset-${Date.now()}`;
+      const vendor = queryFirst('SELECT name FROM vendor_templates WHERE id = ?', [args.vendorId]);
+      if (!vendor) return { content: [{ type: 'text', text: `❌ 厂商不存在: ${args.vendorId}` }] };
+      queryRun(
+        'INSERT INTO assets (id, name, vendor_id, api_key, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [id, args.name || `${vendor.name} Key`, args.vendorId, args.apiKey, 'active', now, now]
+      );
+      return { content: [{ type: 'text', text: `✅ 资产已添加: ${args.name || vendor.name} Key` }] };
+    },
+  },
+  // ========================================
+  // 平台 Key（客户端认证用）
+  // ========================================
+  {
+    name: 'list_platform_keys',
+    label: '列出平台 Key',
+    description: '列出所有客户端调用网关时使用的认证 Key',
+    parameters: Type.Object({}),
+    execute: async () => {
+      const { queryAll } = await import('../../shared/database');
+      const keys = queryAll('SELECT id, name, key_token, status FROM api_keys ORDER BY name') as any[];
+      const text = keys.length
+        ? keys.map((k: any) => `• ${k.name} (${k.status}): ${(k.key_token||'').slice(0,16)}...`).join('\n')
+        : '暂无平台 Key';
+      return { content: [{ type: 'text', text }] };
+    },
+  },
+  {
+    name: 'add_platform_key',
+    label: '添加平台 Key',
+    description: '添加客户端调用网关时使用的认证 Key',
+    parameters: Type.Object({
+      name: Type.String({ description: 'Key 名称' }),
+      key: Type.String({ description: 'Key 字符串，建议以 sk-flux- 开头' }),
+    }),
+    execute: async (_id, args) => {
+      const { queryRun } = await import('../../shared/database');
+      const now = Math.floor(Date.now() / 1000);
+      const id = `key-${Date.now()}`;
+      queryRun(
+        'INSERT INTO api_keys (id, key_token, name, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+        [id, args.key, args.name, 'active', now, now]
+      );
+      return { content: [{ type: 'text', text: `✅ 平台 Key "${args.name}" 已添加` }] };
+    },
+  },
+  // ========================================
+  // Bash 沙箱执行
+  // ========================================
+  {
+    name: 'run_bash',
+    label: '执行脚本',
+    description: '在沙箱临时目录执行 shell 命令。用于调试、检查、运行脚本。不可用于生产操作。',
+    parameters: Type.Object({
+      command: Type.String({ description: '要执行的 shell 命令' }),
+    }),
+    execute: async (_id, args) => {
+      const { execSync } = await import('node:child_process');
+      const { mkdirSync, rmSync } = await import('node:fs');
+      const { join } = await import('node:path');
+      const { tmpdir } = await import('node:os');
+      const sandbox = join(tmpdir(), 'flux-sandbox');
+      mkdirSync(sandbox, { recursive: true });
+      try {
+        const result = execSync(args.command, {
+          cwd: sandbox,
+          timeout: 10000,
+          maxBuffer: 1024 * 100,
+          encoding: 'utf-8',
+          env: { ...process.env, PATH: process.env.PATH },
+        });
+        return { content: [{ type: 'text', text: result || '(无输出)' }] };
+      } catch (e: any) {
+        return { content: [{ type: 'text', text: `❌ ${e.stderr || e.message}` }] };
+      }
+    },
+  },
 ];
 
 // ============================================================
@@ -213,7 +354,7 @@ router.post('/chat', async (c) => {
   // 创建 Agent
   const agent = new Agent({
     initialState: {
-      systemPrompt: '你是网关配置助手。根据用户的需求调用工具来管理网关配置。用中文回复。',
+      systemPrompt: AGENT_SYSTEM_PROMPT,
       model,
       tools: agentTools,
       messages: [],
