@@ -25,14 +25,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: |
-          sudo apt-get update && sudo apt-get install -y python3 make g++ sqlite3
-          npm install --ignore-scripts
-          cd node_modules/better-sqlite3 && npx --yes prebuild-install || npm run build-release
-          cd ../..
-
-      - name: Prepare data directory
-        run: mkdir -p data
+        run: npm install
 
       - name: Run unit tests (Faux Provider, no API key needed)
         run: npx vitest run --exclude 'src/server/shared/__tests__/**'
