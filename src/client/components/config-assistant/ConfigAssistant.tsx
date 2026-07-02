@@ -152,16 +152,6 @@ export function ConfigAssistant() {
         ))}
       </div>
 
-      {models.length > 0 && (
-        <div className="ca-model-selector">
-          <label><Settings size={14} /> 模型</label>
-          <select value={selectedModel} onChange={e => setSelectedModel(e.target.value)}>
-            {models.map(m => (
-              <option key={m.id} value={m.id}>{m.name} ({m.provider})</option>
-            ))}
-          </select>
-        </div>
-      )}
       {providers.length > 0 && (
         <div className="ca-model-selector">
           <label><Key size={14} /> Key</label>
@@ -202,6 +192,17 @@ export function ConfigAssistant() {
         <button onClick={() => sendMessage(input)} disabled={loading || !input.trim()}>
           <Send size={18} />
         </button>
+      </div>
+
+      <div className="ca-model-selector" style={{ marginTop: 8 }}>
+        {models.length > 0 && (
+          <select value={selectedModel} onChange={e => setSelectedModel(e.target.value)}
+            style={{ flex: 1, padding: '6px 10px', border: '1px solid #333', borderRadius: 6, background: '#111', color: '#ccc', fontSize: 13, outline: 'none' }}>
+            {models.map(m => (
+              <option key={m.id} value={m.id}>{m.name} ({m.provider})</option>
+            ))}
+          </select>
+        )}
       </div>
     </div>
   );
