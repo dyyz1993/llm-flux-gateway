@@ -39,6 +39,7 @@ const viewToHash: Record<string, string> = {
   assets: '#/assets',
   vendors: '#/vendors',
   logs: '#/logs',
+  'config-assistant': '#/config-assistant',
   system: '#/system',
   settings: '#/system',
 };
