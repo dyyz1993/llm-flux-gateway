@@ -270,12 +270,41 @@ router.post('/v1/models/*', async (c) => {
 
 router.get('/v1/models', async (c) => {
   const routes = await routeMatcherService.getActiveRoutes();
-  const models = routes.map((r: any) => ({
-    id: r.upstreamModel,
+  const modelSet = new Set<string>();
+
+  // 从路由配置中提取可用模型名
+  for (const r of routes) {
+    const overrides = (r as any).overrides ?? [];
+    let hasModelRule = false;
+    for (const o of overrides) {
+      if (o.field === 'model' && Array.isArray(o.matchValues)) {
+        for (const v of o.matchValues) {
+          if (v !== '*') modelSet.add(v);
+        }
+        hasModelRule = true;
+      }
+    }
+    if (!hasModelRule) {
+      modelSet.add((r as any).name);
+    }
+  }
+
+  // 加上 pi-ai 内置的 1029 个模型
+  try {
+    const { builtinModels } = await import('@earendil-works/pi-ai/providers/all');
+    const catalog = builtinModels();
+    for (const m of catalog.getModels()) {
+      modelSet.add(m.id);
+    }
+  } catch { /* pi-ai 内置目录不可用时不影响 */ }
+
+  const models = Array.from(modelSet).sort().map((id) => ({
+    id,
     object: 'model',
     created: Math.floor(Date.now() / 1000),
-    owned_by: r.name,
+    owned_by: 'gateway',
   }));
+
   return c.json({ object: 'list', data: models });
 });
 

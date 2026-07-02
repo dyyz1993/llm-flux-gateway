@@ -16,7 +16,6 @@ import analyticsRouter from './module-gateway/routes/analytics-routes';
 import systemRouter from './module-system/main';
 import authRouter from './module-auth';
 import styleJumpRouter from './module-style-jump/routes/style-jump-routes';
-import { vendorsService } from './module-vendors/services/vendors.service';
 
 // Configure global fetch agent to prevent 60s/70s timeouts (undici defaults)
 // This is critical for LLM reasoning models that take a long time to start responding
@@ -34,15 +33,6 @@ setGlobalDispatcher(new Agent({
 
 // Initialize database
 await initDatabase();
-
-// Sync vendors from YAML config on startup
-try {
-  const syncResult = await vendorsService.syncFromYaml();
-  console.log('[Init] Vendors synced from YAML:', syncResult);
-} catch (error) {
-  console.error('[Init] Failed to sync vendors from YAML:', error);
-  // Continue anyway - vendors might already exist in DB
-}
 
 // Create Hono app
 const app = new Hono();
