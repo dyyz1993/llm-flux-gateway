@@ -44,6 +44,7 @@ export function ConfigAssistant() {
   const [selectedModel, setSelectedModel] = useState('');
   const [providers, setProviders] = useState<ProviderOption[]>([]);
   const [selectedProvider, setSelectedProvider] = useState('');
+  const [mode, setMode] = useState<'direct' | 'route'>('direct');
   const chatEnd = useRef<HTMLDivElement>(null);
 
   // 加载可用模型和供应商
@@ -80,6 +81,7 @@ export function ConfigAssistant() {
           history: messages.map(m => ({ role: m.role, content: m.content })),
           modelId: selectedModel || undefined,
           providerId: selectedProvider || undefined,
+          mode,
         }),
       });
       const data = await res.json();
@@ -194,7 +196,19 @@ export function ConfigAssistant() {
         </button>
       </div>
 
-      <div className="ca-model-selector" style={{ marginTop: 8 }}>
+      <div className="ca-model-selector" style={{ marginTop: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
+        <button
+          onClick={() => setMode(mode === 'direct' ? 'route' : 'direct')}
+          style={{
+            padding: '4px 10px', border: '1px solid #333', borderRadius: 6,
+            background: mode === 'direct' ? '#2563eb' : 'transparent',
+            color: mode === 'direct' ? '#fff' : '#888',
+            cursor: 'pointer', fontSize: 12, whiteSpace: 'nowrap',
+          }}
+          title="直连：用 API Key 直接调模型。路由：走网关路由配置调模型"
+        >
+          {mode === 'direct' ? '🔌 直连' : '🛣️ 路由'}
+        </button>
         {models.length > 0 && (
           <select value={selectedModel} onChange={e => setSelectedModel(e.target.value)}
             style={{ flex: 1, padding: '6px 10px', border: '1px solid #333', borderRadius: 6, background: '#111', color: '#ccc', fontSize: 13, outline: 'none' }}>
