@@ -27,7 +27,9 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y python3 make g++ sqlite3
-          npm ci --ignore-scripts
+          npm install --ignore-scripts
+          cd node_modules/better-sqlite3 && npx --yes prebuild-install || npm run build-release
+          cd ../..
 
       - name: Prepare data directory
         run: mkdir -p data
