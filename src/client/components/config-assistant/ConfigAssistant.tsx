@@ -33,11 +33,32 @@ const QUICK_ACTIONS = [
   { label: '备份', message: '创建备份' },
 ];
 
+const STORAGE_KEY = 'flux-config-assistant-history';
+
+const DEFAULT_MESSAGE: Message = {
+  role: 'assistant',
+  content: '🤖 你好！我是配置助手。\n\n点上面的快捷按钮查看配置，或者直接对我说：\n\n• "帮我接入 opencode-go，key=sk-xxx"\n• "加个平台 Key sk-xxx"\n• "添加路由 gpt-4 → deepseek"\n• "备份一下"',
+};
+
+function loadHistory(): Message[] {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch { /* ignore */ }
+  return [DEFAULT_MESSAGE];
+}
+
+function saveHistory(messages: Message[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  } catch { /* ignore */ }
+}
+
 export function ConfigAssistant() {
-  const [messages, setMessages] = useState<Message[]>([{
-    role: 'assistant',
-    content: '🤖 你好！我是配置助手。\n\n点上面的快捷按钮查看配置，或者直接对我说：\n\n• "帮我接入 opencode-go，key=sk-xxx"\n• "加个平台 Key sk-xxx"\n• "添加路由 gpt-4 → deepseek"\n• "备份一下"',
-  }]);
+  const [messages, setMessages] = useState<Message[]>(loadHistory);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [models, setModels] = useState<ModelOption[]>([]);
@@ -48,6 +69,9 @@ export function ConfigAssistant() {
   const [selectedPlatformKey, setSelectedPlatformKey] = useState('');
   const [mode, setMode] = useState<'direct' | 'route'>('direct');
   const chatEnd = useRef<HTMLDivElement>(null);
+
+  // 消息变化时持久化
+  useEffect(() => { saveHistory(messages); }, [messages]);
 
   // 加载可用模型、供应商、平台 Key
   useEffect(() => {
@@ -125,6 +149,9 @@ export function ConfigAssistant() {
         .config-assistant { max-width: 800px; margin: 0 auto; padding: 20px; display: flex; flex-direction: column; height: calc(100vh - 100px); }
         .ca-header { margin-bottom: 16px; }
         .ca-header h2 { margin: 0; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+        .ca-header-actions { display: flex; align-items: center; gap: 8px; }
+        .ca-header-actions button { padding: 4px 10px; border: 1px solid #333; border-radius: 6px; background: transparent; color: #888; cursor: pointer; font-size: 12px; }
+        .ca-header-actions button:hover { border-color: #666; color: #ccc; }
         .ca-header p { margin: 4px 0 0; color: #888; font-size: 13px; }
         .ca-quick-actions { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
         .ca-quick-actions button { padding: 6px 14px; border: 1px solid #333; border-radius: 16px; background: transparent; color: #ccc; cursor: pointer; font-size: 13px; }
@@ -157,6 +184,9 @@ export function ConfigAssistant() {
 
       <div className="ca-header">
         <h2><Bot size={20} /> 配置助手</h2>
+        <div className="ca-header-actions">
+          <button onClick={() => { localStorage.removeItem(STORAGE_KEY); setMessages([DEFAULT_MESSAGE]); }}>清空历史</button>
+        </div>
         <p>通过聊天管理厂商、API Key 和路由配置</p>
       </div>
 
