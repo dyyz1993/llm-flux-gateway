@@ -5,7 +5,20 @@ export enum Role {
   TOOL = 'tool'
 }
 
-import { ApiFormat } from '../server/module-protocol-transpiler';
+/**
+ * API 格式枚举 - 定义 LLM 提供商支持的协议格式
+ */
+export enum ApiFormat {
+  OPENAI = 'openai',
+  OPENAI_RESPONSES = 'openai-responses',
+  ANTHROPIC = 'anthropic',
+  GEMINI = 'gemini',
+}
+
+/**
+ * 供应商类型
+ */
+export type VendorType = 'openai' | 'openai-responses' | 'anthropic' | 'gemini' | 'glm' | 'custom';
 
 // ==========================================
 // VENDOR AND PROTOCOL TYPES

@@ -1,0 +1,36 @@
+{
+  "request": {
+    "model": "deepseek-v4-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Count from 1 to 5."
+      }
+    ],
+    "max_tokens": 50,
+    "stream": true
+  },
+  "response": {
+    "chunks": 53,
+    "fullText": "",
+    "sampleChunk": {
+      "id": "01f8b27a-33de-473c-bc4f-d05580eabb95",
+      "object": "chat.completion.chunk",
+      "created": 1782965255,
+      "model": "deepseek-v4-flash",
+      "choices": [
+        {
+          "index": 0,
+          "finish_reason": null,
+          "logprobs": null,
+          "delta": {
+            "role": "assistant",
+            "content": null,
+            "reasoning_content": ""
+          }
+        }
+      ],
+      "usage": null
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "request": {
+    "model": "deepseek-v4-flash",
+    "messages": [
+      {
+        "role": "system",
+        "content": "Reply very briefly."
+      },
+      {
+        "role": "user",
+        "content": "Introduce yourself in one sentence."
+      }
+    ],
+    "max_tokens": 50
+  },
+  "response": {
+    "id": "332bb0cb-1596-4e48-8db7-9e735017201c",
+    "object": "chat.completion",
+    "created": 1782965254,
+    "model": "deepseek-v4-flash",
+    "choices": [
+      {
+        "index": 0,
+        "finish_reason": "length",
+        "logprobs": null,
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "reasoning_content": "Thinking. 1.  **Analyze the Request:**\n    *   Goal: Introduce myself in one sentence.\n    *   Constraint: One sentence only.\n    *   Entity: Myself (the AI assistant).\n\n2.  **"
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 94,
+      "completion_tokens": 50,
+      "total_tokens": 144,
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 94,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 50
+      }
+    },
+    "cost": "0"
+  }
+}

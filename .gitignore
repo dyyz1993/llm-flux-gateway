@@ -51,6 +51,9 @@ data/*.db*
 docker.env
 dist-server
 
+# Agent working files
+AGENTS.md
+
 # Component cache
 .component-cache.json
 .style-jump-port

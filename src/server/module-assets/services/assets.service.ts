@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { queryAll, queryFirst, queryRun } from '../../shared/database';
 import { inferFormatFromVendorTemplate } from '../../module-gateway/utils/format-inferer';
-import { ApiFormat } from '../../module-protocol-transpiler';
+import { ApiFormat } from '../../../shared/types';
 
 export interface ModelValidationStatus {
   success: boolean;

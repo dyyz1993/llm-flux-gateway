@@ -2,7 +2,7 @@ import { routeMatcherService, type RouteMatchWithLBInfo } from './route-matcher.
 import { loadBalancerService } from './load-balancer.service';
 import { rewriteService } from './rewrite.service';
 import { upstreamService } from './upstream.service';
-import type { ApiFormat } from '../../module-protocol-transpiler';
+import type { ApiFormat } from '../../../shared/types';
 
 export interface LBRequestContext {
   requestedModel: string;

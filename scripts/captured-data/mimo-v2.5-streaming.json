@@ -1,0 +1,44 @@
+{
+  "request": {
+    "model": "mimo-v2.5",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Count from 1 to 5."
+      }
+    ],
+    "max_tokens": 50,
+    "stream": true
+  },
+  "response": {
+    "chunks": 20,
+    "fullText": "",
+    "sampleChunk": {
+      "id": "gen-1782965248-am5h2Cv0bx3y20QSogJH",
+      "object": "chat.completion.chunk",
+      "created": 1782965248,
+      "model": "xiaomi/mimo-v2.5-20260422",
+      "provider": "Xiaomi",
+      "choices": [
+        {
+          "index": 0,
+          "delta": {
+            "content": "",
+            "role": "assistant",
+            "reasoning": "Hmm",
+            "reasoning_details": [
+              {
+                "type": "reasoning.text",
+                "text": "Hmm",
+                "format": "unknown",
+                "index": 0
+              }
+            ]
+          },
+          "finish_reason": null,
+          "native_finish_reason": null
+        }
+      ]
+    }
+  }
+}

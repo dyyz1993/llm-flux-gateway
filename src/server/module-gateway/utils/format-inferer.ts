@@ -1,4 +1,4 @@
-import { ApiFormat } from '../../module-protocol-transpiler';
+import { ApiFormat } from '../../../shared/types';
 
 /**
  * Vendor Template interface for format inference

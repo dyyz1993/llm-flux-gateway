@@ -1,0 +1,4143 @@
+
+> llm-flux-gateway@0.0.0 test
+> vitest
+
+
+ RUN  v4.0.16 /Users/xuyingzhou/Downloads/llm-flux-gateway
+
+ ✓ src/server/module-protocol-transpiler/interfaces/__tests__/internal-format.test.ts (59 tests) 6ms
+(node:19137) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > loadCache > 应该在缓存文件不存在时创建新缓存
+[component-cache] 📝 缓存文件不存在，创建新缓存
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > loadCache > 应该在缓存文件不存在时创建新缓存
+[component-cache] 💾 已保存缓存 (0 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > loadCache > 应该加载已存在的缓存
+[component-cache] 📝 缓存文件不存在，创建新缓存
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > loadCache > 应该加载已存在的缓存
+[component-cache] 💾 已保存缓存 (0 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > loadCache > 应该加载已存在的缓存
+[component-cache] ➕ 已添加组件 TestComponent
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > loadCache > 应该加载已存在的缓存
+[component-cache] 💾 已保存缓存 (1 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > loadCache > 应该加载已存在的缓存
+[component-cache] ✅ 已加载缓存 (1 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > shouldReanalyze > 应该在组件未缓存时返回 true
+[component-cache] 📝 缓存文件不存在，创建新缓存
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > shouldReanalyze > 应该在组件未缓存时返回 true
+[component-cache] 💾 已保存缓存 (0 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > shouldReanalyze > 应该在组件未缓存时返回 true
+[component-cache] 🆕 组件 NewComponent 未缓存，需要分析
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > shouldReanalyze > 应该在 hash 相同时返回 false
+[component-cache] 📝 缓存文件不存在，创建新缓存
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > shouldReanalyze > 应该在 hash 相同时返回 false
+[component-cache] 💾 已保存缓存 (0 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > shouldReanalyze > 应该在 hash 相同时返回 false
+[component-cache] ➕ 已添加组件 TestComponent
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > shouldReanalyze > 应该在 hash 相同时返回 false
+[component-cache] 💾 已保存缓存 (1 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > shouldReanalyze > 应该在 hash 相同时返回 false
+[component-cache] ✅ 组件 TestComponent 未变更，不需要分析
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > shouldReanalyze > 应该在 hash 不同时返回 true（保守策略）
+[component-cache] 📝 缓存文件不存在，创建新缓存
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > shouldReanalyze > 应该在 hash 不同时返回 true（保守策略）
+[component-cache] 💾 已保存缓存 (0 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > shouldReanalyze > 应该在 hash 不同时返回 true（保守策略）
+[component-cache] ➕ 已添加组件 TestComponent
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > shouldReanalyze > 应该在 hash 不同时返回 true（保守策略）
+[component-cache] 💾 已保存缓存 (1 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > shouldReanalyze > 应该在 hash 不同时返回 true（保守策略）
+[component-cache] 📊 组件 TestComponent 相似度: 0.0%
+[component-cache] ⚠️  组件 TestComponent 变更较大，需要重新分析
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > shouldReanalyze > 应该正确处理自定义阈值
+[component-cache] 📝 缓存文件不存在，创建新缓存
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > shouldReanalyze > 应该正确处理自定义阈值
+[component-cache] 💾 已保存缓存 (0 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > shouldReanalyze > 应该正确处理自定义阈值
+[component-cache] ➕ 已添加组件 TestComponent
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > shouldReanalyze > 应该正确处理自定义阈值
+[component-cache] 💾 已保存缓存 (1 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > shouldReanalyze > 应该正确处理自定义阈值
+[component-cache] ✅ 组件 TestComponent 未变更，不需要分析
+[component-cache] ✅ 组件 TestComponent 未变更，不需要分析
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该添加新组件
+[component-cache] 📝 缓存文件不存在，创建新缓存
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该添加新组件
+[component-cache] 💾 已保存缓存 (0 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该添加新组件
+[component-cache] ➕ 已添加组件 NewComponent
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该添加新组件
+[component-cache] 💾 已保存缓存 (1 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该更新已存在的组件
+[component-cache] 📝 缓存文件不存在，创建新缓存
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该更新已存在的组件
+[component-cache] 💾 已保存缓存 (0 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该更新已存在的组件
+[component-cache] ➕ 已添加组件 TestComponent
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该更新已存在的组件
+[component-cache] 💾 已保存缓存 (1 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该更新已存在的组件
+[component-cache] 🔄 已更新组件 TestComponent
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该更新已存在的组件
+[component-cache] 💾 已保存缓存 (1 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保存分析结果
+[component-cache] 📝 缓存文件不存在，创建新缓存
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保存分析结果
+[component-cache] 💾 已保存缓存 (0 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保存分析结果
+[component-cache] ➕ 已添加组件 TestComponent
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保存分析结果
+[component-cache] 💾 已保存缓存 (1 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保留最近 10 条历史记录
+[component-cache] 📝 缓存文件不存在，创建新缓存
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保留最近 10 条历史记录
+[component-cache] 💾 已保存缓存 (0 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保留最近 10 条历史记录
+[component-cache] ➕ 已添加组件 TestComponent
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保留最近 10 条历史记录
+[component-cache] 💾 已保存缓存 (1 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保留最近 10 条历史记录
+[component-cache] 🔄 已更新组件 TestComponent
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保留最近 10 条历史记录
+[component-cache] 💾 已保存缓存 (1 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保留最近 10 条历史记录
+[component-cache] 🔄 已更新组件 TestComponent
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保留最近 10 条历史记录
+[component-cache] 💾 已保存缓存 (1 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保留最近 10 条历史记录
+[component-cache] 🔄 已更新组件 TestComponent
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保留最近 10 条历史记录
+[component-cache] 💾 已保存缓存 (1 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保留最近 10 条历史记录
+[component-cache] 🔄 已更新组件 TestComponent
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保留最近 10 条历史记录
+[component-cache] 💾 已保存缓存 (1 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保留最近 10 条历史记录
+[component-cache] 🔄 已更新组件 TestComponent
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保留最近 10 条历史记录
+[component-cache] 💾 已保存缓存 (1 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保留最近 10 条历史记录
+[component-cache] 🔄 已更新组件 TestComponent
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保留最近 10 条历史记录
+[component-cache] 💾 已保存缓存 (1 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保留最近 10 条历史记录
+[component-cache] 🔄 已更新组件 TestComponent
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保留最近 10 条历史记录
+[component-cache] 💾 已保存缓存 (1 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保留最近 10 条历史记录
+[component-cache] 🔄 已更新组件 TestComponent
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保留最近 10 条历史记录
+[component-cache] 💾 已保存缓存 (1 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保留最近 10 条历史记录
+[component-cache] 🔄 已更新组件 TestComponent
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保留最近 10 条历史记录
+[component-cache] 💾 已保存缓存 (1 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保留最近 10 条历史记录
+[component-cache] 🔄 已更新组件 TestComponent
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponent > 应该保留最近 10 条历史记录
+[component-cache] 💾 已保存缓存 (1 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponents > 应该批量更新多个组件
+[component-cache] 📝 缓存文件不存在，创建新缓存
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponents > 应该批量更新多个组件
+[component-cache] 💾 已保存缓存 (0 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponents > 应该批量更新多个组件
+[component-cache] ➕ 已添加组件 Component1
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponents > 应该批量更新多个组件
+[component-cache] 💾 已保存缓存 (1 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponents > 应该批量更新多个组件
+[component-cache] ➕ 已添加组件 Component2
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponents > 应该批量更新多个组件
+[component-cache] 💾 已保存缓存 (2 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponents > 应该批量更新多个组件
+[component-cache] ➕ 已添加组件 Component3
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > updateComponents > 应该批量更新多个组件
+[component-cache] 💾 已保存缓存 (3 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > getCachedComponent > 应该返回缓存的组件
+[component-cache] 📝 缓存文件不存在，创建新缓存
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > getCachedComponent > 应该返回缓存的组件
+[component-cache] 💾 已保存缓存 (0 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > getCachedComponent > 应该返回缓存的组件
+[component-cache] ➕ 已添加组件 TestComponent
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > getCachedComponent > 应该返回缓存的组件
+[component-cache] 💾 已保存缓存 (1 个组件)
+
+stderr | plugins/__tests__/cache.test.ts > ComponentCacheManager > getCachedComponent > 应该在组件不存在时返回 undefined
+[component-cache] ⚠️  缓存未加载
+
+stderr | plugins/__tests__/cache.test.ts > ComponentCacheManager > getCachedComponent > 应该在缓存未加载时返回 undefined
+[component-cache] ⚠️  缓存未加载
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > getAllCachedComponents > 应该返回所有缓存的组件
+[component-cache] 📝 缓存文件不存在，创建新缓存
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > getAllCachedComponents > 应该返回所有缓存的组件
+[component-cache] 💾 已保存缓存 (0 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > getAllCachedComponents > 应该返回所有缓存的组件
+[component-cache] ➕ 已添加组件 Component1
+
+(node:19131) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > getAllCachedComponents > 应该返回所有缓存的组件
+[component-cache] 💾 已保存缓存 (1 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > getAllCachedComponents > 应该返回所有缓存的组件
+[component-cache] ➕ 已添加组件 Component2
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > getAllCachedComponents > 应该返回所有缓存的组件
+[component-cache] 💾 已保存缓存 (2 个组件)
+
+stderr | plugins/__tests__/cache.test.ts > ComponentCacheManager > getAllCachedComponents > 应该在缓存未加载时返回空对象
+[component-cache] ⚠️  缓存未加载
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > clearCache > 应该清除所有缓存
+[component-cache] 📝 缓存文件不存在，创建新缓存
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > clearCache > 应该清除所有缓存
+[component-cache] 💾 已保存缓存 (0 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > clearCache > 应该清除所有缓存
+[component-cache] ➕ 已添加组件 TestComponent
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > clearCache > 应该清除所有缓存
+[component-cache] 💾 已保存缓存 (1 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > clearCache > 应该清除所有缓存
+[component-cache] 💾 已保存缓存 (0 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > clearCache > 应该清除所有缓存
+[component-cache] 🗑️  已清除缓存
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > getCacheStats > 应该返回正确的统计信息
+[component-cache] 📝 缓存文件不存在，创建新缓存
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > getCacheStats > 应该返回正确的统计信息
+[component-cache] 💾 已保存缓存 (0 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > getCacheStats > 应该返回正确的统计信息
+[component-cache] ➕ 已添加组件 Component1
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > getCacheStats > 应该返回正确的统计信息
+[component-cache] 💾 已保存缓存 (1 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > getCacheStats > 应该返回正确的统计信息
+[component-cache] 🔄 已更新组件 Component1
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > getCacheStats > 应该返回正确的统计信息
+[component-cache] 💾 已保存缓存 (1 个组件)
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > getCacheStats > 应该返回正确的统计信息
+[component-cache] ➕ 已添加组件 Component2
+
+stdout | plugins/__tests__/cache.test.ts > ComponentCacheManager > getCacheStats > 应该返回正确的统计信息
+[component-cache] 💾 已保存缓存 (2 个组件)
+
+ ✓ src/server/module-protocol-transpiler/core/__tests__/protocol-transpiler.test.ts (53 tests) 11ms
+ ✓ plugins/__tests__/cache.test.ts (23 tests) 36ms
+stderr | src/server/module-gateway/routes/__tests__/analytics-routes.test.ts > Analytics Routes > GET /api/analytics/overview > should handle service errors
+[Analytics] Failed to get overview stats: Error: Database error
+    at /Users/xuyingzhou/Downloads/llm-flux-gateway/src/server/module-gateway/routes/__tests__/analytics-routes.test.ts:161:9
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1209:10)
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1653:37
+    at Traces.$ (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/vitest/dist/chunks/traces.U4xDYhzZ.js:115:27)
+    at trace (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/vitest/dist/chunks/test.B8ej_ZHS.js:239:21)
+    at runTest (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1653:12)
+
+stderr | src/server/module-gateway/routes/__tests__/analytics-routes.test.ts > Analytics Routes > GET /api/analytics/models > should handle service errors
+[Analytics] Failed to get model stats: Error: Failed to fetch models
+    at /Users/xuyingzhou/Downloads/llm-flux-gateway/src/server/module-gateway/routes/__tests__/analytics-routes.test.ts:190:9
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1209:10)
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1653:37
+    at Traces.$ (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/vitest/dist/chunks/traces.U4xDYhzZ.js:115:27)
+    at trace (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/vitest/dist/chunks/test.B8ej_ZHS.js:239:21)
+    at runTest (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1653:12)
+
+stderr | src/server/module-gateway/routes/__tests__/analytics-routes.test.ts > Analytics Routes > GET /api/analytics/keys > should handle service errors
+[Analytics] Failed to get key stats: Error: Failed to fetch keys
+    at /Users/xuyingzhou/Downloads/llm-flux-gateway/src/server/module-gateway/routes/__tests__/analytics-routes.test.ts:219:9
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1209:10)
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1653:37
+    at Traces.$ (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/vitest/dist/chunks/traces.U4xDYhzZ.js:115:27)
+    at trace (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/vitest/dist/chunks/test.B8ej_ZHS.js:239:21)
+    at runTest (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1653:12)
+
+stderr | src/server/module-gateway/routes/__tests__/analytics-routes.test.ts > Analytics Routes > GET /api/analytics/assets > should handle service errors
+[Analytics] Failed to get asset stats: Error: Failed to fetch assets
+    at /Users/xuyingzhou/Downloads/llm-flux-gateway/src/server/module-gateway/routes/__tests__/analytics-routes.test.ts:248:9
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1209:10)
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1653:37
+    at Traces.$ (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/vitest/dist/chunks/traces.U4xDYhzZ.js:115:27)
+    at trace (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/vitest/dist/chunks/test.B8ej_ZHS.js:239:21)
+    at runTest (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1653:12)
+
+stderr | src/server/module-gateway/routes/__tests__/analytics-routes.test.ts > Analytics Routes > GET /api/analytics/ttfb > should handle service errors
+[Analytics] Failed to get TTFB stats: Error: Failed to fetch TTFB
+    at /Users/xuyingzhou/Downloads/llm-flux-gateway/src/server/module-gateway/routes/__tests__/analytics-routes.test.ts:277:9
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1209:10)
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1653:37
+    at Traces.$ (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/vitest/dist/chunks/traces.U4xDYhzZ.js:115:27)
+    at trace (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/vitest/dist/chunks/test.B8ej_ZHS.js:239:21)
+    at runTest (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1653:12)
+
+stderr | src/server/module-gateway/routes/__tests__/analytics-routes.test.ts > Analytics Routes > GET /api/analytics/cache > should handle service errors
+[Analytics] Failed to get cache stats: Error: Failed to fetch cache stats
+    at /Users/xuyingzhou/Downloads/llm-flux-gateway/src/server/module-gateway/routes/__tests__/analytics-routes.test.ts:306:9
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1209:10)
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1653:37
+    at Traces.$ (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/vitest/dist/chunks/traces.U4xDYhzZ.js:115:27)
+    at trace (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/vitest/dist/chunks/test.B8ej_ZHS.js:239:21)
+    at runTest (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1653:12)
+
+stderr | src/server/module-gateway/routes/__tests__/analytics-routes.test.ts > Analytics Routes > GET /api/analytics/errors > should handle service errors
+[Analytics] Failed to get error stats: Error: Failed to fetch errors
+    at /Users/xuyingzhou/Downloads/llm-flux-gateway/src/server/module-gateway/routes/__tests__/analytics-routes.test.ts:335:9
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1209:10)
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1653:37
+    at Traces.$ (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/vitest/dist/chunks/traces.U4xDYhzZ.js:115:27)
+    at trace (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/vitest/dist/chunks/test.B8ej_ZHS.js:239:21)
+    at runTest (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1653:12)
+
+stderr | src/server/module-gateway/routes/__tests__/analytics-routes.test.ts > Analytics Routes > GET /api/analytics/timeseries > should handle service errors
+[Analytics] Failed to get time series stats: Error: Failed to fetch time series
+    at /Users/xuyingzhou/Downloads/llm-flux-gateway/src/server/module-gateway/routes/__tests__/analytics-routes.test.ts:392:9
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1209:10)
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1653:37
+    at Traces.$ (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/vitest/dist/chunks/traces.U4xDYhzZ.js:115:27)
+    at trace (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/vitest/dist/chunks/test.B8ej_ZHS.js:239:21)
+    at runTest (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1653:12)
+
+ ✓ src/server/module-gateway/routes/__tests__/analytics-routes.test.ts (18 tests) 15ms
+ ✓ src/server/module-protocol-transpiler/converters/__tests__/openai-to-anthropic.real-data.test.ts (19 tests) 7ms
+stderr | plugins/__tests__/component-registry-utils.test.ts > component-registry-utils > extractImports > 应该处理无效的代码
+[component-registry] ❌ 解析导入失败: SyntaxError: Missing semicolon. (1:4)
+    at constructor (/Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@babel/parser/lib/index.js:367:19)
+    at TypeScriptParserMixin.raise (/Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@babel/parser/lib/index.js:6624:19)
+    at TypeScriptParserMixin.semicolon (/Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@babel/parser/lib/index.js:6920:10)
+    at TypeScriptParserMixin.parseExpressionStatement (/Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@babel/parser/lib/index.js:13361:10)
+    at TypeScriptParserMixin.parseStatementContent (/Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@babel/parser/lib/index.js:12975:19)
+    at TypeScriptParserMixin.parseStatementContent (/Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@babel/parser/lib/index.js:9569:18)
+    at TypeScriptParserMixin.parseStatementLike (/Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@babel/parser/lib/index.js:12843:17)
+    at TypeScriptParserMixin.parseModuleItem (/Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@babel/parser/lib/index.js:12820:17)
+    at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@babel/parser/lib/index.js:13392:36)
+    at TypeScriptParserMixin.parseBlockBody (/Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@babel/parser/lib/index.js:13385:10) {
+  code: 'BABEL_PARSER_SYNTAX_ERROR',
+  reasonCode: 'MissingSemicolon',
+  loc: Position { line: 1, column: 4, index: 4 },
+  pos: 4,
+  syntaxPlugin: undefined
+}
+
+ ✓ plugins/__tests__/component-registry-utils.test.ts (40 tests) 40ms
+stderr | src/client/components/analytics/__tests__/Dashboard.test.tsx > Dashboard Component > Initial Loading > should show loading state while fetching data
+The tag <stop> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+<linearGradient /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+The tag <linearGradient> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+The tag <defs> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.
+
+stderr | src/client/components/analytics/__tests__/Dashboard.test.tsx > Dashboard Component > Initial Loading > should show loading state while fetching data
+An update to Dashboard inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to Dashboard inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to Dashboard inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to Dashboard inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to Dashboard inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to Dashboard inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to Dashboard inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to Dashboard inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/client/components/analytics/__tests__/Dashboard.test.tsx > Dashboard Component > Initial Loading > should show loading state while fetching data
+An update to Dashboard inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to Dashboard inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to Dashboard inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stdout | src/server/module-gateway/services/__tests__/upstream-empty-chunk-fix.test.ts > UpstreamService - Empty Chunk Fix > parseStreamWith - __empty chunk handling > should yield chunks marked with __empty instead of skipping
+[Upstream] SSE stream logged to: /Users/xuyingzhou/Downloads/llm-flux-gateway/logs/request-traces/anthropic-est-id-2026-07-02T02-48-13-239Z.log
+
+stdout | src/server/module-gateway/services/__tests__/upstream-empty-chunk-fix.test.ts > UpstreamService - Empty Chunk Fix > parseStreamWith - __empty chunk handling > should yield chunks marked with __empty instead of skipping
+[Upstream] Request trace logged to: /Users/xuyingzhou/Downloads/llm-flux-gateway/logs/request-traces/anthropic-est-id-2026-07-02T02-48-13-243Z.json
+
+stdout | src/server/module-gateway/services/__tests__/upstream-empty-chunk-fix.test.ts > UpstreamService - Empty Chunk Fix > parseStreamWith - __empty chunk handling > should yield regular chunks without __empty marker
+[Upstream] SSE stream logged to: /Users/xuyingzhou/Downloads/llm-flux-gateway/logs/request-traces/openai-no-req-id-2026-07-02T02-48-13-246Z.log
+
+stdout | src/server/module-gateway/services/__tests__/upstream-empty-chunk-fix.test.ts > UpstreamService - Empty Chunk Fix > parseStreamWith - __empty chunk handling > should yield both __empty and regular chunks in the same stream
+[Upstream] SSE stream logged to: /Users/xuyingzhou/Downloads/llm-flux-gateway/logs/request-traces/anthropic-no-req-id-2026-07-02T02-48-13-247Z.log
+
+ ✓ src/server/module-gateway/services/__tests__/upstream-empty-chunk-fix.test.ts (5 tests) 10ms
+stderr | src/client/components/ui/__tests__/WildcardInput.test.tsx > WildcardInput Component > Scenario 1: Default Mode - No Overrides > should show all asset models in dropdown
+An update to WildcardInput inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/client/components/analytics/__tests__/Dashboard.test.tsx > Dashboard Component > Data Display > should display overview cards with correct data
+<linearGradient /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+
+stderr | src/client/components/ui/__tests__/WildcardInput.test.tsx > WildcardInput Component > Scenario 1: Default Mode - No Overrides > should allow selecting from dropdown
+An update to WildcardInput inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/client/components/ui/__tests__/WildcardInput.test.tsx > WildcardInput Component > Scenario 2: Exact Match Mode > should only show exact match patterns in dropdown
+An update to WildcardInput inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/client/components/ui/__tests__/WildcardInput.test.tsx > WildcardInput Component > Scenario 3: Prefix Wildcard Mode (gpt-*) > should filter dropdown by prefix
+An update to WildcardInput inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/client/components/ui/__tests__/WildcardInput.test.tsx > WildcardInput Component > Scenario 5: Mixed Mode - Dropdown + Free Input > should show dropdown with exact patterns
+An update to WildcardInput inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/client/components/ui/__tests__/WildcardInput.test.tsx > WildcardInput Component > Scenario 5: Mixed Mode - Dropdown + Free Input > should allow selecting from dropdown
+An update to WildcardInput inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/client/components/ui/__tests__/WildcardInput.test.tsx > WildcardInput Component > Scenario 5: Mixed Mode - Dropdown + Free Input > should filter dropdown when typing
+An update to WildcardInput inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/client/components/ui/__tests__/WildcardInput.test.tsx (22 tests) 201ms
+stderr | src/client/components/analytics/__tests__/Dashboard.test.tsx > Dashboard Component > Data Display > should display success rate and cost cards
+<linearGradient /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+
+stderr | src/client/components/analytics/__tests__/Dashboard.test.tsx > Dashboard Component > Data Display > should display model statistics table
+<linearGradient /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+
+stderr | src/client/components/analytics/__tests__/Dashboard.test.tsx > Dashboard Component > Data Display > should display API key statistics table
+<linearGradient /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+
+ ✓ src/client/components/playground/__tests__/ModelSelector.test.tsx (15 tests) 257ms
+stderr | src/client/components/analytics/__tests__/Dashboard.test.tsx > Dashboard Component > Data Display > should display recent requests table
+<linearGradient /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+
+stderr | src/client/components/analytics/__tests__/Dashboard.test.tsx > Dashboard Component > Data Display > should render chart components
+<linearGradient /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+
+stderr | src/client/components/analytics/__tests__/Dashboard.test.tsx > Dashboard Component > Empty Data Handling > should display zero values when no data exists
+<linearGradient /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+
+stderr | src/client/components/analytics/__tests__/Dashboard.test.tsx > Dashboard Component > Empty Data Handling > should not display key stats table when no keys exist
+<linearGradient /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+
+stderr | src/client/components/analytics/__tests__/Dashboard.test.tsx > Dashboard Component > Error Handling > should handle partial API failures gracefully
+<linearGradient /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+
+stderr | src/client/components/analytics/__tests__/Dashboard.test.tsx > Dashboard Component > Error Handling > should handle partial API failures gracefully
+Failed to load analytics: Error: API Error
+    at /Users/xuyingzhou/Downloads/llm-flux-gateway/src/client/components/analytics/__tests__/Dashboard.test.tsx:458:74
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1209:10)
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1653:37
+    at Traces.$ (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/vitest/dist/chunks/traces.U4xDYhzZ.js:115:27)
+    at trace (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/vitest/dist/chunks/test.B8ej_ZHS.js:239:21)
+    at runTest (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1653:12)
+
+stderr | src/client/components/analytics/__tests__/Dashboard.test.tsx > Dashboard Component > Error Handling > should complete loading even on error
+<linearGradient /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+
+stderr | src/client/components/analytics/__tests__/Dashboard.test.tsx > Dashboard Component > Error Handling > should complete loading even on error
+Failed to load analytics: Error: API Error
+    at /Users/xuyingzhou/Downloads/llm-flux-gateway/src/client/components/analytics/__tests__/Dashboard.test.tsx:480:74
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1209:10)
+    at file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1653:37
+    at Traces.$ (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/vitest/dist/chunks/traces.U4xDYhzZ.js:115:27)
+    at trace (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/vitest/dist/chunks/test.B8ej_ZHS.js:239:21)
+    at runTest (file:///Users/xuyingzhou/Downloads/llm-flux-gateway/node_modules/@vitest/runner/dist/index.js:1653:12)
+
+stderr | src/client/components/analytics/__tests__/Dashboard.test.tsx > Dashboard Component > Data Formatting > should format large numbers with K/M suffixes
+<linearGradient /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+
+stderr | src/client/components/analytics/__tests__/Dashboard.test.tsx > Dashboard Component > Data Formatting > should format latency in ms and seconds
+<linearGradient /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+
+stderr | src/client/components/analytics/__tests__/Dashboard.test.tsx > Dashboard Component > Data Formatting > should format percentages correctly
+<linearGradient /> is using incorrect casing. Use PascalCase for React components, or lowercase for HTML elements.
+
+ ✓ src/client/components/analytics/__tests__/Dashboard.test.tsx (15 tests | 1 skipped) 444ms
+ ✓ src/server/module-gateway/services/__tests__/routes-service.test.ts (19 tests) 8ms
+stderr | src/server/module-protocol-transpiler/converters/__tests__/image-strip.test.ts > OpenAIConverter - image stripping > should strip image_url blocks when stripImages is true
+[OpenAIConverter] Stripped 1 image_url block(s) from message[0] (model does not support vision)
+
+stderr | src/server/module-protocol-transpiler/converters/__tests__/image-strip.test.ts > OpenAIConverter - image stripping > should set content to null when all blocks are image_url
+[OpenAIConverter] Stripped 2 image_url block(s) from message[0] (model does not support vision)
+
+stderr | src/server/module-protocol-transpiler/converters/__tests__/image-strip.test.ts > OpenAIConverter - image stripping > should handle multiple messages with mixed content
+[OpenAIConverter] Stripped 1 image_url block(s) from message[1] (model does not support vision)
+
+stderr | src/server/module-protocol-transpiler/converters/__tests__/image-strip.test.ts > OpenAIConverter - image stripping > should preserve other content block types (e.g., thinking)
+[OpenAIConverter] Stripped 1 image_url block(s) from message[0] (model does not support vision)
+
+ ✓ src/server/module-protocol-transpiler/converters/__tests__/image-strip.test.ts (6 tests) 4ms
+ ✓ src/client/services/__tests__/analyticsService.test.ts (32 tests) 8ms
+ ✓ src/server/module-keys/services/__tests__/keys-service.test.ts (16 tests) 6ms
+ ✓ src/server/module-protocol-transpiler/converters/__tests__/openai-content-array.test.ts (15 tests) 6ms
+ ✓ src/server/module-protocol-transpiler/core/__tests__/conversion-integration.test.ts (12 tests) 10ms
+stdout | src/server/module-gateway/controllers/__tests__/request-params-storage.test.ts > Request Params Storage Format > OpenAI → Internal → Database > should convert snake_case to camelCase for storage
+📤 客户端请求 (snake_case):
+{
+  "model": "gpt-4",
+  "messages": [
+    {
+      "role": "user",
+      "content": "test"
+    }
+  ],
+  "temperature": 0.7,
+  "max_tokens": 500,
+  "top_p": 0.9,
+  "top_k": 40,
+  "frequency_penalty": 0.5,
+  "presence_penalty": 0.5
+}
+🔄 Internal Format (应该是 camelCase):
+{
+  "model": "gpt-4",
+  "messages": [
+    {
+      "role": "user",
+      "content": "test"
+    }
+  ],
+  "temperature": 0.7,
+  "maxTokens": 500,
+  "topP": 0.9,
+  "topK": 40,
+  "frequencyPenalty": 0.5,
+  "presencePenalty": 0.5
+}
+💾 存入数据库的 request_params (应该是 camelCase):
+{
+  "temperature": 0.7,
+  "maxTokens": 500,
+  "topP": 0.9,
+  "topK": 40,
+  "frequencyPenalty": 0.5,
+  "presencePenalty": 0.5
+}
+
+stdout | src/server/module-gateway/controllers/__tests__/request-params-storage.test.ts > Request Params Storage Format > OpenAI → Internal → Database > should convert from Internal Format to GLM format
+📡 发送给上游的请求 (GLM 格式，应该是 snake_case):
+{
+  "model": "gpt-4",
+  "messages": [
+    {
+      "role": "user",
+      "content": "test"
+    }
+  ],
+  "temperature": 0.7,
+  "max_tokens": 500,
+  "top_p": 0.9,
+  "top_k": 40
+}
+
+stdout | src/server/module-gateway/controllers/__tests__/request-params-storage.test.ts > Request Params Storage Format > Anthropic → OpenAI (Cross-vendor conversion) > should convert Anthropic format to OpenAI format
+Anthropic → OpenAI:
+{
+  "model": "claude-3-5-sonnet-20241022",
+  "messages": [
+    {
+      "role": "user",
+      "content": "test"
+    }
+  ],
+  "max_tokens": 1000,
+  "temperature": 0.8,
+  "top_p": 0.95,
+  "top_k": 40
+}
+
+stdout | src/server/module-gateway/controllers/__tests__/request-params-storage.test.ts > Request Params Storage Format > Vendor-specific handling > should handle GLM-specific fields correctly
+GLM → Internal Format:
+{
+  "model": "glm-4",
+  "messages": [
+    {
+      "role": "user",
+      "content": "test"
+    }
+  ],
+  "maxTokens": 1000,
+  "temperature": 0.8,
+  "topP": 0.95
+}
+GLM 存入数据库的 request_params (应该是 camelCase):
+{
+  "maxTokens": 1000,
+  "temperature": 0.8,
+  "topP": 0.95
+}
+
+ ✓ src/server/module-gateway/controllers/__tests__/request-params-storage.test.ts (4 tests) 8ms
+ ✓ src/server/module-gateway/utils/__tests__/vision-filter.test.ts (13 tests) 12ms
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-2.1-non-streaming.test.ts > Scenario 2.1: OpenAI → OpenAI → OpenAI (非流式) > Layer 1: OpenAI Request → Internal Format > 应当正确转换 OpenAI 请求到 Internal Format
+
+=== Layer 1: OpenAI → Internal ===
+Input: {
+  "model": "gpt-4",
+  "max_tokens": 1024,
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant"
+    },
+    {
+      "role": "user",
+      "content": "What is the weather in Tokyo?"
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Get weather information",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "string",
+              "description": "City name"
+            }
+          },
+          "required": [
+            "city"
+          ]
+        }
+      }
+    }
+  ]
+}
+Output: {
+  "model": "gpt-4",
+  "maxTokens": 1024,
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant"
+    },
+    {
+      "role": "user",
+      "content": "What is the weather in Tokyo?"
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Get weather information",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "string",
+              "description": "City name"
+            }
+          },
+          "required": [
+            "city"
+          ]
+        }
+      }
+    }
+  ]
+}
+✅ max_tokens → maxTokens: 1024
+✅ messages[0].role 保留: "system"
+✅ tools 格式正确转换
+  - type: function
+  - function.name: get_weather
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-2.1-non-streaming.test.ts > Scenario 2.1: OpenAI → OpenAI → OpenAI (非流式) > Layer 2: Internal Format → OpenAI Request > 应当正确转换 Internal Format 到 OpenAI 请求（往返转换）
+
+=== Layer 2: Internal → OpenAI Request ===
+Input (Internal): {
+  "model": "gpt-4",
+  "maxTokens": 1024,
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant"
+    },
+    {
+      "role": "user",
+      "content": "What is the weather in Tokyo?"
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Get weather information",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "string",
+              "description": "City name"
+            }
+          },
+          "required": [
+            "city"
+          ]
+        }
+      }
+    }
+  ]
+}
+Output (OpenAI): {
+  "model": "gpt-4",
+  "max_tokens": 1024,
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant"
+    },
+    {
+      "role": "user",
+      "content": "What is the weather in Tokyo?"
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Get weather information",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "string",
+              "description": "City name"
+            }
+          },
+          "required": [
+            "city"
+          ]
+        }
+      }
+    }
+  ]
+}
+✅ maxTokens → max_tokens: 1024
+✅ messages[0].role 保留: "system"
+✅ tools 格式正确转换回 OpenAI
+  - type: function
+  - function.name: get_weather
+✅ 往返转换后 OpenAI 请求保持一致
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-2.1-non-streaming.test.ts > Scenario 2.1: OpenAI → OpenAI → OpenAI (非流式) > Layer 3: OpenAI Response → Internal Format > 应当正确转换 OpenAI 响应到 Internal Format
+
+=== Layer 3: OpenAI Response → Internal ===
+Input: {
+  "id": "chatcmpl-123",
+  "object": "chat.completion",
+  "created": 1234567890,
+  "model": "gpt-4",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": null,
+        "tool_calls": [
+          {
+            "id": "call_abc123",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": "{\"city\":\"Tokyo\"}"
+            }
+          }
+        ]
+      },
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 20,
+    "completion_tokens": 10,
+    "total_tokens": 30
+  }
+}
+Output: {
+  "id": "chatcmpl-123",
+  "object": "chat.completion",
+  "created": 1234567890,
+  "model": "gpt-4",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": null,
+        "toolCalls": [
+          {
+            "id": "call_abc123",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": "{\"city\":\"Tokyo\"}"
+            }
+          }
+        ]
+      },
+      "finishReason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "promptTokens": 20,
+    "completionTokens": 10,
+    "totalTokens": 30
+  }
+}
+✅ prompt_tokens → promptTokens: 20
+✅ completion_tokens → completionTokens: 10
+✅ total_tokens: 30
+✅ tool_calls → toolCalls
+  - id: call_abc123
+  - type: function
+  - function.name: get_weather
+✅ finish_reason → finishReason: tool_calls
+✅ content is null (tool_only response)
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-2.1-non-streaming.test.ts > Scenario 2.1: OpenAI → OpenAI → OpenAI (非流式) > Layer 4: Internal Format → OpenAI Response > 应当正确转换 Internal Format 到 OpenAI 响应（往返转换）
+
+=== Layer 4: Internal → OpenAI Response ===
+Input (Internal): {
+  "id": "chatcmpl-123",
+  "object": "chat.completion",
+  "created": 1234567890,
+  "model": "gpt-4",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": null,
+        "toolCalls": [
+          {
+            "id": "call_abc123",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": "{\"city\":\"Tokyo\"}"
+            }
+          }
+        ]
+      },
+      "finishReason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "promptTokens": 20,
+    "completionTokens": 10,
+    "totalTokens": 30
+  }
+}
+Output (OpenAI): {
+  "id": "chatcmpl-123",
+  "object": "chat.completion",
+  "created": 1234567890,
+  "model": "gpt-4",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": null,
+        "tool_calls": [
+          {
+            "id": "call_abc123",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": "{\"city\":\"Tokyo\"}"
+            },
+            "index": 0
+          }
+        ]
+      },
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 20,
+    "completion_tokens": 10,
+    "total_tokens": 30
+  }
+}
+✅ promptTokens → prompt_tokens: 20
+✅ completionTokens → completion_tokens: 10
+✅ toolCalls → tool_calls
+  - id: call_abc123
+  - type: function
+✅ finishReason → finish_reason: tool_calls
+✅ 往返转换后 OpenAI 响应保持一致
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-2.1-non-streaming.test.ts > Scenario 2.1: OpenAI → OpenAI → OpenAI (非流式) > 端到端验证: 完整往返转换 > OpenAI → OpenAI 往返转换后关键字段应当一致
+
+=== 端到端验证 ===
+
+Layer 1 (OpenAI → Internal):
+  - maxTokens: 1024
+  - tools count: 1
+
+Layer 2 (Internal → OpenAI):
+  - max_tokens: 1024
+  - tools count: 1
+
+Layer 3 (OpenAI → Internal):
+  - promptTokens: 20
+  - toolCalls count: 1
+
+Layer 4 (Internal → OpenAI):
+  - prompt_tokens: 20
+  - tool_calls count: 1
+
+✅ 工具名称一致: get_weather → get_weather
+✅ 工具参数一致
+✅ 响应 tool_calls 信息一致
+
+✅ 所有 4 层转换成功
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-2.1-non-streaming.test.ts > Scenario 2.1: OpenAI → OpenAI → OpenAI (非流式) > 端到端验证: 完整往返转换 > token 统计在整个链路中正确传递
+
+OpenAI usage (原始): { prompt_tokens: 20, completion_tokens: 10, total_tokens: 30 }
+Internal usage (Layer 3): { promptTokens: 20, completionTokens: 10, totalTokens: 30 }
+OpenAI usage (Layer 4): { prompt_tokens: 20, completion_tokens: 10, total_tokens: 30 }
+
+✅ token 统计在整个链路中正确传递
+  prompt_tokens: 20 → prompt_tokens: 20
+  completion_tokens: 10 → completion_tokens: 10
+
+ ✓ src/server/module-gateway/__tests__/multi-layer-validation/scenario-2.1-non-streaming.test.ts (6 tests) 10ms
+ ✓ src/server/module-gateway/services/__tests__/route-matcher.service.test.ts (29 tests) 13ms
+stdout | src/server/module-protocol-transpiler/converters/__tests__/anthropic-round-trip.test.ts > Anthropic Format Round-Trip Conversion > Basic Round-Trip Conversion > should convert Anthropic → Internal → Anthropic and preserve structure
+
+=== Step 1: Anthropic → Internal Format ===
+Internal Format: {
+  "id": "msg_20260107131610ae4107434e2944f8",
+  "object": "chat.completion",
+  "created": 1782960494,
+  "model": "glm-4.7",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "tool_use",
+            "id": "call_326f82523b21434ba5dfe827",
+            "name": "get_weather",
+            "input": {
+              "city": "San Francisco"
+            }
+          }
+        ],
+        "toolCalls": [
+          {
+            "id": "call_326f82523b21434ba5dfe827",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": "{\"city\":\"San Francisco\"}"
+            }
+          }
+        ]
+      },
+      "finishReason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "promptTokens": 786,
+    "completionTokens": 12,
+    "totalTokens": 798
+  }
+}
+
+=== Step 2: Internal Format → Anthropic ===
+Restored Anthropic Format: {
+  "id": "msg_20260107131610ae4107434e2944f8",
+  "type": "message",
+  "role": "assistant",
+  "content": [
+    {
+      "type": "tool_use",
+      "id": "call_326f82523b21434ba5dfe827",
+      "name": "get_weather",
+      "input": {
+        "city": "San Francisco"
+      }
+    }
+  ],
+  "model": "glm-4.7",
+  "stop_reason": "tool_use",
+  "usage": {
+    "input_tokens": 786,
+    "output_tokens": 12
+  }
+}
+
+=== Assertions: Basic Structure ===
+✅ Basic structure preserved
+
+=== Assertions: Content Array ===
+✅ Content array preserved
+
+=== Assertions: Input Object Format ===
+✅ Input object format preserved (not JSON string)
+
+=== Assertions: Stop Reason ===
+✅ Stop reason correctly mapped
+
+=== Assertions: Usage Fields ===
+✅ Usage fields preserved
+
+stdout | src/server/module-protocol-transpiler/converters/__tests__/anthropic-round-trip.test.ts > Anthropic Format Round-Trip Conversion > Field Preservation Details > should preserve all core fields through round-trip
+
+=== Core Fields Comparison ===
+Original: {
+  id: 'msg_20260107131610ae4107434e2944f8',
+  type: 'message',
+  role: 'assistant',
+  model: 'glm-4.7'
+}
+Restored: {
+  id: 'msg_20260107131610ae4107434e2944f8',
+  type: 'message',
+  role: 'assistant',
+  model: 'glm-4.7'
+}
+
+stdout | src/server/module-protocol-transpiler/converters/__tests__/anthropic-round-trip.test.ts > Anthropic Format Round-Trip Conversion > Field Preservation Details > should preserve tool_use block structure
+
+=== Tool Use Block Comparison ===
+Original: {
+  type: 'tool_use',
+  id: 'call_326f82523b21434ba5dfe827',
+  name: 'get_weather',
+  input: { city: 'San Francisco' }
+}
+Restored: {
+  type: 'tool_use',
+  id: 'call_326f82523b21434ba5dfe827',
+  name: 'get_weather',
+  input: { city: 'San Francisco' }
+}
+
+stdout | src/server/module-protocol-transpiler/converters/__tests__/anthropic-round-trip.test.ts > Anthropic Format Round-Trip Conversion > Field Preservation Details > should preserve usage fields
+
+=== Usage Fields Comparison ===
+Original: {
+  input_tokens: 786,
+  output_tokens: 12,
+  cache_read_input_tokens: 0,
+  server_tool_use: { web_search_requests: 0 },
+  service_tier: 'standard'
+}
+Restored: { input_tokens: 786, output_tokens: 12 }
+⚠️  cache_read_input_tokens: { original: 0, restored: undefined, preserved: false }
+
+stdout | src/server/module-protocol-transpiler/converters/__tests__/anthropic-round-trip.test.ts > Anthropic Format Round-Trip Conversion > Vendor-Specific Fields > should handle stop_sequence null value
+
+=== Stop Sequence Field ===
+Original: null
+Restored: undefined
+❌ stop_sequence is LOST during conversion
+⚠️  This field should be preserved even if null
+
+stdout | src/server/module-protocol-transpiler/converters/__tests__/anthropic-round-trip.test.ts > Anthropic Format Round-Trip Conversion > Vendor-Specific Fields > should handle vendor-specific usage fields
+
+=== Vendor-Specific Usage Fields ===
+server_tool_use: {
+  original: { web_search_requests: 0 },
+  restored: undefined,
+  preserved: false
+}
+service_tier: { original: 'standard', restored: undefined, preserved: false }
+❌ server_tool_use is LOST
+❌ service_tier is LOST
+
+stdout | src/server/module-protocol-transpiler/converters/__tests__/anthropic-round-trip.test.ts > Anthropic Format Round-Trip Conversion > Edge Cases > should handle empty content array
+
+=== Empty Content Array ===
+Restored: {
+  id: 'msg_test_empty',
+  type: 'message',
+  role: 'assistant',
+  content: [ { type: 'text', text: '' } ],
+  model: 'test-model',
+  stop_reason: 'end_turn',
+  usage: { input_tokens: 10, output_tokens: 5 }
+}
+
+stdout | src/server/module-protocol-transpiler/converters/__tests__/anthropic-round-trip.test.ts > Anthropic Format Round-Trip Conversion > Edge Cases > should handle complex nested input object
+
+=== Complex Nested Input ===
+Original input: {
+  "simple": "string",
+  "number": 42,
+  "nested": {
+    "object": {
+      "with": {
+        "deep": {
+          "nesting": true
+        }
+      }
+    },
+    "array": [
+      1,
+      2,
+      3
+    ]
+  },
+  "nullField": null,
+  "boolField": true
+}
+Restored input: {
+  "simple": "string",
+  "number": 42,
+  "nested": {
+    "object": {
+      "with": {
+        "deep": {
+          "nesting": true
+        }
+      }
+    },
+    "array": [
+      1,
+      2,
+      3
+    ]
+  },
+  "nullField": null,
+  "boolField": true
+}
+✅ Complex nested input preserved
+
+stdout | src/server/module-protocol-transpiler/converters/__tests__/anthropic-round-trip.test.ts > Anthropic Format Round-Trip Conversion > Edge Cases > should handle text + tool_use mixed content
+
+=== Mixed Content (text + tool_use) ===
+Original content length: 2
+Restored content length: 2
+✅ Mixed content preserved
+
+stdout | src/server/module-protocol-transpiler/converters/__tests__/anthropic-round-trip.test.ts > Anthropic Format Round-Trip Conversion > Internal Format Verification > should correctly convert Anthropic to Internal Format
+
+=== Internal Format Structure ===
+id: msg_20260107131610ae4107434e2944f8
+object: chat.completion
+model: glm-4.7
+choices length: 1
+finishReason: tool_calls
+usage: {
+  promptTokens: 786,
+  completionTokens: 12,
+  totalTokens: 798,
+  cacheReadTokens: undefined,
+  cacheWriteTokens: undefined,
+  thinkingTokens: undefined
+}
+✅ Internal Format structure correct
+
+ ✓ src/server/module-protocol-transpiler/converters/__tests__/anthropic-round-trip.test.ts (10 tests) 6ms
+ ✓ src/server/module-protocol-transpiler/converters/__tests__/anthropic-text-field-bug.test.ts (7 tests) 5ms
+ ✓ src/server/module-protocol-transpiler/core/__tests__/responses-integration.test.ts (18 tests) 7ms
+stderr | plugins/__tests__/dependency-graph.test.ts > getDependencyTree > 应该检测循环依赖
+[dependency-graph] ⚠️  检测到循环依赖: A
+
+stderr | plugins/__tests__/dependency-graph.test.ts > getDependencyTree > 应该在组件不存在时返回 null
+[dependency-graph] ⚠️  组件 NonExistent 不存在
+
+stderr | plugins/__tests__/dependency-graph.test.ts > topologicalSort > 应该在检测到循环依赖时返回空数组
+[dependency-graph] ❌ 检测到循环依赖，无法完成拓扑排序
+
+stderr | plugins/__tests__/dependency-graph.test.ts > generateMermaidDiagram > 应该在组件不存在时返回空字符串
+[dependency-graph] ⚠️  组件 NonExistent 不存在
+
+ ✓ src/server/module-gateway/services/__tests__/analytics.service.test.ts (23 tests) 8ms
+ ✓ plugins/__tests__/dependency-graph.test.ts (28 tests) 9ms
+ ✓ src/server/module-gateway/services/__tests__/route-matcher.service.api-key-isolation.test.ts (11 tests) 8ms
+ ✓ src/server/module-protocol-transpiler/converters/__tests__/anthropic-openai-response-structure.test.ts (18 tests) 14ms
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-4.2-streaming.test.ts > Scenario 4.2: OpenAI → Anthropic → OpenAI (流式) > Layer 3: Anthropic SSE Event → Internal Chunk > 应当正确转换每个 Anthropic SSE event 到 Internal Format
+
+=== Layer 3: Anthropic SSE → Internal Chunks ===
+
+Event 1 (message_start):
+Input (Anthropic SSE): data: {"type":"message_start","message":{"id":"msg_abc123","type":"message","rol...
+Output (Internal): {
+  "id": "msg_abc123",
+  "object": "chat.completion.chunk",
+  "created": 1782960494,
+  "model": "claude-3-5-sonnet-20241022",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {
+        "role": "assistant"
+      },
+      "finishReason": null
+    }
+  ]
+}
+
+Event 2 (content_block_start):
+Input (Anthropic SSE): data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use"...
+Output (Internal): {
+  "id": "msg_abc123",
+  "object": "chat.completion.chunk",
+  "created": 1782960494,
+  "model": "claude-3-5-sonnet-20241022",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {
+        "toolCalls": [
+          {
+            "index": 0,
+            "id": "toolu_xyz789",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": ""
+            }
+          }
+        ]
+      },
+      "finishReason": null
+    }
+  ]
+}
+
+Event 3 (content_block_delta):
+Input (Anthropic SSE): data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"...
+Output (Internal): {
+  "id": "msg_abc123",
+  "object": "chat.completion.chunk",
+  "created": 1782960494,
+  "model": "claude-3-5-sonnet-20241022",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {
+        "toolCalls": [
+          {
+            "index": 0,
+            "function": {
+              "arguments": "{\"city\":"
+            }
+          }
+        ]
+      },
+      "finishReason": null
+    }
+  ]
+}
+
+Event 4 (content_block_delta):
+Input (Anthropic SSE): data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"...
+Output (Internal): {
+  "id": "msg_abc123",
+  "object": "chat.completion.chunk",
+  "created": 1782960494,
+  "model": "claude-3-5-sonnet-20241022",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {
+        "toolCalls": [
+          {
+            "index": 0,
+            "function": {
+              "arguments": "\"Tokyo\""
+            }
+          }
+        ]
+      },
+      "finishReason": null
+    }
+  ]
+}
+
+Event 5 (content_block_delta):
+Input (Anthropic SSE): data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"...
+Output (Internal): {
+  "id": "msg_abc123",
+  "object": "chat.completion.chunk",
+  "created": 1782960494,
+  "model": "claude-3-5-sonnet-20241022",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {
+        "toolCalls": [
+          {
+            "index": 0,
+            "function": {
+              "arguments": "}"
+            }
+          }
+        ]
+      },
+      "finishReason": null
+    }
+  ]
+}
+
+Event 6 (content_block_stop):
+Input (Anthropic SSE): data: {"type":"content_block_stop","index":0}...
+Output (Internal): {
+  "__empty": true
+}
+
+Event 7 (message_delta):
+Input (Anthropic SSE): data: {"type":"message_delta","delta":{"stop_reason":"tool_use","stop_sequence":...
+Output (Internal): {
+  "id": "msg_abc123",
+  "object": "chat.completion.chunk",
+  "created": 1782960494,
+  "model": "claude-3-5-sonnet-20241022",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {},
+      "finishReason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "completionTokens": 10,
+    "promptTokens": 0,
+    "totalTokens": 10
+  }
+}
+
+Event 8 (message_stop):
+Input (Anthropic SSE): data: {"type":"message_stop"}...
+Output (Internal): {
+  "__empty": true
+}
+
+✅ 转换了 8 个 meaningful chunks
+✅ message_start event 转换成功: role = assistant
+✅ content_block_start event (tool_use) 转换成功: tool_use id = toolu_xyz789
+✅ content_block_delta events (参数分片): 3
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-4.2-streaming.test.ts > Scenario 4.2: OpenAI → Anthropic → OpenAI (流式) > Layer 3: Anthropic SSE Event → Internal Chunk > 应当正确累积 tool_use 参数分片
+
+=== 验证 tool_use 参数累积逻辑 ===
+✅ tool_use id: toolu_xyz789
+✅ 累积的 arguments: {"city":"Tokyo"}
+✅ arguments 是有效 JSON: { city: 'Tokyo' }
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-4.2-streaming.test.ts > Scenario 4.2: OpenAI → Anthropic → OpenAI (流式) > Layer 4: Internal Chunk → OpenAI SSE > 应当正确转换 Internal chunks 到 OpenAI SSE 格式
+
+=== Layer 4: Internal Chunks → OpenAI SSE ===
+Internal chunks count: 8
+Meaningful chunks count: 6
+生成了 6 个 OpenAI SSE 事件
+✅ 生成了 6 个 SSE 事件
+✅ 所有 SSE 事件格式正确
+✅ 最后一个事件包含 finish_reason
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-4.2-streaming.test.ts > Scenario 4.2: OpenAI → Anthropic → OpenAI (流式) > Layer 4: Internal Chunk → OpenAI SSE > 应当正确映射 stop_reason 到 finish_reason
+
+=== 验证 stop_reason → finish_reason 映射 ===
+找到 message_delta chunk: {
+  "id": "msg_abc123",
+  "object": "chat.completion.chunk",
+  "created": 1782960494,
+  "model": "claude-3-5-sonnet-20241022",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {},
+      "finishReason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "completionTokens": 10,
+    "promptTokens": 0,
+    "totalTokens": 10
+  }
+}
+✅ stop_reason 正确映射到 finish_reason
+  Anthropic: tool_use → Internal: tool_calls → OpenAI: tool_calls
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-4.2-streaming.test.ts > Scenario 4.2: OpenAI → Anthropic → OpenAI (流式) > 完整流式链路验证 > Anthropic SSE → Internal → OpenAI SSE 应当保持数据完整性
+
+=== 完整流式链路验证 ===
+
+✅ tool_use 信息正确累积
+  - id: toolu_xyz789
+  - input: { city: 'Tokyo' }
+
+✅ usage 信息正确传递
+  - output_tokens: 10
+
+✅ 往返转换后 SSE 事件数量合理: 6
+✅ finish_reason 正确映射: tool_use → tool_calls
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-4.2-streaming.test.ts > Scenario 4.2: OpenAI → Anthropic → OpenAI (流式) > 完整流式链路验证 > OpenAI → Anthropic → OpenAI 流式往返转换说明
+
+=== OpenAI → Anthropic → OpenAI 流式转换说明 ===
+✅ 跨协议转换（OpenAI → Anthropic → OpenAI）
+   - Layer 3: Anthropic SSE → Internal（解析并归一化）
+   - Layer 4: Internal → OpenAI SSE（转换为 OpenAI 格式）
+
+   跨协议转换要点:
+   - 事件格式转换: Anthropic events → OpenAI chunks
+   - 字段映射: stop_reason → finish_reason
+   - tool_use → tool_calls 映射
+   - 参数分片正确累积
+   - usage 信息正确传递
+
+✅ 所有验证通过
+
+ ✓ src/server/module-gateway/__tests__/multi-layer-validation/scenario-4.2-streaming.test.ts (6 tests) 6ms
+ ✓ src/server/module-protocol-transpiler/core/__tests__/internal-stream-chunk-conversion.test.ts (17 tests) 5ms
+ ✓ src/server/module-protocol-transpiler/utils/__tests__/format-detector.test.ts (92 tests) 10ms
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-2.2-streaming.test.ts > Scenario 2.2: OpenAI → OpenAI → OpenAI (流式) > Layer 3: OpenAI SSE Chunk → Internal Chunk > 应当正确转换每个 OpenAI chunk 到 Internal Format
+
+=== Layer 3: OpenAI SSE → Internal Chunks ===
+
+Chunk 1:
+Input (OpenAI SSE): data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1234567890,"model":"gpt-4","ch...
+Output (Internal): {
+  "id": "chatcmpl-123",
+  "object": "chat.completion.chunk",
+  "created": 1234567890,
+  "model": "gpt-4",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {
+        "role": "assistant"
+      },
+      "finishReason": null
+    }
+  ]
+}
+
+Chunk 2:
+Input (OpenAI SSE): data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1234567890,"model":"gpt-4","ch...
+Output (Internal): {
+  "id": "chatcmpl-123",
+  "object": "chat.completion.chunk",
+  "created": 1234567890,
+  "model": "gpt-4",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {
+        "toolCalls": [
+          {
+            "index": 0,
+            "id": "call_abc123",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": ""
+            }
+          }
+        ]
+      },
+      "finishReason": null
+    }
+  ]
+}
+
+Chunk 3:
+Input (OpenAI SSE): data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1234567890,"model":"gpt-4","ch...
+Output (Internal): {
+  "id": "chatcmpl-123",
+  "object": "chat.completion.chunk",
+  "created": 1234567890,
+  "model": "gpt-4",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {
+        "toolCalls": [
+          {
+            "index": 0,
+            "function": {
+              "arguments": "{\"city\":"
+            }
+          }
+        ]
+      },
+      "finishReason": null
+    }
+  ]
+}
+
+Chunk 4:
+Input (OpenAI SSE): data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1234567890,"model":"gpt-4","ch...
+Output (Internal): {
+  "id": "chatcmpl-123",
+  "object": "chat.completion.chunk",
+  "created": 1234567890,
+  "model": "gpt-4",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {
+        "toolCalls": [
+          {
+            "index": 0,
+            "function": {
+              "arguments": "\"Tokyo\""
+            }
+          }
+        ]
+      },
+      "finishReason": null
+    }
+  ]
+}
+
+Chunk 5:
+Input (OpenAI SSE): data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1234567890,"model":"gpt-4","ch...
+Output (Internal): {
+  "id": "chatcmpl-123",
+  "object": "chat.completion.chunk",
+  "created": 1234567890,
+  "model": "gpt-4",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {
+        "toolCalls": [
+          {
+            "index": 0,
+            "function": {
+              "arguments": "}"
+            }
+          }
+        ]
+      },
+      "finishReason": null
+    }
+  ]
+}
+
+Chunk 6:
+Input (OpenAI SSE): data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1234567890,"model":"gpt-4","ch...
+Output (Internal): {
+  "id": "chatcmpl-123",
+  "object": "chat.completion.chunk",
+  "created": 1234567890,
+  "model": "gpt-4",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {},
+      "finishReason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "promptTokens": 20,
+    "completionTokens": 10,
+    "totalTokens": 30
+  }
+}
+
+✅ 转换了 6 个 chunks
+✅ Chunk 1: role = "assistant"
+✅ Chunk 2: tool_calls 开始
+  - id: call_abc123
+  - name: get_weather
+✅ Chunks 3-5: 工具调用参数分片
+  - Chunk 3: '{"city":'
+  - Chunk 4: '"Tokyo"'
+  - Chunk 5: '}'
+✅ Chunk 6: finish_reason = "tool_calls"
+  - usage: { promptTokens: 20, completionTokens: 10, totalTokens: 30 }
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-2.2-streaming.test.ts > Scenario 2.2: OpenAI → OpenAI → OpenAI (流式) > Layer 3: OpenAI SSE Chunk → Internal Chunk > 应当正确累积 tool_calls 参数分片
+
+=== 验证 tool_calls 累积逻辑 ===
+✅ 累积了 1 个 tool_call
+✅ 最终 tool_call:
+  - id: call_abc123
+  - name: get_weather
+  - arguments: {"city":"Tokyo"}
+✅ arguments 是有效 JSON: { city: 'Tokyo' }
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-2.2-streaming.test.ts > Scenario 2.2: OpenAI → OpenAI → OpenAI (流式) > Layer 4: Internal Chunk → OpenAI SSE > 应当正确转换 Internal chunks 到 OpenAI SSE 格式（往返转换）
+
+=== Layer 4: Internal Chunks → OpenAI SSE ===
+Internal chunks count: 6
+生成了 6 个 OpenAI SSE 事件
+✅ 生成了 6 个 SSE 事件（与原始一致）
+✅ 所有 SSE 事件格式正确
+✅ 最后一个事件包含 finish_reason 和 usage
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-2.2-streaming.test.ts > Scenario 2.2: OpenAI → OpenAI → OpenAI (流式) > Layer 4: Internal Chunk → OpenAI SSE > 应当正确保持 finish_reason
+
+=== 验证 finish_reason 保持 ===
+找到 finish_reason chunk: tool_calls
+✅ finish_reason 在往返转换后保持一致
+  OpenAI: tool_calls → Internal: tool_calls → OpenAI: tool_calls
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-2.2-streaming.test.ts > Scenario 2.2: OpenAI → OpenAI → OpenAI (流式) > 完整流式链路验证 > OpenAI SSE → Internal → OpenAI SSE 应当保持数据完整性
+
+=== 完整流式链路验证 ===
+
+✅ tool_calls 正确累积
+  - 数量: 1
+  - id: call_abc123
+  - name: get_weather
+
+✅ 工具调用参数完整
+  - 参数: {"city":"Tokyo"}
+
+✅ usage 信息正确传递
+  - promptTokens: 20
+  - completionTokens: 10
+
+✅ 往返转换后 SSE 事件数量一致: 6
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-2.2-streaming.test.ts > Scenario 2.2: OpenAI → OpenAI → OpenAI (流式) > 完整流式链路验证 > OpenAI → OpenAI 流式往返转换说明
+
+=== OpenAI → OpenAI 流式转换说明 ===
+✅ 同协议转换（OpenAI → OpenAI）
+   - Layer 3: OpenAI SSE → Internal（解析并归一化）
+   - Layer 4: Internal → OpenAI SSE（还原为原始格式）
+
+   往返转换后:
+   - 字段名保持 snake_case
+   - 数据结构保持一致
+   - tool_calls 参数分片正确累积
+   - finish_reason 正确传递
+
+✅ 所有验证通过
+
+ ✓ src/server/module-gateway/__tests__/multi-layer-validation/scenario-2.2-streaming.test.ts (6 tests) 6ms
+stdout | src/server/module-gateway/controllers/__tests__/glm-token-extraction.test.ts > GLM Token Extraction - Complete Flow > Step 2: Direct converter call should return Internal Format
+✅ Direct converter call works!
+✅ Internal Format (camelCase):
+  - promptTokens: 79
+  - completionTokens: 23
+  - totalTokens: 102
+
+stdout | src/server/module-gateway/controllers/__tests__/glm-token-extraction.test.ts > GLM Token Extraction - Complete Flow > Step 3: Document why transpile() returns wrong format
+
+=== Why transpile() is wrong for getting Internal Format ===
+transpile(anthropic → openai) returns:
+  Field names: prompt_tokens, completion_tokens, total_tokens, cache_read_tokens, cache_write_tokens, thinking_tokens
+  - prompt_tokens: 79
+  - completion_tokens: 23
+
+❌ This is OpenAI API format (snake_case), not Internal Format!
+❌ That's why we use direct converter call instead
+
+stdout | src/server/module-gateway/controllers/__tests__/glm-token-extraction.test.ts > GLM Token Extraction - Complete Flow > Step 4: Verify gateway-controller extraction works
+
+=== Gateway Extraction Test (After Fix) ===
+internalResponse exists: true
+internalResponse.usage exists: true
+promptTokens: 79
+completionTokens: 23
+
+✅ FIX VERIFIED!
+✅ Direct converter call returns Internal Format (camelCase)
+✅ Token extraction works correctly
+
+ ✓ src/server/module-gateway/controllers/__tests__/glm-token-extraction.test.ts (4 tests) 4ms
+ ✓ src/server/module-protocol-transpiler/converters/__tests__/anthropic.tool-role.test.ts (8 tests) 4ms
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-3.2-streaming.test.ts > Scenario 3.2: Anthropic → Anthropic → Anthropic (流式) > Layer 3: Anthropic SSE Event → Internal Chunk > 应当正确转换每个 Anthropic SSE event 到 Internal Format
+
+=== Layer 3: Anthropic SSE → Internal Chunks ===
+
+Event 1 (message_start):
+Input (Anthropic SSE): data: {"type":"message_start","message":{"id":"msg_abc123","type":"message","rol...
+Output (Internal): {
+  "id": "msg_abc123",
+  "object": "chat.completion.chunk",
+  "created": 1782960495,
+  "model": "claude-3-5-sonnet-20241022",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {
+        "role": "assistant"
+      },
+      "finishReason": null
+    }
+  ]
+}
+
+Event 2 (content_block_start):
+Input (Anthropic SSE): data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use"...
+Output (Internal): {
+  "id": "msg_abc123",
+  "object": "chat.completion.chunk",
+  "created": 1782960495,
+  "model": "claude-3-5-sonnet-20241022",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {
+        "toolCalls": [
+          {
+            "index": 0,
+            "id": "toolu_xyz789",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": ""
+            }
+          }
+        ]
+      },
+      "finishReason": null
+    }
+  ]
+}
+
+Event 3 (content_block_delta):
+Input (Anthropic SSE): data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"...
+Output (Internal): {
+  "id": "msg_abc123",
+  "object": "chat.completion.chunk",
+  "created": 1782960495,
+  "model": "claude-3-5-sonnet-20241022",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {
+        "toolCalls": [
+          {
+            "index": 0,
+            "function": {
+              "arguments": "{\"city\":"
+            }
+          }
+        ]
+      },
+      "finishReason": null
+    }
+  ]
+}
+
+Event 4 (content_block_delta):
+Input (Anthropic SSE): data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"...
+Output (Internal): {
+  "id": "msg_abc123",
+  "object": "chat.completion.chunk",
+  "created": 1782960495,
+  "model": "claude-3-5-sonnet-20241022",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {
+        "toolCalls": [
+          {
+            "index": 0,
+            "function": {
+              "arguments": "\"Tokyo\""
+            }
+          }
+        ]
+      },
+      "finishReason": null
+    }
+  ]
+}
+
+Event 5 (content_block_delta):
+Input (Anthropic SSE): data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta"...
+Output (Internal): {
+  "id": "msg_abc123",
+  "object": "chat.completion.chunk",
+  "created": 1782960495,
+  "model": "claude-3-5-sonnet-20241022",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {
+        "toolCalls": [
+          {
+            "index": 0,
+            "function": {
+              "arguments": "}"
+            }
+          }
+        ]
+      },
+      "finishReason": null
+    }
+  ]
+}
+
+Event 6 (content_block_stop):
+Input (Anthropic SSE): data: {"type":"content_block_stop","index":0}...
+Output (Internal): {
+  "__empty": true
+}
+
+Event 7 (message_delta):
+Input (Anthropic SSE): data: {"type":"message_delta","delta":{"stop_reason":"tool_use","stop_sequence":...
+Output (Internal): {
+  "id": "msg_abc123",
+  "object": "chat.completion.chunk",
+  "created": 1782960495,
+  "model": "claude-3-5-sonnet-20241022",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {},
+      "finishReason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "completionTokens": 10,
+    "promptTokens": 0,
+    "totalTokens": 10
+  }
+}
+
+Event 8 (message_stop):
+Input (Anthropic SSE): data: {"type":"message_stop"}...
+Output (Internal): {
+  "__empty": true
+}
+
+✅ 转换了 8 个 meaningful chunks
+✅ message_start event 转换成功: role = assistant
+✅ content_block_start event (tool_use) 转换成功: tool_use id = toolu_xyz789
+✅ content_block_delta events (参数分片): 3
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-3.2-streaming.test.ts > Scenario 3.2: Anthropic → Anthropic → Anthropic (流式) > Layer 3: Anthropic SSE Event → Internal Chunk > 应当正确累积 tool_use 参数分片
+
+=== 验证 tool_use 参数累积逻辑 ===
+✅ tool_use id: toolu_xyz789
+✅ 累积的 arguments: {"city":"Tokyo"}
+✅ arguments 是有效 JSON: { city: 'Tokyo' }
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-3.2-streaming.test.ts > Scenario 3.2: Anthropic → Anthropic → Anthropic (流式) > Layer 4: Internal Chunk → Anthropic SSE > 应当正确转换 Internal chunks 到 Anthropic SSE 格式（往返转换）
+
+=== Layer 4: Internal Chunks → Anthropic SSE ===
+Internal chunks count: 8
+Meaningful chunks count: 6
+生成了 6 个 Anthropic SSE 事件
+✅ 生成了 6 个 SSE 事件
+✅ 所有 SSE 事件格式正确
+✅ message_delta 事件包含 usage
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-3.2-streaming.test.ts > Scenario 3.2: Anthropic → Anthropic → Anthropic (流式) > Layer 4: Internal Chunk → Anthropic SSE > 应当正确保持 stop_reason
+
+=== 验证 stop_reason 保持 ===
+找到 message_delta chunk: {
+  "id": "msg_abc123",
+  "object": "chat.completion.chunk",
+  "created": 1782960495,
+  "model": "claude-3-5-sonnet-20241022",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {},
+      "finishReason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "completionTokens": 10,
+    "promptTokens": 0,
+    "totalTokens": 10
+  }
+}
+✅ stop_reason 在往返转换后保持一致
+  Anthropic: tool_use → Internal: tool_calls → Anthropic: tool_use
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-3.2-streaming.test.ts > Scenario 3.2: Anthropic → Anthropic → Anthropic (流式) > 完整流式链路验证 > Anthropic SSE → Internal → Anthropic SSE 应当保持数据完整性
+
+=== 完整流式链路验证 ===
+
+✅ tool_use 信息正确累积
+  - id: toolu_xyz789
+  - input: { city: 'Tokyo' }
+
+✅ usage 信息正确传递
+  - output_tokens: 10
+
+✅ 往返转换后 SSE 事件数量合理: 6
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-3.2-streaming.test.ts > Scenario 3.2: Anthropic → Anthropic → Anthropic (流式) > 完整流式链路验证 > Anthropic → Anthropic 流式往返转换说明
+
+=== Anthropic → Anthropic 流式转换说明 ===
+✅ 同协议转换（Anthropic → Anthropic）
+   - Layer 3: Anthropic SSE → Internal（解析并归一化）
+   - Layer 4: Internal → Anthropic SSE（还原为原始格式）
+
+   往返转换后:
+   - 事件类型保持一致
+   - 数据结构保持一致
+   - tool_use 参数分片正确累积
+   - stop_reason 正确传递
+   - usage 信息正确传递
+
+✅ 所有验证通过
+
+ ✓ src/server/module-gateway/__tests__/multi-layer-validation/scenario-3.2-streaming.test.ts (6 tests) 5ms
+stdout | src/server/module-protocol-transpiler/converters/__tests__/anthropic.streaming.real-data.test.ts > AnthropicConverter - Real Data Tests > Text Streaming (from actual logs) > should handle complete text streaming conversation
+
+=== Testing Internal -> Anthropic conversion ===
+SSE type: string
+SSE length: 195
+SSE preview: event: message_start
+data: {"type":"message_start","message":{"id":"msg_202601031513181856df84e5504309","type":"message","role":"assistant","content":[],"model":"glm-4-air","stop_reason":null}}
+
+
+SSE type: string
+SSE length: 235
+SSE preview: event: content_block_start
+data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}
+
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{
+SSE type: string
+SSE length: 116
+SSE preview: event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"！"}}
+
+
+SSE type: string
+SSE length: 118
+SSE preview: event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"有什么"}}
+
+
+SSE type: string
+SSE length: 119
+SSE preview: event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"可以帮助"}}
+
+
+SSE type: string
+SSE length: 117
+SSE preview: event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"你的"}}
+
+
+SSE type: string
+SSE length: 116
+SSE preview: event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"吗"}}
+
+
+SSE type: string
+SSE length: 116
+SSE preview: event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"？"}}
+
+
+SSE type: string
+SSE length: 116
+SSE preview: event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"，"}}
+
+
+SSE type: string
+SSE length: 116
+SSE preview: event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"请"}}
+
+
+SSE type: string
+SSE length: 117
+SSE preview: event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"随时"}}
+
+
+SSE type: string
+SSE length: 118
+SSE preview: event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"告诉我"}}
+
+
+SSE type: string
+SSE length: 116
+SSE preview: event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"。"}}
+
+
+SSE type: string
+SSE length: 265
+SSE preview: event: content_block_stop
+data: {"type":"content_block_stop","index":0}
+
+
+event: message_delta
+data: {"type":"message_delta","delta":{"type":"message_delta","stop_reason":"end_turn"},"usage":{"output_
+Total SSE strings generated: 14
+
+ ✓ src/server/module-protocol-transpiler/converters/__tests__/anthropic.streaming.real-data.test.ts (4 tests) 4ms
+ ✓ src/server/module-protocol-transpiler/converters/__tests__/anthropic-glm-fields.test.ts (19 tests) 4ms
+ ✓ src/server/module-protocol-transpiler/converters/__tests__/anthropic-empty-events.test.ts (17 tests) 8ms
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-1.2-streaming.test.ts > Scenario 1.2: Anthropic → OpenAI → Anthropic (流式) > Layer 3: OpenAI SSE Chunk → Internal Chunk > 应当正确转换每个 OpenAI chunk 到 Internal Format
+
+=== Layer 3: OpenAI SSE → Internal Chunks ===
+
+Chunk 1:
+Input (OpenAI SSE): data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1234567890,"model":"gpt-4","ch...
+Output (Internal): {
+  "id": "chatcmpl-123",
+  "object": "chat.completion.chunk",
+  "created": 1234567890,
+  "model": "gpt-4",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {
+        "role": "assistant"
+      },
+      "finishReason": null
+    }
+  ]
+}
+
+Chunk 2:
+Input (OpenAI SSE): data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1234567890,"model":"gpt-4","ch...
+Output (Internal): {
+  "id": "chatcmpl-123",
+  "object": "chat.completion.chunk",
+  "created": 1234567890,
+  "model": "gpt-4",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {
+        "toolCalls": [
+          {
+            "index": 0,
+            "id": "call_abc123",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": ""
+            }
+          }
+        ]
+      },
+      "finishReason": null
+    }
+  ]
+}
+
+Chunk 3:
+Input (OpenAI SSE): data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1234567890,"model":"gpt-4","ch...
+Output (Internal): {
+  "id": "chatcmpl-123",
+  "object": "chat.completion.chunk",
+  "created": 1234567890,
+  "model": "gpt-4",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {
+        "toolCalls": [
+          {
+            "index": 0,
+            "function": {
+              "arguments": "{\"city\":"
+            }
+          }
+        ]
+      },
+      "finishReason": null
+    }
+  ]
+}
+
+Chunk 4:
+Input (OpenAI SSE): data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1234567890,"model":"gpt-4","ch...
+Output (Internal): {
+  "id": "chatcmpl-123",
+  "object": "chat.completion.chunk",
+  "created": 1234567890,
+  "model": "gpt-4",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {
+        "toolCalls": [
+          {
+            "index": 0,
+            "function": {
+              "arguments": "\"Tokyo\""
+            }
+          }
+        ]
+      },
+      "finishReason": null
+    }
+  ]
+}
+
+Chunk 5:
+Input (OpenAI SSE): data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1234567890,"model":"gpt-4","ch...
+Output (Internal): {
+  "id": "chatcmpl-123",
+  "object": "chat.completion.chunk",
+  "created": 1234567890,
+  "model": "gpt-4",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {
+        "toolCalls": [
+          {
+            "index": 0,
+            "function": {
+              "arguments": "}"
+            }
+          }
+        ]
+      },
+      "finishReason": null
+    }
+  ]
+}
+
+Chunk 6:
+Input (OpenAI SSE): data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1234567890,"model":"gpt-4","ch...
+Output (Internal): {
+  "id": "chatcmpl-123",
+  "object": "chat.completion.chunk",
+  "created": 1234567890,
+  "model": "gpt-4",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {},
+      "finishReason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "promptTokens": 20,
+    "completionTokens": 10,
+    "totalTokens": 30
+  }
+}
+
+✅ 转换了 6 个 chunks
+✅ Chunk 1: role = "assistant"
+✅ Chunk 2: tool_calls 开始
+  - id: call_abc123
+  - name: get_weather
+✅ Chunks 3-5: 工具调用参数分片
+  - Chunk 3: '{"city":'
+  - Chunk 4: '"Tokyo"'
+  - Chunk 5: '}'
+✅ Chunk 6: finish_reason = "tool_calls"
+  - usage: { promptTokens: 20, completionTokens: 10, totalTokens: 30 }
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-1.2-streaming.test.ts > Scenario 1.2: Anthropic → OpenAI → Anthropic (流式) > Layer 3: OpenAI SSE Chunk → Internal Chunk > 应当正确累积 tool_calls 参数分片
+
+=== 验证 tool_calls 累积逻辑 ===
+✅ 累积了 1 个 tool_call
+✅ 最终 tool_call:
+  - id: call_abc123
+  - name: get_weather
+  - arguments: {"city":"Tokyo"}
+✅ arguments 是有效 JSON: { city: 'Tokyo' }
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-1.2-streaming.test.ts > Scenario 1.2: Anthropic → OpenAI → Anthropic (流式) > Layer 4: Internal Chunk → Anthropic SSE > 应当正确转换 Internal chunks 到 Anthropic SSE 格式
+
+=== Layer 4: Internal Chunks → Anthropic SSE ===
+Internal chunks count: 6
+
+生成了 6 个非空 Anthropic SSE 事件
+Event 1: message_start
+Event 2: content_block_start
+Event 3: content_block_delta
+Event 4: content_block_delta
+Event 5: content_block_delta
+Event 6: content_block_stop
+
+事件类型: [
+  'message_start',
+  'content_block_start',
+  'content_block_delta',
+  'content_block_delta',
+  'content_block_delta',
+  'content_block_stop'
+]
+✅ 生成了 6 个事件
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-1.2-streaming.test.ts > Scenario 1.2: Anthropic → OpenAI → Anthropic (流式) > Layer 4: Internal Chunk → Anthropic SSE > 应当正确映射 finish_reason
+
+=== 验证 finish_reason 映射 ===
+找到 finish_reason chunk: tool_calls
+✅ finish_reason 在 Internal Format 中正确保留
+  OpenAI: tool_calls → Internal: tool_calls
+  Internal: tool_calls → Anthropic: tool_use (在 Layer 4)
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-1.2-streaming.test.ts > Scenario 1.2: Anthropic → OpenAI → Anthropic (流式) > 完整流式链路验证 > OpenAI SSE → Internal 应当保持数据完整性
+
+=== 完整流式链路验证 (Layer 3) ===
+
+✅ tool_calls 正确累积
+  - 数量: 1
+  - id: call_abc123
+  - name: get_weather
+
+✅ 工具调用参数完整
+  - 参数: {"city":"Tokyo"}
+
+✅ usage 信息正确传递
+  - promptTokens: 20
+  - completionTokens: 10
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-1.2-streaming.test.ts > Scenario 1.2: Anthropic → OpenAI → Anthropic (流式) > 完整流式链路验证 > Layer 4: Internal → Anthropic SSE 转换说明
+
+=== Layer 4 转换说明 ===
+⚠️  注意: convertStreamChunkFromInternal 可能返回空字符串
+   这是因为 isChunkMeaningful() 方法过滤了没有实质内容的 chunks
+
+   对于 tool_only 响应:
+   - 第一个 chunk (role) 可能被过滤（没有 content）
+   - tool_calls 参数分片可能被过滤（不满足 meaningful 条件）
+   - 最后一个 chunk (finish_reason) 可能被过滤
+
+   这是正确的行为！在真实场景中:
+   - Gateway Controller 会累积 tool_calls
+   - 在适当的时机发送完整的 tool_calls chunk
+   - 参见 gateway-controller.ts:487-531
+
+✅ Layer 3 (OpenAI → Internal) 验证了核心转换逻辑
+✅ 累积逻辑在 Gateway Controller 中处理
+
+ ✓ src/server/module-gateway/__tests__/multi-layer-validation/scenario-1.2-streaming.test.ts (6 tests) 15ms
+ ✓ src/server/module-protocol-transpiler/converters/__tests__/openai-anthropic-streaming-roundtrip.test.ts (12 tests) 7ms
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-3.1-non-streaming.test.ts > Scenario 3.1: Anthropic → Anthropic → Anthropic (非流式) > Layer 1: Anthropic Request → Internal Format > 应当正确转换 Anthropic 请求到 Internal Format
+
+=== Layer 1: Anthropic → Internal ===
+Input: {
+  "model": "claude-3-5-sonnet-20241022",
+  "max_tokens": 1024,
+  "system": "You are a helpful assistant",
+  "messages": [
+    {
+      "role": "user",
+      "content": "What is the weather in Tokyo?"
+    }
+  ],
+  "tools": [
+    {
+      "name": "get_weather",
+      "description": "Get weather information",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "city": {
+            "type": "string",
+            "description": "City name"
+          }
+        },
+        "required": [
+          "city"
+        ]
+      }
+    }
+  ]
+}
+Output: {
+  "model": "claude-3-5-sonnet-20241022",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant"
+    },
+    {
+      "role": "user",
+      "content": "What is the weather in Tokyo?"
+    }
+  ],
+  "maxTokens": 1024,
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Get weather information",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "string",
+              "description": "City name"
+            }
+          },
+          "required": [
+            "city"
+          ]
+        }
+      }
+    }
+  ]
+}
+✅ max_tokens → maxTokens: 1024
+✅ system → messages[0].role="system"
+✅ tools 格式正确转换
+  - name: get_weather
+  - parameters.type: object
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-3.1-non-streaming.test.ts > Scenario 3.1: Anthropic → Anthropic → Anthropic (非流式) > Layer 2: Internal Format → Anthropic Request > 应当正确转换 Internal Format 到 Anthropic 请求（往返转换）
+
+=== Layer 2: Internal → Anthropic Request ===
+Input (Internal): {
+  "model": "claude-3-5-sonnet-20241022",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant"
+    },
+    {
+      "role": "user",
+      "content": "What is the weather in Tokyo?"
+    }
+  ],
+  "maxTokens": 1024,
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Get weather information",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "string",
+              "description": "City name"
+            }
+          },
+          "required": [
+            "city"
+          ]
+        }
+      }
+    }
+  ]
+}
+Output (Anthropic): {
+  "model": "claude-3-5-sonnet-20241022",
+  "messages": [
+    {
+      "role": "user",
+      "content": "What is the weather in Tokyo?"
+    }
+  ],
+  "max_tokens": 1024,
+  "system": "You are a helpful assistant",
+  "tools": [
+    {
+      "name": "get_weather",
+      "description": "Get weather information",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "city": {
+            "type": "string",
+            "description": "City name"
+          }
+        },
+        "required": [
+          "city"
+        ]
+      }
+    }
+  ]
+}
+✅ maxTokens → max_tokens: 1024
+✅ messages[0].role="system" → system
+✅ tools 格式正确转换回 Anthropic
+  - name: get_weather
+✅ 往返转换后 Anthropic 请求保持一致
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-3.1-non-streaming.test.ts > Scenario 3.1: Anthropic → Anthropic → Anthropic (非流式) > Layer 3: Anthropic Response → Internal Format > 应当正确转换 Anthropic 响应到 Internal Format
+
+=== Layer 3: Anthropic Response → Internal ===
+Input: {
+  "id": "msg_abc123",
+  "type": "message",
+  "role": "assistant",
+  "content": [
+    {
+      "type": "tool_use",
+      "id": "toolu_xyz789",
+      "name": "get_weather",
+      "input": {
+        "city": "Tokyo"
+      }
+    }
+  ],
+  "model": "claude-3-5-sonnet-20241022",
+  "stop_reason": "tool_use",
+  "usage": {
+    "input_tokens": 20,
+    "output_tokens": 10
+  }
+}
+Output: {
+  "id": "msg_abc123",
+  "object": "chat.completion",
+  "created": 1782960495,
+  "model": "claude-3-5-sonnet-20241022",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "tool_use",
+            "id": "toolu_xyz789",
+            "name": "get_weather",
+            "input": {
+              "city": "Tokyo"
+            }
+          }
+        ],
+        "toolCalls": [
+          {
+            "id": "toolu_xyz789",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": "{\"city\":\"Tokyo\"}"
+            }
+          }
+        ]
+      },
+      "finishReason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "promptTokens": 20,
+    "completionTokens": 10,
+    "totalTokens": 30
+  }
+}
+✅ input_tokens → promptTokens: 20
+✅ output_tokens → completionTokens: 10
+✅ totalTokens (计算): 30
+✅ tool_use → toolCalls
+  - id: toolu_xyz789
+  - name: get_weather
+✅ stop_reason → finishReason: tool_calls
+  Anthropic: tool_use → Internal: tool_calls
+✅ content[] 保留为原始数组格式
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-3.1-non-streaming.test.ts > Scenario 3.1: Anthropic → Anthropic → Anthropic (非流式) > Layer 4: Internal Format → Anthropic Response > 应当正确转换 Internal Format 到 Anthropic 响应（往返转换）
+
+=== Layer 4: Internal → Anthropic Response ===
+Input (Internal): {
+  "id": "msg_abc123",
+  "object": "chat.completion",
+  "created": 1782960495,
+  "model": "claude-3-5-sonnet-20241022",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "tool_use",
+            "id": "toolu_xyz789",
+            "name": "get_weather",
+            "input": {
+              "city": "Tokyo"
+            }
+          }
+        ],
+        "toolCalls": [
+          {
+            "id": "toolu_xyz789",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": "{\"city\":\"Tokyo\"}"
+            }
+          }
+        ]
+      },
+      "finishReason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "promptTokens": 20,
+    "completionTokens": 10,
+    "totalTokens": 30
+  }
+}
+Output (Anthropic): {
+  "id": "msg_abc123",
+  "type": "message",
+  "role": "assistant",
+  "content": [
+    {
+      "type": "tool_use",
+      "id": "toolu_xyz789",
+      "name": "get_weather",
+      "input": {
+        "city": "Tokyo"
+      }
+    }
+  ],
+  "model": "claude-3-5-sonnet-20241022",
+  "stop_reason": "tool_use",
+  "usage": {
+    "input_tokens": 20,
+    "output_tokens": 10
+  }
+}
+✅ type: message
+✅ role: assistant
+✅ content[] 包含 tool_use 块
+✅ tool_use 块格式:
+  - type: tool_use
+  - id: toolu_xyz789
+  - name: get_weather
+✅ input 是对象 (不是字符串): {"city":"Tokyo"}
+✅ promptTokens → input_tokens: 20
+✅ completionTokens → output_tokens: 10
+✅ finishReason → stop_reason: tool_use
+✅ 往返转换后 Anthropic 响应保持一致
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-3.1-non-streaming.test.ts > Scenario 3.1: Anthropic → Anthropic → Anthropic (非流式) > 端到端验证: 完整往返转换 > Anthropic → Anthropic 往返转换后关键字段应当一致
+
+=== 端到端验证 ===
+
+Layer 1 (Anthropic → Internal):
+  - maxTokens: 1024
+  - tools count: 1
+
+Layer 2 (Internal → Anthropic):
+  - max_tokens: 1024
+  - tools count: 1
+
+Layer 3 (Anthropic → Internal):
+  - promptTokens: 20
+  - toolCalls count: 1
+
+Layer 4 (Internal → Anthropic):
+  - input_tokens: 20
+  - content[] length: 1
+
+✅ 工具名称一致: get_weather → get_weather
+✅ 工具参数一致
+✅ 响应 tool_use 信息一致
+
+✅ 所有 4 层转换成功
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-3.1-non-streaming.test.ts > Scenario 3.1: Anthropic → Anthropic → Anthropic (非流式) > 端到端验证: 完整往返转换 > token 统计在整个链路中正确传递
+
+Anthropic usage (原始): { input_tokens: 20, output_tokens: 10 }
+Internal usage (Layer 3): {
+  promptTokens: 20,
+  completionTokens: 10,
+  totalTokens: 30,
+  cacheReadTokens: undefined,
+  cacheWriteTokens: undefined,
+  thinkingTokens: undefined
+}
+Anthropic usage (Layer 4): { input_tokens: 20, output_tokens: 10 }
+
+✅ token 统计在整个链路中正确传递
+  input_tokens: 20 → input_tokens: 20
+  output_tokens: 10 → output_tokens: 10
+
+ ✓ src/server/module-gateway/__tests__/multi-layer-validation/scenario-3.1-non-streaming.test.ts (6 tests) 5ms
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-4.1-non-streaming.test.ts > Scenario 4.1: OpenAI → Anthropic → OpenAI (非流式) > Layer 1: OpenAI Request → Internal Format > 应当正确转换 OpenAI 请求到 Internal Format
+
+=== Layer 1: OpenAI → Internal ===
+Input: {
+  "model": "gpt-4",
+  "max_tokens": 1024,
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant"
+    },
+    {
+      "role": "user",
+      "content": "What is the weather in Tokyo?"
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Get weather information",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "string",
+              "description": "City name"
+            }
+          },
+          "required": [
+            "city"
+          ]
+        }
+      }
+    }
+  ]
+}
+Output: {
+  "model": "gpt-4",
+  "maxTokens": 1024,
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant"
+    },
+    {
+      "role": "user",
+      "content": "What is the weather in Tokyo?"
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Get weather information",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "string",
+              "description": "City name"
+            }
+          },
+          "required": [
+            "city"
+          ]
+        }
+      }
+    }
+  ]
+}
+✅ max_tokens → maxTokens: 1024
+✅ messages[0].role 保留: "system"
+✅ tools 格式正确转换到 Internal
+  - type: function
+  - function.name: get_weather
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-4.1-non-streaming.test.ts > Scenario 4.1: OpenAI → Anthropic → OpenAI (非流式) > Layer 2: Internal Format → Anthropic Request > 应当正确转换 Internal Format 到 Anthropic 请求
+
+=== Layer 2: Internal → Anthropic Request ===
+Input (Internal): {
+  "model": "gpt-4",
+  "maxTokens": 1024,
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant"
+    },
+    {
+      "role": "user",
+      "content": "What is the weather in Tokyo?"
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Get weather information",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "string",
+              "description": "City name"
+            }
+          },
+          "required": [
+            "city"
+          ]
+        }
+      }
+    }
+  ]
+}
+Output (Anthropic): {
+  "model": "gpt-4",
+  "messages": [
+    {
+      "role": "user",
+      "content": "What is the weather in Tokyo?"
+    }
+  ],
+  "max_tokens": 1024,
+  "system": "You are a helpful assistant",
+  "tools": [
+    {
+      "name": "get_weather",
+      "description": "Get weather information",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "city": {
+            "type": "string",
+            "description": "City name"
+          }
+        },
+        "required": [
+          "city"
+        ]
+      }
+    }
+  ]
+}
+✅ maxTokens → max_tokens: 1024
+✅ messages[0].role="system" → system
+✅ tools 格式正确转换到 Anthropic
+  - name: get_weather
+  - input_schema.type: object
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-4.1-non-streaming.test.ts > Scenario 4.1: OpenAI → Anthropic → OpenAI (非流式) > Layer 3: Anthropic Response → Internal Format > 应当正确转换 Anthropic 响应到 Internal Format
+
+=== Layer 3: Anthropic Response → Internal ===
+Input: {
+  "id": "msg_abc123",
+  "type": "message",
+  "role": "assistant",
+  "content": [
+    {
+      "type": "tool_use",
+      "id": "toolu_xyz789",
+      "name": "get_weather",
+      "input": {
+        "city": "Tokyo"
+      }
+    }
+  ],
+  "model": "claude-3-5-sonnet-20241022",
+  "stop_reason": "tool_use",
+  "usage": {
+    "input_tokens": 20,
+    "output_tokens": 10
+  }
+}
+Output: {
+  "id": "msg_abc123",
+  "object": "chat.completion",
+  "created": 1782960495,
+  "model": "claude-3-5-sonnet-20241022",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "tool_use",
+            "id": "toolu_xyz789",
+            "name": "get_weather",
+            "input": {
+              "city": "Tokyo"
+            }
+          }
+        ],
+        "toolCalls": [
+          {
+            "id": "toolu_xyz789",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": "{\"city\":\"Tokyo\"}"
+            }
+          }
+        ]
+      },
+      "finishReason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "promptTokens": 20,
+    "completionTokens": 10,
+    "totalTokens": 30
+  }
+}
+✅ input_tokens → promptTokens: 20
+✅ output_tokens → completionTokens: 10
+✅ totalTokens (计算): 30
+✅ tool_use → toolCalls
+  - id: toolu_xyz789
+  - type: function
+  - function.name: get_weather
+✅ stop_reason → finishReason: tool_calls
+  Anthropic: tool_use → Internal: tool_calls
+✅ content[] 保留为原始数组格式
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-4.1-non-streaming.test.ts > Scenario 4.1: OpenAI → Anthropic → OpenAI (非流式) > Layer 4: Internal Format → OpenAI Response > 应当正确转换 Internal Format 到 OpenAI 响应
+
+=== Layer 4: Internal → OpenAI Response ===
+Input (Internal): {
+  "id": "msg_abc123",
+  "object": "chat.completion",
+  "created": 1782960495,
+  "model": "claude-3-5-sonnet-20241022",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "tool_use",
+            "id": "toolu_xyz789",
+            "name": "get_weather",
+            "input": {
+              "city": "Tokyo"
+            }
+          }
+        ],
+        "toolCalls": [
+          {
+            "id": "toolu_xyz789",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": "{\"city\":\"Tokyo\"}"
+            }
+          }
+        ]
+      },
+      "finishReason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "promptTokens": 20,
+    "completionTokens": 10,
+    "totalTokens": 30
+  }
+}
+Output (OpenAI): {
+  "id": "msg_abc123",
+  "object": "chat.completion",
+  "created": 1782960495,
+  "model": "claude-3-5-sonnet-20241022",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": null,
+        "tool_calls": [
+          {
+            "id": "toolu_xyz789",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": "{\"city\":\"Tokyo\"}"
+            },
+            "index": 0
+          }
+        ]
+      },
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 20,
+    "completion_tokens": 10,
+    "total_tokens": 30
+  }
+}
+✅ promptTokens → prompt_tokens: 20
+✅ completionTokens → completion_tokens: 10
+✅ toolCalls → tool_calls
+  - id: toolu_xyz789
+  - type: function
+✅ finishReason → finish_reason: tool_calls (映射自 tool_use)
+✅ content is null (tool_only response)
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-4.1-non-streaming.test.ts > Scenario 4.1: OpenAI → Anthropic → OpenAI (非流式) > 端到端验证: 完整往返转换 > OpenAI → Anthropic → OpenAI 完整转换链路验证
+
+=== 端到端验证 ===
+
+Layer 1 (OpenAI → Internal):
+  - maxTokens: 1024
+  - tools count: 1
+
+Layer 2 (Internal → Anthropic):
+  - max_tokens: 1024
+  - tools count: 1
+
+Layer 3 (Anthropic → Internal):
+  - promptTokens: 20
+  - toolCalls count: 1
+
+Layer 4 (Internal → OpenAI):
+  - prompt_tokens: 20
+  - tool_calls count: 1
+
+✅ 工具名称一致: get_weather → get_weather
+✅ 工具参数结构一致
+✅ 响应 tool_calls 信息一致
+✅ finish_reason 正确映射: tool_use → tool_calls
+
+✅ 所有 4 层转换成功
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-4.1-non-streaming.test.ts > Scenario 4.1: OpenAI → Anthropic → OpenAI (非流式) > 端到端验证: 完整往返转换 > token 统计在整个链路中正确传递
+
+Anthropic usage (原始): { input_tokens: 20, output_tokens: 10 }
+Internal usage (Layer 3): {
+  promptTokens: 20,
+  completionTokens: 10,
+  totalTokens: 30,
+  cacheReadTokens: undefined,
+  cacheWriteTokens: undefined,
+  thinkingTokens: undefined
+}
+OpenAI usage (Layer 4): {
+  prompt_tokens: 20,
+  completion_tokens: 10,
+  total_tokens: 30,
+  cache_read_tokens: undefined,
+  cache_write_tokens: undefined,
+  thinking_tokens: undefined
+}
+
+✅ token 统计在整个链路中正确传递
+  input_tokens: 20 → prompt_tokens: 20
+  output_tokens: 10 → completion_tokens: 10
+
+ ✓ src/server/module-gateway/__tests__/multi-layer-validation/scenario-4.1-non-streaming.test.ts (6 tests) 6ms
+ ✓ src/server/module-protocol-transpiler/converters/__tests__/anthropic.streaming.test.ts (15 tests) 7ms
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-1.1-non-streaming.test.ts > Scenario 1.1: Anthropic → OpenAI → Anthropic (非流式) > Layer 1: Anthropic Request → Internal Format > 应当正确转换 Anthropic 请求到 Internal Format
+
+=== Layer 1: Anthropic → Internal ===
+Input: {
+  "model": "claude-3-5-sonnet-20241022",
+  "max_tokens": 1024,
+  "system": "You are a helpful assistant",
+  "messages": [
+    {
+      "role": "user",
+      "content": "What is the weather in Tokyo?"
+    }
+  ],
+  "tools": [
+    {
+      "name": "get_weather",
+      "description": "Get weather information",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "city": {
+            "type": "string",
+            "description": "City name"
+          }
+        },
+        "required": [
+          "city"
+        ]
+      }
+    }
+  ]
+}
+Output: {
+  "model": "claude-3-5-sonnet-20241022",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant"
+    },
+    {
+      "role": "user",
+      "content": "What is the weather in Tokyo?"
+    }
+  ],
+  "maxTokens": 1024,
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Get weather information",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "string",
+              "description": "City name"
+            }
+          },
+          "required": [
+            "city"
+          ]
+        }
+      }
+    }
+  ]
+}
+✅ max_tokens → maxTokens: 1024
+✅ system → messages[0].role="system"
+✅ tools 格式正确转换
+  - name: get_weather
+  - parameters.type: object
+✅ messages[1] 保持不变
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-1.1-non-streaming.test.ts > Scenario 1.1: Anthropic → OpenAI → Anthropic (非流式) > Layer 2: Internal Format → OpenAI Request > 应当正确转换 Internal Format 到 OpenAI 请求
+
+=== Layer 2: Internal → OpenAI Request ===
+Input (Internal): {
+  "model": "claude-3-5-sonnet-20241022",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant"
+    },
+    {
+      "role": "user",
+      "content": "What is the weather in Tokyo?"
+    }
+  ],
+  "maxTokens": 1024,
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Get weather information",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "string",
+              "description": "City name"
+            }
+          },
+          "required": [
+            "city"
+          ]
+        }
+      }
+    }
+  ]
+}
+Output (OpenAI): {
+  "model": "claude-3-5-sonnet-20241022",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant"
+    },
+    {
+      "role": "user",
+      "content": "What is the weather in Tokyo?"
+    }
+  ],
+  "max_tokens": 1024,
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Get weather information",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "string",
+              "description": "City name"
+            }
+          },
+          "required": [
+            "city"
+          ]
+        }
+      }
+    }
+  ]
+}
+✅ maxTokens → max_tokens: 1024
+✅ messages[0].role 保留: "system"
+✅ tools 格式正确转换回 OpenAI
+  - type: function
+  - function.name: get_weather
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-1.1-non-streaming.test.ts > Scenario 1.1: Anthropic → OpenAI → Anthropic (非流式) > Layer 3: OpenAI Response → Internal Format > 应当正确转换 OpenAI 响应到 Internal Format
+
+=== Layer 3: OpenAI Response → Internal ===
+Input: {
+  "id": "chatcmpl-123",
+  "object": "chat.completion",
+  "created": 1234567890,
+  "model": "gpt-4",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": null,
+        "tool_calls": [
+          {
+            "id": "call_abc123",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": "{\"city\":\"Tokyo\"}"
+            }
+          }
+        ]
+      },
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 20,
+    "completion_tokens": 10,
+    "total_tokens": 30
+  }
+}
+Output: {
+  "id": "chatcmpl-123",
+  "object": "chat.completion",
+  "created": 1234567890,
+  "model": "gpt-4",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": null,
+        "toolCalls": [
+          {
+            "id": "call_abc123",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": "{\"city\":\"Tokyo\"}"
+            }
+          }
+        ]
+      },
+      "finishReason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "promptTokens": 20,
+    "completionTokens": 10,
+    "totalTokens": 30
+  }
+}
+✅ prompt_tokens → promptTokens: 20
+✅ completion_tokens → completionTokens: 10
+✅ total_tokens: 30
+✅ tool_calls → toolCalls
+  - id: call_abc123
+  - type: function
+  - function.name: get_weather
+✅ finish_reason → finishReason: tool_calls
+✅ content is null (tool_only response)
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-1.1-non-streaming.test.ts > Scenario 1.1: Anthropic → OpenAI → Anthropic (非流式) > Layer 4: Internal Format → Anthropic Response > 应当正确转换 Internal Format 到 Anthropic 响应
+
+=== Layer 4: Internal → Anthropic Response ===
+Input (Internal): {
+  "id": "chatcmpl-123",
+  "object": "chat.completion",
+  "created": 1234567890,
+  "model": "gpt-4",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": null,
+        "toolCalls": [
+          {
+            "id": "call_abc123",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": "{\"city\":\"Tokyo\"}"
+            }
+          }
+        ]
+      },
+      "finishReason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "promptTokens": 20,
+    "completionTokens": 10,
+    "totalTokens": 30
+  }
+}
+Output (Anthropic): {
+  "id": "chatcmpl-123",
+  "type": "message",
+  "role": "assistant",
+  "content": [
+    {
+      "type": "tool_use",
+      "id": "call_abc123",
+      "name": "get_weather",
+      "input": {
+        "city": "Tokyo"
+      }
+    }
+  ],
+  "model": "gpt-4",
+  "stop_reason": "tool_use",
+  "usage": {
+    "input_tokens": 20,
+    "output_tokens": 10
+  }
+}
+✅ type: message
+✅ role: assistant
+✅ content[] 包含 tool_use 块
+✅ tool_use 块格式:
+  - type: tool_use
+  - id: call_abc123
+  - name: get_weather
+✅ input 是对象 (不是字符串): {"city":"Tokyo"}
+✅ promptTokens → input_tokens: 20
+✅ completionTokens → output_tokens: 10
+✅ finishReason → stop_reason: tool_use
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-1.1-non-streaming.test.ts > Scenario 1.1: Anthropic → OpenAI → Anthropic (非流式) > 端到端验证: 完整往返转换 > 完整往返转换后关键字段应当一致
+
+=== 端到端验证 ===
+
+Layer 1 (Anthropic → Internal):
+  - maxTokens: 1024
+  - tools count: 1
+
+Layer 2 (Internal → OpenAI):
+  - max_tokens: 1024
+  - tools count: 1
+
+Layer 3 (OpenAI → Internal):
+  - promptTokens: 20
+  - toolCalls count: 1
+
+Layer 4 (Internal → Anthropic):
+  - input_tokens: 20
+  - content[] length: 1
+
+✅ 工具名称一致: get_weather → get_weather
+✅ 工具参数一致: {"city":"Tokyo"}
+
+✅ 所有 4 层转换成功
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-1.1-non-streaming.test.ts > Scenario 1.1: Anthropic → OpenAI → Anthropic (非流式) > 端到端验证: 完整往返转换 > token 统计在整个链路中正确传递
+
+OpenAI usage (原始): { prompt_tokens: 20, completion_tokens: 10, total_tokens: 30 }
+Internal usage (Layer 3): { promptTokens: 20, completionTokens: 10, totalTokens: 30 }
+Anthropic usage (Layer 4): { input_tokens: 20, output_tokens: 10 }
+
+✅ token 统计在整个链路中正确传递
+  prompt_tokens: 20 → input_tokens: 20
+  completion_tokens: 10 → output_tokens: 10
+
+ ✓ src/server/module-gateway/__tests__/multi-layer-validation/scenario-1.1-non-streaming.test.ts (6 tests) 5ms
+stdout | src/server/module-protocol-transpiler/converters/__tests__/anthropic.streaming.integration.test.ts > AnthropicConverter - Real SSE Integration Test > should convert real upstream SSE stream correctly
+Total events: 24
+Chunks with content: 20
+Empty chunks: 4
+Empty chunk types: [ 'ping', 'content_block_start', 'content_block_stop', 'message_stop' ]
+
+=== Conversion Results ===
+1. message_start: HAS CONTENT
+    {"id":"msg_202601031513181856df84e5504309","object":"chat.completion.chunk","created":1782960495,"model":"glm-4-air","choices":[{"index":0,"delta":{"role":"assistant"},"finishReason":null}]}
+2. ping: EMPTY
+3. content_block_start: EMPTY
+4. content_block_delta: HAS CONTENT
+    {"id":"msg_202601031513181856df84e5504309","object":"chat.completion.chunk","created":1782960495,"model":"glm-4-air","choices":[{"index":0,"delta":{"content":"你好"},"finishReason":null}]}
+5. content_block_delta: HAS CONTENT
+    {"id":"msg_202601031513181856df84e5504309","object":"chat.completion.chunk","created":1782960495,"model":"glm-4-air","choices":[{"index":0,"delta":{"content":"！"},"finishReason":null}]}
+6. content_block_delta: HAS CONTENT
+    {"id":"msg_202601031513181856df84e5504309","object":"chat.completion.chunk","created":1782960495,"model":"glm-4-air","choices":[{"index":0,"delta":{"content":"有什么"},"finishReason":null}]}
+7. content_block_delta: HAS CONTENT
+    {"id":"msg_202601031513181856df84e5504309","object":"chat.completion.chunk","created":1782960495,"model":"glm-4-air","choices":[{"index":0,"delta":{"content":"可以帮助"},"finishReason":null}]}
+8. content_block_delta: HAS CONTENT
+    {"id":"msg_202601031513181856df84e5504309","object":"chat.completion.chunk","created":1782960495,"model":"glm-4-air","choices":[{"index":0,"delta":{"content":"你的"},"finishReason":null}]}
+9. content_block_delta: HAS CONTENT
+    {"id":"msg_202601031513181856df84e5504309","object":"chat.completion.chunk","created":1782960495,"model":"glm-4-air","choices":[{"index":0,"delta":{"content":"吗"},"finishReason":null}]}
+10. content_block_delta: HAS CONTENT
+    {"id":"msg_202601031513181856df84e5504309","object":"chat.completion.chunk","created":1782960495,"model":"glm-4-air","choices":[{"index":0,"delta":{"content":"？"},"finishReason":null}]}
+11. content_block_delta: HAS CONTENT
+    {"id":"msg_202601031513181856df84e5504309","object":"chat.completion.chunk","created":1782960495,"model":"glm-4-air","choices":[{"index":0,"delta":{"content":"如果你"},"finishReason":null}]}
+12. content_block_delta: HAS CONTENT
+    {"id":"msg_202601031513181856df84e5504309","object":"chat.completion.chunk","created":1782960495,"model":"glm-4-air","choices":[{"index":0,"delta":{"content":"有任何"},"finishReason":null}]}
+13. content_block_delta: HAS CONTENT
+    {"id":"msg_202601031513181856df84e5504309","object":"chat.completion.chunk","created":1782960495,"model":"glm-4-air","choices":[{"index":0,"delta":{"content":"问题"},"finishReason":null}]}
+14. content_block_delta: HAS CONTENT
+    {"id":"msg_202601031513181856df84e5504309","object":"chat.completion.chunk","created":1782960495,"model":"glm-4-air","choices":[{"index":0,"delta":{"content":"或者"},"finishReason":null}]}
+15. content_block_delta: HAS CONTENT
+    {"id":"msg_202601031513181856df84e5504309","object":"chat.completion.chunk","created":1782960495,"model":"glm-4-air","choices":[{"index":0,"delta":{"content":"需要"},"finishReason":null}]}
+16. content_block_delta: HAS CONTENT
+    {"id":"msg_202601031513181856df84e5504309","object":"chat.completion.chunk","created":1782960495,"model":"glm-4-air","choices":[{"index":0,"delta":{"content":"帮助"},"finishReason":null}]}
+17. content_block_delta: HAS CONTENT
+    {"id":"msg_202601031513181856df84e5504309","object":"chat.completion.chunk","created":1782960495,"model":"glm-4-air","choices":[{"index":0,"delta":{"content":"，"},"finishReason":null}]}
+18. content_block_delta: HAS CONTENT
+    {"id":"msg_202601031513181856df84e5504309","object":"chat.completion.chunk","created":1782960495,"model":"glm-4-air","choices":[{"index":0,"delta":{"content":"请"},"finishReason":null}]}
+19. content_block_delta: HAS CONTENT
+    {"id":"msg_202601031513181856df84e5504309","object":"chat.completion.chunk","created":1782960495,"model":"glm-4-air","choices":[{"index":0,"delta":{"content":"随时"},"finishReason":null}]}
+20. content_block_delta: HAS CONTENT
+    {"id":"msg_202601031513181856df84e5504309","object":"chat.completion.chunk","created":1782960495,"model":"glm-4-air","choices":[{"index":0,"delta":{"content":"告诉我"},"finishReason":null}]}
+21. content_block_delta: HAS CONTENT
+    {"id":"msg_202601031513181856df84e5504309","object":"chat.completion.chunk","created":1782960495,"model":"glm-4-air","choices":[{"index":0,"delta":{"content":"。"},"finishReason":null}]}
+22. content_block_stop: EMPTY
+23. message_delta: HAS CONTENT
+    {"id":"msg_202601031513181856df84e5504309","object":"chat.completion.chunk","created":1782960495,"model":"glm-4-air","choices":[{"index":0,"delta":{},"finishReason":"stop"}],"usage":{"completionTokens":20,"promptTokens":532,"totalTokens":552}}
+24. message_stop: EMPTY
+
+ ✓ src/server/module-protocol-transpiler/converters/__tests__/anthropic.streaming.integration.test.ts (1 test) 3ms
+ ✓ src/server/module-protocol-transpiler/converters/__tests__/anthropic-issue-352ed7.test.ts (7 tests) 3ms
+ ✓ src/client/hooks/__tests__/useAIStream.test.ts (14 tests) 8ms
+ ✓ src/server/module-assets/__tests__/assets-service.test.ts (10 tests) 4ms
+ ✓ src/server/module-protocol-transpiler/converters/__tests__/openai.streaming.test.ts (14 tests) 7ms
+ ✓ src/server/module-gateway/controllers/__tests__/gateway-tool-calls-fallback.test.ts (12 tests) 5ms
+ ✓ src/server/module-gateway/controllers/__tests__/glm-e2e-conversion.test.ts (1 test) 10ms
+ ✓ src/server/module-gateway/services/__tests__/load-balancer.service.test.ts (9 tests) 6ms
+ ✓ src/server/module-protocol-transpiler/converters/__tests__/image-conversion.test.ts (17 tests) 8ms
+ ✓ src/server/module-protocol-transpiler/core/__tests__/transpile-result.test.ts (35 tests) 7ms
+ ✓ src/server/module-protocol-transpiler/converters/__tests__/internal-format-validation.test.ts (18 tests) 6ms
+ ✓ src/server/module-protocol-transpiler/converters/__tests__/anthropic-tool-use-blocks.test.ts (11 tests) 6ms
+stdout | src/client/components/logs/__tests__/vendorBadge.test.ts > findVendorByModel - 模型匹配问题测试 > 问题重现：当多个 Vendor 配置了相同的模型时 > 问题：无法知道实际请求是通过哪个 route/vendor 发出的
+匹配到的 vendor: Zhipu AI
+期望的 vendor（实际请求使用的 route）: Zhipu coding
+
+ ✓ src/client/components/logs/__tests__/vendorBadge.test.ts (6 tests) 2ms
+ ✓ src/client/components/logs/__tests__/parseContentBlocks.test.ts (8 tests) 6ms
+ ✓ src/server/module-protocol-transpiler/converters/__tests__/anthropic-field-normalization.test.ts (7 tests) 7ms
+stdout | src/server/module-protocol-transpiler/converters/__tests__/responses.streaming.test.ts > ResponsesConverter - Streaming > should convert internal chunk to Responses API SSE format
+SSE output: event: response.output_text.delta
+data: {"type":"response.output_text.delta","delta":{"type":"content","content":"Hello"}}
+
+
+
+stdout | src/server/module-protocol-transpiler/converters/__tests__/responses.streaming.test.ts > ResponsesConverter - Streaming > should use response.created event for first chunk with role
+SSE output: event: response.created
+data: {"type":"response.created","response":{"id":"resp_123","status":"in_progress","created_at":1234567890,"model":"gpt-4o"}}
+
+
+
+stdout | src/server/module-protocol-transpiler/converters/__tests__/responses.streaming.test.ts > ResponsesConverter - Streaming > should use response.done event for chunk with finish_reason
+SSE output: event: response.done
+data: {"type":"response.done","response":{"id":"resp_123","status":"completed","created_at":1234567890,"model":"gpt-4o","usage":{"input_tokens":10,"output_tokens":20,"total_tokens":30}}}
+
+
+
+stdout | src/server/module-protocol-transpiler/converters/__tests__/responses.streaming.test.ts > ResponsesConverter - Streaming > should use response!.output_text.delta event for content chunks
+SSE output: event: response.output_text.delta
+data: {"type":"response.output_text.delta","delta":{"type":"content","content":"Hello"}}
+
+
+
+stdout | src/server/module-protocol-transpiler/converters/__tests__/responses.streaming.test.ts > ResponsesConverter - Streaming > should maintain consistent SSE format for all chunks
+Chunk 1: event: response.created
+data: {"type":"response.created","response":{"id":"resp_123","status":"in_progress","created_at":1234567890,"model":"gpt-4o"}}
+
+
+Chunk 2: event: response.output_text.delta
+data: {"type":"response.output_text.delta","delta":{"type":"content","content":"Hello"}}
+
+
+Chunk 3: event: response.output_text.delta
+data: {"type":"response.output_text.delta","delta":{"type":"content","content":" World"}}
+
+
+Chunk 4: event: response.done
+data: {"type":"response.done","response":{"id":"resp_123","status":"completed","created_at":1234567890,"model":"gpt-4o"}}
+
+
+
+ ✓ src/server/module-protocol-transpiler/converters/__tests__/anthropic-issue-2a1098.test.ts (9 tests) 8ms
+ ✓ src/server/module-protocol-transpiler/converters/__tests__/responses.streaming.test.ts (5 tests) 7ms
+ ✓ src/server/module-protocol-transpiler/converters/__tests__/openai-index-field.test.ts (4 tests) 3ms
+stdout | src/server/module-gateway/controllers/__tests__/glm-token-zero-bug.test.ts > GLM Token Zero Bug - Root Cause Analysis > Root Cause: transpile() returns wrong format > transpile(glm, openai) returns OpenAI API format (snake_case), not Internal Format (camelCase)
+
+=== transpile() Result ===
+Response usage: { prompt_tokens: 161, completion_tokens: 61, total_tokens: 222 }
+❌ transpile() returns OpenAI API format (snake_case)
+❌ Field names: prompt_tokens, completion_tokens
+❌ This is NOT Internal Format!
+
+stdout | src/server/module-gateway/controllers/__tests__/glm-token-zero-bug.test.ts > GLM Token Zero Bug - Root Cause Analysis > Root Cause: transpile() returns wrong format > Gateway controller fails to extract tokens from transpile() result
+
+=== Gateway Token Extraction (Current Implementation) ===
+internalResponse exists: true
+internalResponse.usage exists: true
+promptTokens: 0
+completionTokens: 0
+❌ Token extraction FAILED - got 0 instead of 161/61
+
+stdout | src/server/module-gateway/controllers/__tests__/glm-token-zero-bug.test.ts > GLM Token Zero Bug - Root Cause Analysis > Root Cause: transpile() returns wrong format > Direct converter call returns Internal Format (camelCase)
+
+=== convertResponseToInternal() Result ===
+Response usage: { promptTokens: 161, completionTokens: 61, totalTokens: 222 }
+✅ convertResponseToInternal() returns Internal Format (camelCase)
+✅ Field names: promptTokens, completionTokens
+
+stdout | src/server/module-gateway/controllers/__tests__/glm-token-zero-bug.test.ts > GLM Token Zero Bug - Root Cause Analysis > Root Cause: transpile() returns wrong format > Gateway can extract tokens from convertResponseToInternal() result
+
+=== Gateway Token Extraction (Correct Implementation) ===
+internalResponse exists: true
+internalResponse.usage exists: true
+promptTokens: 161
+completionTokens: 61
+✅ Token extraction SUCCESS - got 161/61 as expected
+
+stdout | src/server/module-gateway/controllers/__tests__/glm-token-zero-bug.test.ts > GLM Token Zero Bug - Root Cause Analysis > Solution Comparison > Solution 1: Use convertResponseToInternal() directly (RECOMMENDED)
+
+✅ Solution 1: Direct converter call
+✅ Pros: Clean, efficient, follows architecture
+✅ Cons: None
+
+stdout | src/server/module-gateway/controllers/__tests__/glm-token-zero-bug.test.ts > GLM Token Zero Bug - Root Cause Analysis > Solution Comparison > Solution 2: Defensive fallback in gateway controller
+
+⚠️  Solution 2: Defensive fallback
+⚠️  Pros: Works with current code
+⚠️  Cons: Hack, violates architecture principles
+
+stdout | src/server/module-gateway/controllers/__tests__/glm-token-zero-bug.test.ts > GLM Token Zero Bug - Root Cause Analysis > Solution Comparison > Solution 3: Double transpile (NOT RECOMMENDED)
+
+❌ Solution 3: Double transpile
+❌ Pros: None
+❌ Cons: Does not work, wasteful, confusing
+
+stdout | src/server/module-gateway/controllers/__tests__/glm-token-zero-bug.test.ts > GLM Token Zero Bug - Root Cause Analysis > Impact Analysis > Current implementation affects all GLM requests
+
+=== Impact Analysis ===
+Affected vendors:
+  - GLM (all models)
+  - Any vendor using OpenAI format with transpile()
+
+Affected data:
+  - promptTokens stored as 0 in database
+  - completionTokens stored as 0 in database
+  - cachedTokens may also be affected
+
+User impact:
+  - Incorrect token usage statistics
+  - Billing calculations may be wrong
+  - Analytics data is corrupted
+
+stdout | src/server/module-gateway/controllers/__tests__/glm-token-zero-bug.test.ts > GLM Token Zero Bug - Root Cause Analysis > Impact Analysis > Verify fix does not break other vendors
+
+✅ Fix does not break standard OpenAI responses
+
+ ✓ src/server/module-gateway/controllers/__tests__/glm-token-zero-bug.test.ts (9 tests) 4ms
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-3.3-concurrent-streaming.test.ts > Scenario 3.3: Anthropic → Anthropic → Anthropic (并发流式) > Bug 复现: 并发流式请求工具调用采集 > 当两个 Anthropic 流式请求并发时，应该正确采集各自的工具调用
+
+=== 并发流式请求测试 ===
+Stream A:
+  - tool_call id: toolu_A123
+  - accumulated args: {"city":"Tokyo"}
+Stream B:
+  - tool_call id: toolu_B456
+  - accumulated args: {"timezone":"UTC"}
+
+✅ 两个流都正确采集（单线程顺序处理）
+   ⚠️  注意: JavaScript 单线程顺序执行可能无法完全复现并发 bug
+   真实的并发场景需要使用 Promise.all 或多个网络请求
+
+stdout | src/server/module-gateway/__tests__/multi-layer-validation/scenario-3.3-concurrent-streaming.test.ts > Scenario 3.3: Anthropic → Anthropic → Anthropic (并发流式) > Bug 复现: 并发流式请求工具调用采集 > 应该正确识别并报告 bug 根本原因
+
+=== Bug 根本原因分析 ===
+1. protocol-transpiler-singleton.ts 创建单个 AnthropicConverter 实例
+2. AnthropicConverter.streamState 是实例属性（所有请求共享）
+3. 代码假设只有一个流: for (const [id, s] of this.streamState.entries()) { break; }
+4. 并发请求时，Stream A 可能获取 Stream B 的状态
+5. pendingToolCalls.get(index) 查找失败 → 工具调用未累积
+
+修复方案:
+Option 1: 使用复合 key (messageId + unique stream ID)
+Option 2: 将 streamState 作为转换上下文传递
+Option 3: 为每个流创建独立的 Converter 实例
+
+ ✓ src/server/module-gateway/__tests__/multi-layer-validation/scenario-3.3-concurrent-streaming.test.ts (2 tests) 8ms
+stdout | src/server/module-gateway/controllers/__tests__/glm-snake-case-output.test.ts > GLM 响应 - 最终输出 snake_case 验证 > 应该确保最终响应（SSE 和非 SSE）完全没有驼峰字段
+
+📋 Step 1: GLM 原始响应（包含驼峰）
+{
+  "id": "msg_123",
+  "object": "chat.completion",
+  "created": 1234567890,
+  "model": "glm-4",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "1 + 1 = 2",
+        "toolCalls": [
+          {
+            "id": "call_123",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": "{\"city\": \"Beijing\"}"
+            }
+          }
+        ]
+      },
+      "finishReason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "promptTokens": 10,
+    "completionTokens": 20,
+    "totalTokens": 30,
+    "reasoningTokens": 5,
+    "cachedTokens": 2
+  }
+}
+
+📋 Step 2: Internal Format（应该是驼峰）
+{
+  "id": "msg_123",
+  "object": "chat.completion",
+  "created": 1234567890,
+  "model": "glm-4",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "1 + 1 = 2",
+        "toolCalls": [
+          {
+            "id": "call_123",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": "{\"city\": \"Beijing\"}"
+            }
+          }
+        ]
+      },
+      "finishReason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "promptTokens": 10,
+    "completionTokens": 20,
+    "totalTokens": 30,
+    "reasoningTokens": 5,
+    "cachedTokens": 2
+  }
+}
+
+📋 Step 3: 最终响应（应该是 snake_case）
+{
+  "id": "msg_123",
+  "object": "chat.completion",
+  "created": 1234567890,
+  "model": "glm-4",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "1 + 1 = 2",
+        "tool_calls": [
+          {
+            "id": "call_123",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": "{\"city\": \"Beijing\"}"
+            },
+            "index": 0
+          }
+        ]
+      },
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 10,
+    "completion_tokens": 20,
+    "total_tokens": 30,
+    "reasoning_tokens": 5,
+    "cached_tokens": 2
+  }
+}
+
+🔍 最终响应中的驼峰字段检查:
+✅ 没有发现驼峰字段！
+
+stdout | src/server/module-gateway/controllers/__tests__/glm-snake-case-output.test.ts > GLM 响应 - 最终输出 snake_case 验证 > 流式响应 chunk 也应该转换为 snake_case
+
+📋 Internal Stream Chunk（包含驼峰）
+{
+  "id": "chatcmpl_123",
+  "object": "chat.completion.chunk",
+  "created": 1234567890,
+  "model": "glm-4",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {
+        "content": "Hello",
+        "toolCalls": [
+          {
+            "index": 0,
+            "id": "call_123",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": ""
+            }
+          }
+        ]
+      },
+      "finishReason": null
+    }
+  ]
+}
+
+📋 SSE 格式输出:
+data: {"id":"chatcmpl_123","object":"chat.completion.chunk","created":1234567890,"model":"glm-4","choices":[{"index":0,"delta":{"content":"Hello","tool_calls":[{"index":0,"id":"call_123","type":"function","function":{"name":"get_weather","arguments":""}}]},"finish_reason":null}]}
+
+
+
+📋 解析后的 SSE chunk:
+{
+  "id": "chatcmpl_123",
+  "object": "chat.completion.chunk",
+  "created": 1234567890,
+  "model": "glm-4",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {
+        "content": "Hello",
+        "tool_calls": [
+          {
+            "index": 0,
+            "id": "call_123",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": ""
+            }
+          }
+        ]
+      },
+      "finish_reason": null
+    }
+  ]
+}
+
+🔍 SSE chunk 中的驼峰字段检查:
+✅ 没有发现驼峰字段！
+
+ ✓ src/server/module-gateway/controllers/__tests__/glm-snake-case-output.test.ts (2 tests) 6ms
+stdout | src/server/module-protocol-transpiler/converters/__tests__/responses.streaming.real-data.test.ts > ResponsesConverter - Real Data Integration > should handle real Anthropic SSE stream correctly
+
+message_start:
+  Internal: {"id":"msg_123","object":"chat.completion.chunk","created":1782960497,"model":"glm-4-air","choices":[{"index":0,"delta":{"role":"assistant"},"finishReason":null}]}
+  Responses SSE: event: response.created
+data: {"type":"response.created","response":{"id":"msg_123","status":"in_progress","created_at":1782960497,"model":"glm-4-air"}}
+
+
+  isEmptyInternal: false
+  shouldProduceOutput: true
+
+ping:
+  Internal: {"__empty":true}
+  Responses SSE: (empty string)
+  isEmptyInternal: true
+  shouldProduceOutput: false
+
+content_block_start:
+  Internal: {"__empty":true}
+  Responses SSE: (empty string)
+  isEmptyInternal: true
+  shouldProduceOutput: false
+
+content_block_delta:
+  Internal: {"id":"msg_123","object":"chat.completion.chunk","created":1782960497,"model":"glm-4-air","choices":[{"index":0,"delta":{"content":"你好"},"finishReason":null}]}
+  Responses SSE: event: response.output_text.delta
+data: {"type":"response.output_text.delta","delta":{"type":"content","content":"你好"}}
+
+
+  isEmptyInternal: false
+  shouldProduceOutput: true
+
+content_block_stop:
+  Internal: {"__empty":true}
+  Responses SSE: (empty string)
+  isEmptyInternal: true
+  shouldProduceOutput: false
+
+message_delta:
+  Internal: {"id":"msg_123","object":"chat.completion.chunk","created":1782960497,"model":"glm-4-air","choices":[{"index":0,"delta":{},"finishReason":"stop"}]}
+  Responses SSE: event: response.done
+data: {"type":"response.done","response":{"id":"msg_123","status":"completed","created_at":1782960497,"model":"glm-4-air"}}
+
+
+  isEmptyInternal: false
+  shouldProduceOutput: true
+
+message_stop:
+  Internal: {"__empty":true}
+  Responses SSE: (empty string)
+  isEmptyInternal: true
+  shouldProduceOutput: false
+
+=== Summary ===
+Total events: 7
+Non-empty internal chunks: 3
+Empty internal chunks: 4
+Events producing output: 3
+Events NOT producing output: 4
+
+Empty internal chunks analysis:
+  ping: (empty - correct!)
+  content_block_start: (empty - correct!)
+  content_block_stop: (empty - correct!)
+  message_stop: (empty - correct!)
+
+Non-empty internal chunks analysis:
+  message_start: event: response.created
+data: {"type":"response.created","response":{"id":"msg_123","status":"in_progress","created_at":1782960497,"model":"glm-4-air"}}
+
+
+  content_block_delta: event: response.output_text.delta
+data: {"type":"response.output_text.delta","delta":{"type":"content","content":"你好"}}
+
+
+  message_delta: event: response.done
+data: {"type":"response.done","response":{"id":"msg_123","status":"completed","created_at":1782960497,"model":"glm-4-air"}}
+
+
+
+ ✓ src/server/module-protocol-transpiler/converters/__tests__/responses.streaming.real-data.test.ts (1 test) 9ms
+ ✓ src/server/module-protocol-transpiler/converters/__tests__/anthropic-issue-c9d389.test.ts (5 tests) 2ms
+stdout | src/server/module-gateway/controllers/__tests__/glm-native-format.test.ts > GLM Native Format Conversion Issue > Problem: GLM native format is changed > should detect that GLM uses Anthropic-style format
+
+=== GLM Native Format ===
+Has content array: true
+Content type: tool_use
+Has tool_calls: false
+
+stdout | src/server/module-gateway/controllers/__tests__/glm-native-format.test.ts > GLM Native Format Conversion Issue > Root cause analysis > OpenAI converter always outputs OpenAI format, not original format
+
+=== OpenAI Converter Output Format ===
+Response structure: {
+  "id": "test",
+  "object": "chat.completion",
+  "created": 1782960497125,
+  "model": "glm-4.7",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": null,
+        "tool_calls": [
+          {
+            "id": "call_123",
+            "type": "function",
+            "index": 0,
+            "function": {
+              "name": "get_weather",
+              "arguments": "{\"city\":\"San Francisco\"}"
+            }
+          }
+        ]
+      },
+      "finish_reason": "tool_calls"
+    }
+  ]
+}
+
+❌ OpenAI converter cannot preserve GLM native format
+❌ It always converts to OpenAI standard format
+
+stdout | src/server/module-gateway/controllers/__tests__/glm-native-format.test.ts > GLM Native Format Conversion Issue > Impact on different request formats > User sends Anthropic format request, gets OpenAI format response
+
+=== Scenario: Mixed Format Conversion ===
+Step 1: User sends request with content[tool_use]
+Step 2: Gateway converts to Internal Format (toolCalls)
+Step 3: Gateway sends to upstream (format depends on vendor)
+Step 4: GLM returns content[tool_use] (native format)
+Step 5: OpenAI converter converts to toolCalls (Internal Format)
+Step 6: OpenAI converter converts to tool_calls (API format)
+
+❌ Request format: content[tool_use]
+❌ Response format: tool_calls
+❌ Format mismatch!
+
+stdout | src/server/module-gateway/controllers/__tests__/glm-native-format.test.ts > GLM Native Format Conversion Issue > Potential solutions > Solution 1: Use Anthropic converter for GLM native format
+
+✅ Solution 1: Create GLM converter that handles both formats
+✅ - Detect input format (content array vs tool_calls)
+✅ - Preserve format when converting
+✅ - Convert between formats when needed
+
+stdout | src/server/module-gateway/controllers/__tests__/glm-native-format.test.ts > GLM Native Format Conversion Issue > Potential solutions > Solution 2: Always use OpenAI format for GLM
+
+⚠️  Solution 2: Force GLM to use OpenAI-compatible endpoint
+⚠️  - Change API endpoint to OpenAI format
+⚠️  - Consistent format, but loses native capabilities
+
+stdout | src/server/module-gateway/controllers/__tests__/glm-native-format.test.ts > GLM Native Format Conversion Issue > Potential solutions > Solution 3: Format detection in converter
+
+⚠️  Solution 3: Enhance OpenAI converter to detect GLM format
+⚠️  - Check if response has content array
+⚠️  - Preserve GLM format in convertResponseFromInternal
+⚠️  - More complex, but maintains compatibility
+
+ ✓ src/server/module-gateway/controllers/__tests__/glm-native-format.test.ts (7 tests | 1 skipped) 4ms
+stdout | src/server/module-protocol-transpiler/utils/__tests__/camelcase-checker.test.ts > CamelCase 检查器 - 验证 normalizeToSnakeCase > 应该完全转换所有驼峰字段为 snake_case
+📋 转换后的响应:
+{
+  "id": "msg_123",
+  "object": "chat.completion",
+  "created": 1234567890,
+  "model": "glm-4",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "1 + 1 = 2",
+        "tool_calls": [
+          {
+            "id": "call_123",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": "{\"city\": \"Beijing\"}"
+            }
+          }
+        ]
+      },
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 10,
+    "completion_tokens": 20,
+    "total_tokens": 30,
+    "reasoning_tokens": 5,
+    "cached_tokens": 2
+  }
+}
+
+🔍 发现的驼峰字段:
+✅ 没有发现驼峰字段！
+
+ ✓ src/server/module-protocol-transpiler/utils/__tests__/camelcase-checker.test.ts (2 tests) 3ms
+ ✓ src/server/module-protocol-transpiler/core/__tests__/glm-alias.test.ts (2 tests) 2ms
+ ✓ src/server/module-gateway/utils/__tests__/format-inferer.test.ts (12 tests) 3ms
+ ✓ src/server/module-gateway/utils/__tests__/format-inferer.integration.test.ts (9 tests) 2ms
+ ✓ src/server/module-protocol-transpiler/converters/__tests__/image.e2e.test.ts (14 tests | 12 skipped) 1ms
+ ↓ src/server/module-protocol-transpiler/converters/__tests__/image.integration.test.ts (6 tests | 6 skipped)
+ ↓ src/client/components/playground/__tests__/RoutePlayground.test.tsx (5 tests | 5 skipped)
+ ↓ src/client/components/playground/__tests__/RoutePlayground.format.test.tsx (6 tests | 6 skipped)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/server/shared/__tests__/database-init.integration.test.ts [ src/server/shared/__tests__/database-init.integration.test.ts ]
+Error: database is locked
+ ❯ src/server/shared/database.ts:9:8
+      7| 
+      8| sqlite.exec('PRAGMA foreign_keys = ON');
+      9| sqlite.exec('PRAGMA journal_mode = WAL');
+       |        ^
+     10| 
+     11| export async function initDatabase() {
+ ❯ src/server/shared/__tests__/database-init.integration.test.ts:1:1
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 72 passed | 3 skipped (76)
+      Tests  1005 passed | 31 skipped (1036)
+   Start at  10:48:11
+   Duration  5.99s (transform 3.61s, setup 0ms, import 6.27s, tests 1.42s, environment 42.87s)
+

@@ -1,0 +1,71 @@
+{
+  "request": {
+    "model": "mimo-v2.5",
+    "messages": [
+      {
+        "role": "system",
+        "content": "Reply very briefly."
+      },
+      {
+        "role": "user",
+        "content": "Introduce yourself in one sentence."
+      }
+    ],
+    "max_tokens": 50
+  },
+  "response": {
+    "id": "gen-1782965247-IpBezqWLK8eiJVJMYZpK",
+    "object": "chat.completion",
+    "created": 1782965247,
+    "model": "xiaomi/mimo-v2.5-20260422",
+    "provider": "Xiaomi",
+    "system_fingerprint": null,
+    "service_tier": null,
+    "choices": [
+      {
+        "index": 0,
+        "logprobs": null,
+        "finish_reason": "length",
+        "native_finish_reason": "length",
+        "message": {
+          "role": "assistant",
+          "content": null,
+          "refusal": null,
+          "reasoning": "Hmm, the user wants a one-sentence self-introduction. This is a straightforward request with clear constraints. \n\nThe key points to cover are my identity as an AI assistant and my core function. I should keep it concise while being informative.",
+          "reasoning_details": [
+            {
+              "type": "reasoning.text",
+              "text": "Hmm, the user wants a one-sentence self-introduction. This is a straightforward request with clear constraints. \n\nThe key points to cover are my identity as an AI assistant and my core function. I should keep it concise while being informative.",
+              "format": "unknown",
+              "index": 0
+            }
+          ]
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 22,
+      "completion_tokens": 50,
+      "total_tokens": 72,
+      "cost": 0,
+      "is_byok": true,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.00001708,
+        "upstream_inference_prompt_cost": 0.00000308,
+        "upstream_inference_completions_cost": 0.000014
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 49,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    },
+    "cost": "0"
+  }
+}

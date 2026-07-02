@@ -1,6 +1,6 @@
 import { queryAll } from '@server/shared/database';
 import { inferFormatFromVendorTemplate, type VendorTemplateForInference } from '../utils/format-inferer';
-import { ApiFormat } from '../../module-protocol-transpiler';
+import { ApiFormat } from '../../../shared/types';
 import { parseWildcardPattern, matchesWildcardPattern } from '@client/utils/wildcardUtils';
 import type { LoadBalancerMember, HealthStatus } from './load-balancer.service';
 

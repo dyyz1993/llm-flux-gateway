@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { authMiddleware } from '@server/shared/middleware/auth';
-import gatewayController from '../controllers/gateway-controller';
+import gatewayController from '../controllers/gateway-controller.pi';
 
 const router = new Hono();
 

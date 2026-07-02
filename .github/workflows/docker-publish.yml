@@ -3,6 +3,8 @@ name: Docker Build and Publish
 on:
   push:
     branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
   workflow_dispatch:
 
 env:
@@ -10,7 +12,32 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run unit tests (Faux Provider, no API key needed)
+        run: npm test
+
+      - name: Run format validators
+        run: npx tsx scripts/run-format-validation.ts
+
+      - name: Run test harness (offline mode)
+        run: npx tsx scripts/test-harness.ts --validate
+
   build:
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read
