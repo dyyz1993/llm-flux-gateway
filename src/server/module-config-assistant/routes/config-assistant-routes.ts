@@ -126,28 +126,59 @@ const agentTools: AgentTool[] = [
 // 获取模型（优先用已注册的 provider，否则用 pi-ai 内置）
 // ============================================================
 
-async function getModel(): Promise<{ model: Model<Api>; apiKey?: string } | null> {
+async function getModel(requestedModel?: string): Promise<{ model: Model<Api>; apiKey?: string } | null> {
   try {
-    // 先从已注册的 provider 找
-    const { getModelsInstance } = await import('../../pi-providers/index');
-    const catalog = getModelsInstance();
-    let m = catalog.getModel('opencode-go', 'deepseek-v4-flash');
+    // 如果指定了模型，按模型查找
+    if (requestedModel) {
+      const { builtinModels } = await import('@earendil-works/pi-ai/providers/all');
+      const builtin = builtinModels();
+      // 在所有 provider 中查找指定模型
+      for (const p of builtin.getProviders()) {
+        const m = builtin.getModel(p.id, requestedModel);
+        if (m) {
+          const { queryFirst } = await import('../../shared/database');
+          const asset = queryFirst('SELECT api_key FROM assets WHERE vendor_id = ? LIMIT 1', [p.id]);
+          return { model: m, apiKey: asset?.api_key };
+        }
+      }
+    }
 
-    if (m) return { model: m };
-
-    // 没有注册的 → 用 pi-ai 内置，从 DB 拿 key
+    // 默认：找 opencode-go → deepseek-v4-flash
     const { builtinModels } = await import('@earendil-works/pi-ai/providers/all');
     const builtin = builtinModels();
-    m = builtin.getModel('opencode-go', 'deepseek-v4-flash')
+    let m = builtin.getModel('opencode-go', 'deepseek-v4-flash')
       || builtin.getModels().find(x => x.reasoning);
 
     if (!m) return null;
 
-    // 从 DB 找对应 key
     const { queryFirst } = await import('../../shared/database');
     const asset = queryFirst('SELECT api_key FROM assets WHERE vendor_id = ? LIMIT 1', [m.provider]);
     return { model: m, apiKey: asset?.api_key };
   } catch { return null; }
+}
+
+/**
+ * 获取可用的模型列表（有 API Key 的）
+ */
+async function getAvailableModels(): Promise<{ id: string; name: string; provider: string }[]> {
+  try {
+    const { builtinModels } = await import('@earendil-works/pi-ai/providers/all');
+    const catalog = builtinModels();
+    const { queryAll } = await import('../../shared/database');
+    const assets = queryAll('SELECT DISTINCT vendor_id FROM assets WHERE status = ?', ['active']) as any[];
+
+    const vendorIds = new Set(assets.map((a: any) => a.vendor_id));
+    const result: { id: string; name: string; provider: string }[] = [];
+
+    for (const vid of vendorIds) {
+      const models = catalog.getModels(vid);
+      for (const m of models.slice(0, 5)) {
+        result.push({ id: m.id, name: m.name, provider: vid });
+      }
+    }
+
+    return result;
+  } catch { return []; }
 }
 
 // ============================================================
@@ -155,11 +186,11 @@ async function getModel(): Promise<{ model: Model<Api>; apiKey?: string } | null
 // ============================================================
 
 router.post('/chat', async (c) => {
-  const { message, history } = await c.req.json();
+  const { message, history, modelId } = await c.req.json();
   if (!message) return c.json({ reply: '请说点什么。' });
 
-  // 获取模型
-  const modelInfo = await getModel();
+  // 获取模型（支持指定模型）
+  const modelInfo = await getModel(modelId);
   if (!modelInfo) {
     // 没有 AI 模型可用 → 规则降级
     return c.json({ reply: await fallbackReply(message) });
@@ -221,6 +252,12 @@ router.post('/chat', async (c) => {
   } catch (e: any) {
     return c.json({ reply: `❌ ${e.message}` });
   }
+});
+
+// 获取可用模型列表
+router.get('/models', async (c) => {
+  const models = await getAvailableModels();
+  return c.json({ data: models });
 });
 
 // ============================================================

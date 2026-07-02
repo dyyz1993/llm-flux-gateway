@@ -5,12 +5,18 @@
  * 支持快速配置、查看、备份、恢复等操作。
  */
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, AlertCircle, CheckCircle, HelpCircle, Database, Shield, Route, Key } from 'lucide-react';
+import { Send, Bot, User, Settings } from 'lucide-react';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
   data?: any;
+}
+
+interface ModelOption {
+  id: string;
+  name: string;
+  provider: string;
 }
 
 const QUICK_ACTIONS = [
@@ -27,7 +33,20 @@ export function ConfigAssistant() {
   }]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [models, setModels] = useState<ModelOption[]>([]);
+  const [selectedModel, setSelectedModel] = useState('');
   const chatEnd = useRef<HTMLDivElement>(null);
+
+  // 加载可用模型
+  useEffect(() => {
+    fetch('/api/config-assistant/models')
+      .then(r => r.json())
+      .then(d => {
+        setModels(d.data || []);
+        if (d.data?.length > 0) setSelectedModel(d.data[0].id);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     chatEnd.current?.scrollIntoView({ behavior: 'smooth' });
@@ -48,6 +67,7 @@ export function ConfigAssistant() {
         body: JSON.stringify({
           message: content,
           history: messages.map(m => ({ role: m.role, content: m.content })),
+          modelId: selectedModel || undefined,
         }),
       });
       const data = await res.json();
@@ -97,6 +117,10 @@ export function ConfigAssistant() {
         .ca-input-area input:focus { border-color: #2563eb; }
         .ca-input-area button { padding: 10px 18px; border: none; border-radius: 8px; background: #2563eb; color: #fff; cursor: pointer; }
         .ca-input-area button:disabled { opacity: 0.5; }
+        .ca-model-selector { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+        .ca-model-selector label { color: #888; font-size: 13px; white-space: nowrap; }
+        .ca-model-selector select { flex: 1; padding: 6px 10px; border: 1px solid #333; border-radius: 6px; background: #111; color: #ccc; font-size: 13px; outline: none; max-width: 300px; }
+        .ca-model-selector select:focus { border-color: #2563eb; }
         .ca-loading { display: flex; align-items: center; gap: 8px; color: #888; font-size: 13px; padding: 8px 0; }
         .ca-loading .dots { display: flex; gap: 3px; }
         .ca-loading .dot { width: 6px; height: 6px; border-radius: 50%; background: #555; animation: pulse 1s infinite; }
@@ -115,6 +139,17 @@ export function ConfigAssistant() {
           <button key={a.label} onClick={() => sendMessage(a.message)}>{a.label}</button>
         ))}
       </div>
+
+      {models.length > 0 && (
+        <div className="ca-model-selector">
+          <label><Settings size={14} /> 模型</label>
+          <select value={selectedModel} onChange={e => setSelectedModel(e.target.value)}>
+            {models.map(m => (
+              <option key={m.id} value={m.id}>{m.name} ({m.provider})</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="ca-chat">
         {messages.map((msg, i) => (
