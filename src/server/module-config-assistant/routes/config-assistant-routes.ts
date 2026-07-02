@@ -68,9 +68,28 @@ const AGENT_SYSTEM_PROMPT = `你是网关 LLM Flux Gateway 的配置助手。你
    - 会经过: 平台 Key 鉴权 → 路由匹配 → 资产 Key 调上游
    - 需要平台 Key 已经绑定了路由
 
+## 快捷接入流程（用户给一个厂商名+Key，AI 应该自动完成以下步骤）
+
+当用户说"帮我接入 XXX，key=sk-xxx"时，按顺序执行：
+
+第1步: 调用 list_vendors 检查厂商是否已存在（如果已存在则跳过 1）
+第2步: 调用 quick_setup(providerId, apiKey) → 添加厂商+资产+路由
+第3步: 调用 add_platform_key(name, key) → 创建一个平台 Key
+       - key 值用 sk-flux-{随机6位} 格式
+       - 名称用 "{厂商名} 测试 Key"
+第4步: 调用 run_bash 测试连接:
+       curl -s -X POST http://localhost:3001/v1/chat/completions \
+         -H "Content-Type: application/json" \
+         -H "Authorization: Bearer {刚创建的平台Key}" \
+         -d '{"model":"{路由匹配的模型名}","messages":[{"role":"user","content":"hi"}],"max_tokens":10}'
+第5步: 给用户返回:
+       - 配置成功摘要（厂商/模型/路由名）
+       - 测试结果（通/不通）
+       - 可直接用的 curl 命令
+
 ## 常用操作
 
-- quick_setup: 一键添加厂商+资产+路由，适合快速接入新厂商
+- quick_setup: 一键添加厂商+资产+路由
 - 添加平台 Key 后需要通过 quick_setup 或手动配置路由才能使用
 - 添加资产前必须先有厂商
 - 操作前会自动备份，失败了可以 restore_config 恢复到之前的状态`;
@@ -237,10 +256,10 @@ const agentTools: AgentTool[] = [
   {
     name: 'add_platform_key',
     label: '添加平台 Key',
-    description: '添加客户端调用网关时使用的认证 Key',
+    description: '添加客户端调用网关时使用的认证 Key。Key 值建议用 sk-flux- 开头加随机字符，如 sk-flux-a1b2c3d4。',
     parameters: Type.Object({
-      name: Type.String({ description: 'Key 名称' }),
-      key: Type.String({ description: 'Key 字符串，建议以 sk-flux- 开头' }),
+      name: Type.String({ description: 'Key 名称，建议包含用途说明，如 "opencode-go 测试 Key"' }),
+      key: Type.String({ description: 'Key 值，建议格式 sk-flux-{随机字符}' }),
     }),
     execute: async (_id, args) => {
       const { queryRun } = await import('../../shared/database');
