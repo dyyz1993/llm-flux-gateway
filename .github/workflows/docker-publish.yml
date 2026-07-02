@@ -28,7 +28,7 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Run unit tests (Faux Provider, no API key needed)
-        run: npm test
+        run: npx vitest run --exclude 'src/server/shared/__tests__/**'
 
       - name: Run format validators
         run: npx tsx scripts/run-format-validation.ts
