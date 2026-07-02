@@ -44,19 +44,25 @@ export function ConfigAssistant() {
   const [selectedModel, setSelectedModel] = useState('');
   const [providers, setProviders] = useState<ProviderOption[]>([]);
   const [selectedProvider, setSelectedProvider] = useState('');
+  const [platformKeys, setPlatformKeys] = useState<{ id: string; name: string; keyPrefix: string }[]>([]);
+  const [selectedPlatformKey, setSelectedPlatformKey] = useState('');
   const [mode, setMode] = useState<'direct' | 'route'>('direct');
   const chatEnd = useRef<HTMLDivElement>(null);
 
-  // 加载可用模型和供应商
+  // 加载可用模型、供应商、平台 Key
   useEffect(() => {
     Promise.all([
       fetch('/api/config-assistant/models').then(r => r.json()),
       fetch('/api/config-assistant/providers').then(r => r.json()),
-    ]).then(([modelsData, providersData]) => {
+      fetch('/api/keys').then(r => r.json()).then(d => d.data || []).catch(() => []),
+    ]).then(([modelsData, providersData, keysData]) => {
       setModels(modelsData.data || []);
       if (modelsData.data?.length > 0) setSelectedModel(modelsData.data[0].id);
       setProviders(providersData.data || []);
       if (providersData.data?.length > 0) setSelectedProvider(providersData.data[0].id);
+      setPlatformKeys(keysData);
+      const activeKey = keysData.find((k: any) => k.status === 'active');
+      if (activeKey) setSelectedPlatformKey(activeKey.id);
     }).catch(() => {});
   }, []);
 
@@ -79,9 +85,15 @@ export function ConfigAssistant() {
         body: JSON.stringify({
           message: content,
           history: messages.map(m => ({ role: m.role, content: m.content })),
-          modelId: selectedModel || undefined,
-          providerId: selectedProvider || undefined,
           mode,
+          // 直连模式：传 modelId + providerId（上游 Key）
+          ...(mode === 'direct' ? {
+            modelId: selectedModel || undefined,
+            providerId: selectedProvider || undefined,
+          } : {
+            // 路由模式：传 keyId（平台 Key）
+            keyId: selectedPlatformKey || undefined,
+          }),
         }),
       });
       const data = await res.json();
@@ -209,11 +221,32 @@ export function ConfigAssistant() {
         >
           {mode === 'direct' ? '🔌 直连' : '🛣️ 路由'}
         </button>
-        {models.length > 0 && (
-          <select value={selectedModel} onChange={e => setSelectedModel(e.target.value)}
+        {mode === 'direct' ? (
+          // 直连模式：选上游 Key（资产）+ 模型
+          <>
+            {providers.length > 0 && (
+              <select value={selectedProvider} onChange={e => setSelectedProvider(e.target.value)}
+                style={{ padding: '6px 10px', border: '1px solid #333', borderRadius: 6, background: '#111', color: '#ccc', fontSize: 13, outline: 'none', maxWidth: 160 }}>
+                {providers.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            )}
+            {models.length > 0 && (
+              <select value={selectedModel} onChange={e => setSelectedModel(e.target.value)}
+                style={{ flex: 1, padding: '6px 10px', border: '1px solid #333', borderRadius: 6, background: '#111', color: '#ccc', fontSize: 13, outline: 'none' }}>
+                {models.map(m => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+              </select>
+            )}
+          </>
+        ) : (
+          // 路由模式：选平台 Key
+          <select value={selectedPlatformKey} onChange={e => setSelectedPlatformKey(e.target.value)}
             style={{ flex: 1, padding: '6px 10px', border: '1px solid #333', borderRadius: 6, background: '#111', color: '#ccc', fontSize: 13, outline: 'none' }}>
-            {models.map(m => (
-              <option key={m.id} value={m.id}>{m.name} ({m.provider})</option>
+            {platformKeys.map((k: any) => (
+              <option key={k.id} value={k.id}>{k.name} ({(k.key_token||'').slice(0,16)}...)</option>
             ))}
           </select>
         )}

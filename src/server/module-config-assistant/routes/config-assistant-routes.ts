@@ -383,11 +383,47 @@ async function getAvailableModels(): Promise<{ id: string; name: string; provide
 // ============================================================
 
 router.post('/chat', async (c) => {
-  const { message, history, modelId, providerId, mode } = await c.req.json();
+  const { message, history, modelId, providerId, keyId, mode } = await c.req.json();
   if (!message) return c.json({ reply: '请说点什么。' });
 
-  // 获取模型（支持直连/路由模式）
-  const modelInfo = await getModel(modelId, providerId, mode || 'direct');
+  let modelInfo: { model: Model<Api>; apiKey?: string } | null = null;
+
+  if (mode === 'route' && keyId) {
+    // 路由模式 + 平台 Key：走网关路由
+    const { getModelsInstance, registerPiRoute, mapRequestFormatToApi } = await import('../../pi-providers/index');
+    const { queryFirst } = await import('../../shared/database');
+    // 找到平台 Key 关联的路由
+    const row = queryFirst(`
+      SELECT r.id, r.name, v.base_url, v.endpoint, a.api_key,
+             r.overrides, r.request_format
+      FROM api_key_routes akr
+      JOIN routes r ON akr.route_id = r.id
+      JOIN assets a ON r.asset_id = a.id
+      JOIN vendor_templates v ON a.vendor_id = v.id
+      WHERE akr.api_key_id = ? AND r.is_active = 1
+      ORDER BY akr.priority DESC
+      LIMIT 1
+    `, [keyId]) as any;
+
+    if (row) {
+      const overrides = JSON.parse(row.overrides || '[]');
+      const modelOverride = overrides.find((o: any) => o.field === 'model');
+      const upstreamModel = modelOverride?.rewriteValue || row.name;
+      const apiType = mapRequestFormatToApi(row.request_format || 'openai');
+      const m = await registerPiRoute({
+        id: row.id, name: row.name, baseUrl: row.base_url,
+        apiType: apiType as any, upstreamModel, apiKey: row.api_key,
+        responseFormat: 'openai',
+      });
+      modelInfo = { model: m, apiKey: row.api_key };
+    }
+    if (!modelInfo) {
+      return c.json({ reply: '❌ 该平台 Key 没有关联任何活跃路由' });
+    }
+  } else {
+    // 直连模式（默认）
+    modelInfo = await getModel(modelId, providerId);
+  }
   if (!modelInfo) {
     // 没有 AI 模型可用 → 规则降级
     return c.json({ reply: await fallbackReply(message) });
