@@ -6,6 +6,7 @@ import {
   Wallet,
   Server,
   Key,
+  Bot,
   Settings,
   Hexagon,
   LogOut,
@@ -26,6 +27,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, o
     { id: 'assets', label: 'Assets', icon: Wallet },
     { id: 'vendors', label: 'Vendors', icon: Server },
     { id: 'keys', label: 'Access Keys', icon: Key },
+    { id: 'config-assistant', label: 'Config AI', icon: Bot },
     { id: 'settings', label: 'System', icon: Settings },
   ];
 

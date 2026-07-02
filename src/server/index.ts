@@ -13,6 +13,7 @@ import vendorsRouter from './module-vendors/routes/vendors-routes';
 import logsRouter from './module-gateway/routes/logs-routes';
 import logsStreamRouter from './module-gateway/routes/logs-stream-routes';
 import analyticsRouter from './module-gateway/routes/analytics-routes';
+import configAssistantRouter from './module-config-assistant/routes/config-assistant-routes';
 import systemRouter from './module-system/main';
 import authRouter from './module-auth';
 import styleJumpRouter from './module-style-jump/routes/style-jump-routes';
@@ -100,6 +101,7 @@ app.route('/api/system', protectedSystemRouter);
 app.route('/api/logs/stream', protectedLogsStreamRouter);
 app.route('/api/logs', protectedLogsRouter);
 app.route('/api/analytics', protectedAnalyticsRouter);
+app.route('/api/config-assistant', configAssistantRouter);
 
 // Gateway proxy routes (OpenAI-compatible endpoints)
 // Mount gateway router at root - it handles /v1/* with auth middleware

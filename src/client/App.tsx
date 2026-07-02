@@ -10,6 +10,7 @@ import { AssetManager } from '@client/components/assets/AssetManager';
 import { VendorManager } from '@client/components/vendors/VendorManager';
 import { LogExplorer } from '@client/components/logs';
 import { SystemSettings } from '@client/components/system/SystemSettings';
+import { ConfigAssistant } from '@client/components/config-assistant/ConfigAssistant';
 import { isAuthenticated, logout } from '@client/services/adminApi';
 
 // Hash to view mapping
@@ -23,6 +24,7 @@ const hashToView: Record<string, string> = {
   '#/assets': 'assets',
   '#/vendors': 'vendors',
   '#/logs': 'logs',
+  '#/config-assistant': 'config-assistant',
   '#/system': 'system',
   '#/settings': 'system', // Alias for system
 };
@@ -107,6 +109,7 @@ function App() {
       case 'assets': return <AssetManager />;
       case 'vendors': return <VendorManager />;
       case 'logs': return <LogExplorer />;
+      case 'config-assistant': return <ConfigAssistant />;
       case 'system': return <SystemSettings />;
       default: return <div className="text-center text-gray-500 mt-20">View not implemented</div>;
     }
