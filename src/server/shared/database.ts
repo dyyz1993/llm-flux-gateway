@@ -5,8 +5,13 @@ const DATABASE_PATH = process.env.DATABASE_PATH || './data/gateway.db';
 
 export const sqlite = new DatabaseSync(DATABASE_PATH);
 
+// 性能优化 PRAGMA: 减少高并发下的锁冲突
 sqlite.exec('PRAGMA foreign_keys = ON');
 sqlite.exec('PRAGMA journal_mode = WAL');
+sqlite.exec('PRAGMA busy_timeout = 5000');   // 锁等待 5 秒，不立即报错
+sqlite.exec('PRAGMA synchronous = NORMAL');   // 减少写等待
+sqlite.exec('PRAGMA cache_size = -64000');    // 64MB 缓存
+sqlite.exec('PRAGMA temp_store = MEMORY');    // 临时表放内存
 
 export async function initDatabase() {
   sqlite.exec(`CREATE TABLE IF NOT EXISTS api_keys (
