@@ -92,9 +92,8 @@ vendors:
 
 
   - name: SiliconFlow 硅基流动
-    baseUrl: https://api.siliconflow.cn/v1  # 兼容OpenAI格式的基础URL
-    endpoint: /chat/completions  # OpenAI风格对话补全端点
-    iconUrl: https://image-clip.docker.19930810.xyz:8443/api/image?url=https%3A%2F%2Fsiliconflow.cn%2Flogo-new.svg&cx=0&cy=0&cw=59&ch=32  # 建议使用官方图标路径
+    baseUrl: https://api.siliconflow.cn/v1
+    endpoint: /chat/completions
     models:
       - deepseek-ai/DeepSeek-R1  
       
@@ -105,7 +104,6 @@ vendors:
   - name: Zhipu AI
     baseUrl: https://open.bigmodel.cn/api/paas/v4
     endpoint: /chat/completions
-    iconUrl: https://image-clip.docker.19930810.xyz:8443/api/image?id=38272329-0c4a-4681-a32e-dafcbaa3c292&cx=-9&cy=0&cw=64&ch=56&wt=%5Bpremium-crown%5D&wc=%23ffffff&wo=128&wx=7&wy=-1&ws=50
     models:
       - glm-4.6
       - glm-4.7
@@ -116,7 +114,6 @@ vendors:
   - name: Zhipu coding
     baseUrl: https://open.bigmodel.cn/api/coding/paas/v4
     endpoint: /chat/completions
-    iconUrl: https://image-clip.docker.19930810.xyz:8443/api/image?id=38272329-0c4a-4681-a32e-dafcbaa3c292&cx=-9&cy=0&cw=64&ch=56&wt=%5Bpremium-crown%5D&wc=%23ffffff&wo=128&wx=7&wy=-1&ws=50
     models:
       - glm-4.6
       - glm-4.7
@@ -126,17 +123,15 @@ vendors:
   - name: Zhipu coding anthropic
     baseUrl: https://open.bigmodel.cn/api/anthropic/v1
     endpoint: /messages
-    iconUrl: https://image-clip.docker.19930810.xyz:8443/api/image?id=38272329-0c4a-4681-a32e-dafcbaa3c292&cx=-9&cy=0&cw=64&ch=56&wt=%5Bpremium-crown%5D&wc=%23ffffff&wo=128&wx=7&wy=-1&ws=50
     models:
       - glm-4.6
       - glm-4.7
       - glm-4-flash
       - glm-4-plus
       - glm-4-air
-  - name: DeepSeek 深度求索  # 修正拼写错误，原"deepspeek"应为"DeepSeek"
-    baseUrl: https://api.deepseek.com/v1  # 兼容OpenAI格式的基础URL
+  - name: DeepSeek 深度求索
+    baseUrl: https://api.deepseek.com/v1
     endpoint: /chat/completions
-    iconUrl: https://image-clip.docker.19930810.xyz:8443/api/image?url=https%3A%2F%2Fcdn.deepseek.com%2Flogo.png%3Fx-image-process%3Dimage%252Fresize%252Cw_1920&cx=0&cy=0&cw=233&ch=165 # 建议使用官方图标路径
     models:
       - deepseek-chat  # DeepSeek-V3.2-Exp非思考模式，官方默认对话模型{insert\_element\_0\_}
       - deepseek-reasoner  # DeepSeek-V3.2-Exp思考模式，适合复杂推理{insert\_element\_1\_}
@@ -164,14 +159,5 @@ vendors:
       - kimi-k2.6
       - mimo-v2.5
       - mimo-v2.5-pro
-
-  - name: GLM Proxy
-    baseUrl: https://p.19930810.xyz:8443/k/glm/https://api.z.ai/api/coding/paas/v4
-    endpoint: /chat/completions
-    iconUrl: https://image-clip.docker.19930810.xyz:8443/api/image?id=38272329-0c4a-4681-a32e-dafcbaa3c292&cx=-9&cy=0&cw=64&ch=56&wt=%5Bpremium-crown%5D&wc=%23ffffff&wo=128&wx=7&wy=-1&ws=50
-    models:
-      - glm-4-flash
-      - glm-4.6
-      - glm-4.7
       - glm-4-plus
       - glm-4-air
