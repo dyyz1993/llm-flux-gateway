@@ -45,6 +45,13 @@ export interface UpdateLogParams {
   cachedTokens?: number;
   cacheReadTokens?: number;
   cacheWriteTokens?: number;
+  reasoningTokens?: number;
+  inputCost?: number;
+  outputCost?: number;
+  cacheReadCost?: number;
+  cacheWriteCost?: number;
+  totalCost?: number;
+  cacheHitRate?: number;
   responseParams?: any;
   responseToolCalls?: any[];
   // Original Response (NEW)
@@ -149,6 +156,9 @@ export class RequestLogService {
    */
   async updateLog(id: string, params: UpdateLogParams): Promise<void> {
     const totalTokens = params.promptTokens + params.completionTokens;
+    // 缓存命中率: cacheRead / (input + cacheRead) × 100
+    const totalInput = params.promptTokens + (params.cacheReadTokens ?? params.cachedTokens ?? 0);
+    const cacheHitRate = totalInput > 0 ? Math.round((params.cacheReadTokens ?? params.cachedTokens ?? 0) / totalInput * 100) : 0;
 
     queryRun(
       `
@@ -160,6 +170,13 @@ export class RequestLogService {
           cached_tokens = COALESCE(?, cached_tokens),
           cache_read_tokens = COALESCE(?, cache_read_tokens),
           cache_write_tokens = COALESCE(?, cache_write_tokens),
+          reasoning_tokens = COALESCE(?, reasoning_tokens),
+          input_cost = COALESCE(?, input_cost),
+          output_cost = COALESCE(?, output_cost),
+          cache_read_cost = COALESCE(?, cache_read_cost),
+          cache_write_cost = COALESCE(?, cache_write_cost),
+          total_cost = COALESCE(?, total_cost),
+          cache_hit_rate = COALESCE(?, cache_hit_rate),
           latency_ms = ?,
           time_to_first_byte_ms = ?,
           error_message = ?,
@@ -178,6 +195,13 @@ export class RequestLogService {
         params.cachedTokens ?? null,
         params.cacheReadTokens ?? null,
         params.cacheWriteTokens ?? null,
+        params.reasoningTokens ?? null,
+        params.inputCost ?? null,
+        params.outputCost ?? null,
+        params.cacheReadCost ?? null,
+        params.cacheWriteCost ?? null,
+        params.totalCost ?? null,
+        cacheHitRate,
         params.latencyMs,
         params.timeToFirstByteMs || null,
         params.errorMessage || null,

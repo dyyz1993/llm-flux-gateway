@@ -143,7 +143,14 @@ export async function handleGatewayRequestPi(
         const outputAdapter = getOutputAdapter(responseFormat);
         let promptTokens = 0;
         let completionTokens = 0;
-        let cachedTokens = 0;
+        let cachedRead = 0;
+        let cachedWrite = 0;
+        let reasoningTokens = 0;
+        let inputCost = 0;
+        let outputCost = 0;
+        let cacheReadCost = 0;
+        let cacheWriteCost = 0;
+        let totalCost = 0;
         let chunkCount = 0;
         let errorMsg: string | undefined;
 
@@ -151,7 +158,7 @@ export async function handleGatewayRequestPi(
           ...options,
           apiKey: match.route.upstreamApiKey,
           signal: c.req.raw?.signal,
-          maxRetries: 0, // 由网关自己的负载均衡控制重试
+          maxRetries: 0,
         };
 
         try {
@@ -162,7 +169,14 @@ export async function handleGatewayRequestPi(
               const u = event.message.usage;
               promptTokens = u.input;
               completionTokens = u.output;
-              cachedTokens = u.cacheRead;
+              cachedRead = u.cacheRead;
+              cachedWrite = u.cacheWrite;
+              reasoningTokens = u.reasoning ?? 0;
+              inputCost = u.cost.input;
+              outputCost = u.cost.output;
+              cacheReadCost = u.cost.cacheRead;
+              cacheWriteCost = u.cost.cacheWrite;
+              totalCost = u.cost.total;
             }
 
             const sseLines = [...outputAdapter.eventToSSE(event)];
@@ -202,7 +216,11 @@ export async function handleGatewayRequestPi(
           const latency = Date.now() - startTime;
           await requestLogService.updateLog(logId, {
             statusCode: errorMsg ? 500 : 200,
-            promptTokens, completionTokens, cachedTokens,
+            promptTokens, completionTokens,
+            cacheReadTokens: cachedRead, cacheWriteTokens: cachedWrite,
+            reasoningTokens,
+            inputCost, outputCost,
+            cacheReadCost, cacheWriteCost, totalCost,
             latencyMs: latency,
             errorMessage: errorMsg,
           });
@@ -223,7 +241,14 @@ export async function handleGatewayRequestPi(
           statusCode: 200,
           promptTokens: result.usage.input,
           completionTokens: result.usage.output,
-          cachedTokens: result.usage.cacheRead,
+          cacheReadTokens: result.usage.cacheRead,
+          cacheWriteTokens: result.usage.cacheWrite,
+          reasoningTokens: result.usage.reasoning ?? 0,
+          inputCost: result.usage.cost.input,
+          outputCost: result.usage.cost.output,
+          cacheReadCost: result.usage.cost.cacheRead,
+          cacheWriteCost: result.usage.cost.cacheWrite,
+          totalCost: result.usage.cost.total,
           latencyMs: latency,
           responseContent: JSON.stringify(result.content),
         });
