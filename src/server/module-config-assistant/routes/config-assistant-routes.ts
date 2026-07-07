@@ -586,9 +586,23 @@ router.post('/chat', async (c) => {
       ? (toolCalls[toolCalls.length - 1] as any).content.find((b: any) => b.type === 'toolCall')?.name
       : undefined;
 
+    // AI 回复为空或只有"已完成"时降级到规则模式
+    if (!replyText || replyText === '已完成' || replyText.length < 2) {
+      const fallback = await fallbackReply(message);
+      if (!fallback.startsWith('🤔')) {
+        return c.json({ reply: fallback, action: undefined });
+      }
+    }
+
     return c.json({ reply: replyText || '已完成', action });
   } catch (e: any) {
-    return c.json({ reply: `❌ ${e.message}` });
+    // AI 出错时降级到规则模式
+    try {
+      const fallback = await fallbackReply(message);
+      return c.json({ reply: fallback, action: undefined });
+    } catch {
+      return c.json({ reply: `❌ ${e.message}` });
+    }
   }
 });
 
