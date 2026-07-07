@@ -111,31 +111,44 @@ export async function registerPiRoute(config: PiRouteConfig): Promise<Model<Api>
   const models = getModels();
   const apiImpl = await getApiImpl(config.apiType);
 
-  // 构建 pi-ai Model
-  // 构建 pi-ai Model，带上 compat 配置
-  // 不同 API 类型有不同默认行为，需要设置 compat 避免上游拒绝
-  const baseCompat = config.apiType === 'openai-completions'
-    ? {
-        supportsStore: false,
-        supportsDeveloperRole: false,
-        maxTokensField: 'max_tokens' as const,
-        supportsReasoningEffort: false,
+  // 优先使用 pi-ai 内置的模型配置（包含正确的 compat/reasoning/thinking 等设置）
+  let piModel: Model<Api> | undefined;
+  try {
+    const { builtinModels } = await import('@earendil-works/pi-ai/providers/all');
+    const builtin = builtinModels();
+    if (config.apiType === 'openai-completions') {
+      const builtinModel = builtin.getModel('opencode-go', config.upstreamModel) as Model<Api> | undefined;
+      if (builtinModel) {
+        piModel = { ...builtinModel, provider: config.id, baseUrl: config.baseUrl };
       }
-    : undefined;
+    }
+  } catch { /* fallback */ }
 
-  const piModel: Model<Api> = {
-    id: config.upstreamModel,
-    name: config.upstreamModel,
-    api: config.apiType as Api,
-    provider: config.id,
-    baseUrl: config.baseUrl,
-    reasoning: false,
-    input: ['text'],
-    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-    contextWindow: 128000,
-    maxTokens: 32000,
-    ...(baseCompat ? { compat: baseCompat } : {}),
-  } as Model<Api>;
+  // 如果 pi-ai 没有内置该模型，手动创建（需要至少带上 compat 配置）
+  if (!piModel) {
+    const baseCompat = config.apiType === 'openai-completions'
+      ? {
+          supportsStore: false,
+          supportsDeveloperRole: false,
+          maxTokensField: 'max_tokens' as const,
+          supportsReasoningEffort: false,
+        }
+      : undefined;
+
+    piModel = {
+      id: config.upstreamModel,
+      name: config.upstreamModel,
+      api: config.apiType as Api,
+      provider: config.id,
+      baseUrl: config.baseUrl,
+      reasoning: false,
+      input: ['text'],
+      cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+      contextWindow: 128000,
+      maxTokens: 32000,
+      ...(baseCompat ? { compat: baseCompat } : {}),
+    } as Model<Api>;
+  }
 
   // 创建 pi-ai Provider
   // API Key 通过 stream/complete 的 options.apiKey 传入，
