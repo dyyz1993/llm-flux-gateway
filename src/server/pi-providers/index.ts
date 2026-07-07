@@ -112,6 +112,17 @@ export async function registerPiRoute(config: PiRouteConfig): Promise<Model<Api>
   const apiImpl = await getApiImpl(config.apiType);
 
   // 构建 pi-ai Model
+  // 构建 pi-ai Model，带上 compat 配置
+  // 不同 API 类型有不同默认行为，需要设置 compat 避免上游拒绝
+  const baseCompat = config.apiType === 'openai-completions'
+    ? {
+        supportsStore: false,
+        supportsDeveloperRole: false,
+        maxTokensField: 'max_tokens' as const,
+        supportsReasoningEffort: false,
+      }
+    : undefined;
+
   const piModel: Model<Api> = {
     id: config.upstreamModel,
     name: config.upstreamModel,
@@ -123,7 +134,8 @@ export async function registerPiRoute(config: PiRouteConfig): Promise<Model<Api>
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
     contextWindow: 128000,
     maxTokens: 32000,
-  };
+    ...(baseCompat ? { compat: baseCompat } : {}),
+  } as Model<Api>;
 
   // 创建 pi-ai Provider
   // API Key 通过 stream/complete 的 options.apiKey 传入，
