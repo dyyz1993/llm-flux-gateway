@@ -68,7 +68,24 @@ class SSEBroadcasterService {
 
     const message = `data: ${JSON.stringify(log)}\n\n`;
 
-    // Call all callbacks
+    await this.broadcast(message);
+  }
+
+  /**
+   * Broadcast a content delta for a streaming log to all connected clients.
+   * Client-side should use addEventListener('log_delta', ...) to receive these.
+   */
+  async broadcastLogDelta(logId: string, delta: string, type: 'text' | 'reasoning'): Promise<void> {
+    if (this.callbacks.size === 0 || !delta) return;
+
+    const message = `event: log_delta\ndata: ${JSON.stringify({ id: logId, delta, type })}\n\n`;
+    await this.broadcast(message);
+  }
+
+  /**
+   * Internal: send raw message to all callbacks
+   */
+  private async broadcast(message: string): Promise<void> {
     const promises = Array.from(this.callbacks).map(async (callback, index) => {
       try {
         const success = await callback(message);

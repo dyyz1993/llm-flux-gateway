@@ -10,9 +10,17 @@ import { getAdminToken } from './adminApi';
 // 事件监听器类型
 type LogEventListener = (log: RequestLog) => void;
 
+// Delta 事件回调类型
+export interface LogDeltaEvent {
+  id: string;
+  delta: string;
+  type: 'text' | 'reasoning';
+}
+
 class RealtimeLogsService {
   private eventSource: EventSource | null = null;
   private listeners: Set<LogEventListener> = new Set();
+  private deltaListeners: Set<LogDeltaCallback> = new Set();
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 2000; // 2秒
@@ -77,6 +85,16 @@ class RealtimeLogsService {
         this.disconnect();
       }
     };
+
+    // 监听 log_delta 事件（流式内容增量推送）
+    this.eventSource.addEventListener('log_delta', (event: MessageEvent) => {
+      try {
+        const data: LogDeltaEvent = JSON.parse(event.data!);
+        this.deltaListeners.forEach(cb => cb(data));
+      } catch (error) {
+        console.error('[RealtimeLogs] Failed to parse log_delta:', error);
+      }
+    });
   }
 
   /**
@@ -99,6 +117,16 @@ class RealtimeLogsService {
     // 返回取消订阅函数
     return () => {
       this.listeners.delete(listener);
+    };
+  }
+
+  /**
+   * 添加 delta 监听器（流式内容增量）
+   */
+  subscribeDelta(callback: LogDeltaCallback) {
+    this.deltaListeners.add(callback);
+    return () => {
+      this.deltaListeners.delete(callback);
     };
   }
 

@@ -200,6 +200,12 @@ export interface RequestLog {
   messages: Message[]; // The conversation history
   responseContent?: string; // Full response content (for streaming requests)
   responseToolCalls?: ToolCall[]; // Tool calls from the response (if any)
+
+  // Live streaming state (not persisted — used by UI for real-time display)
+  liveResponseContent?: {
+    text: string;
+    reasoning: string;
+  };
   overwrittenAttributes: Record<string, { original: any; final: any }>;
 
   // Original Data (NEW)

@@ -19,6 +19,7 @@ import { routeMatcherService } from '../services/route-matcher.service';
 import { rewriteService } from '../services/rewrite.service';
 import { requestLogService } from '../services/request-log.service';
 import { logRequestTrace } from '../services/upstream.service';
+import { sseBroadcasterService } from '../services/sse-broadcaster.service';
 
 import { getInputAdapter, type SourceFormat } from '../../adapters/input/index';
 import { getOutputAdapter, type ResponseFormat } from '../../adapters/output/index';
@@ -183,9 +184,15 @@ export async function handleGatewayRequestPi(
               totalCost = u.cost.total;
             }
 
-            // 汇总流式文本内容
+            // 汇总流式文本内容 & 广播 delta 到日志控制台
             if (event.type === 'text_delta') {
               accumulatedText += event.delta;
+              sseBroadcasterService.broadcastLogDelta(logId, event.delta, 'text').catch(() => {});
+            }
+
+            // 广播 reasoning delta
+            if (event.type === 'thinking_delta') {
+              sseBroadcasterService.broadcastLogDelta(logId, event.delta, 'reasoning').catch(() => {});
             }
 
             // pi-ai 发出 error 事件（非 throw，是 event stream 的一部分）

@@ -376,6 +376,8 @@ export const LogExplorer: React.FC = () => {
                 messages: (prevSelected.messages?.length ?? 0) > 0 ? prevSelected.messages : messages,
                 responseContent: prevSelected.responseContent || responseContent,
                 responseToolCalls: (prevSelected.responseToolCalls?.length ?? 0) > 0 ? prevSelected.responseToolCalls : responseToolCalls,
+                // Clear live content when request completes (statusCode !== 0)
+                ...(newLog.statusCode !== 0 ? { liveResponseContent: undefined } : {}),
               };
             }
             return prevSelected;
@@ -395,8 +397,27 @@ export const LogExplorer: React.FC = () => {
       });
     });
 
+    // Subscribe to streaming deltas for live content display
+    const unsubscribeDelta = realtimeLogsService.subscribeDelta((deltaEvent) => {
+      setSelectedLog(prevSelected => {
+        if (!prevSelected || prevSelected.id !== deltaEvent.id) return prevSelected;
+        if (prevSelected.statusCode !== 0) return prevSelected; // Don't update completed requests
+
+        const live = prevSelected.liveResponseContent || { text: '', reasoning: '' };
+        return {
+          ...prevSelected,
+          liveResponseContent: {
+            ...live,
+            ...(deltaEvent.type === 'text' ? { text: live.text + deltaEvent.delta } : {}),
+            ...(deltaEvent.type === 'reasoning' ? { reasoning: live.reasoning + deltaEvent.delta } : {}),
+          },
+        };
+      });
+    });
+
     return () => {
       unsubscribe();
+      unsubscribeDelta();
       realtimeLogsService.disconnect();
     };
   }, [selectedApiKey]);
