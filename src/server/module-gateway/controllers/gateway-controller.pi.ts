@@ -153,6 +153,7 @@ export async function handleGatewayRequestPi(
         let totalCost = 0;
         let chunkCount = 0;
         let errorMsg: string | undefined;
+        let accumulatedText = '';
 
         const streamOpts = {
           ...options,
@@ -177,6 +178,11 @@ export async function handleGatewayRequestPi(
               cacheReadCost = u.cost.cacheRead;
               cacheWriteCost = u.cost.cacheWrite;
               totalCost = u.cost.total;
+            }
+
+            // 汇总流式文本内容
+            if (event.type === 'text_delta') {
+              accumulatedText += event.delta;
             }
 
             // pi-ai 发出 error 事件（非 throw，是 event stream 的一部分）
@@ -228,6 +234,7 @@ export async function handleGatewayRequestPi(
             cacheReadCost, cacheWriteCost, totalCost,
             latencyMs: latency,
             errorMessage: errorMsg || (promptTokens ? undefined : 'No response data received'),
+            responseContent: accumulatedText || undefined,
           });
 
           // 流式请求出错时追加一条错误 trace
