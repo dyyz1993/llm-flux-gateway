@@ -207,6 +207,23 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, allMe
 
       {/* Content */}
       <div className={`flex-1 max-w-[80%] ${isUser ? 'text-right' : 'text-left'}`}>
+        {/* Reasoning/Thinking Content */}
+        {!isUser && message.reasoningContent && (
+          <div className="mb-2 px-3 py-2 rounded-lg bg-[#111] border border-[#2a2a2a]">
+            <div className="flex items-center gap-1.5 mb-1">
+              <svg className="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 16v-4" />
+                <path d="M12 8h.01" />
+              </svg>
+              <span className="text-[11px] text-amber-400/70 font-medium uppercase tracking-wider">Thinking</span>
+            </div>
+            <div className="text-xs text-gray-400 whitespace-pre-wrap leading-relaxed max-h-[200px] overflow-y-auto">
+              {message.reasoningContent}
+            </div>
+          </div>
+        )}
+
         <div className={`inline-block px-4 py-3 rounded-2xl ${
           isUser
             ? 'bg-indigo-600 text-white'

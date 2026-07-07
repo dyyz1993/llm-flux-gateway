@@ -10,7 +10,7 @@ interface StreamOptions {
   // Optional: Use pre-built request body in specific format
   requestBody?: any;
   requestFormat?: ApiFormat;
-  onChunk: (content: string, toolCalls?: ToolCall[]) => void;
+  onChunk: (content: string, toolCalls?: ToolCall[], reasoningContent?: string) => void;
   onError: (error: string) => void;
   onComplete?: (tokens: { prompt: number; completion: number }) => void;
 }
@@ -103,8 +103,14 @@ export function useChatStream(): StreamResult {
               }
 
               // Handle content delta
-              if (parsed.choices?.[0]?.delta?.content) {
-                onChunk(parsed.choices[0].delta.content, Array.from(accumulatedToolCalls.values()));
+              const delta = parsed.choices?.[0]?.delta;
+              if (delta?.content) {
+                const rc = (typeof delta.reasoning_content === 'string' && delta.reasoning_content.length > 0)
+                  ? delta.reasoning_content : undefined;
+                onChunk(delta.content, Array.from(accumulatedToolCalls.values()), rc);
+              } else if (delta?.reasoning_content && typeof delta.reasoning_content === 'string' && delta.reasoning_content.length > 0) {
+                // 只有 reasoning_content 的情况
+                onChunk('', Array.from(accumulatedToolCalls.values()), delta.reasoning_content);
               }
 
               // Handle tool_calls

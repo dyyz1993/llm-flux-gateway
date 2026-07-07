@@ -13,7 +13,7 @@ interface ChatState {
   deleteSession: (sessionId: string) => void;
   switchSession: (sessionId: string) => void;
   addMessage: (message: ChatMessage) => void;
-  updateLastMessage: (content: string, tokens?: { prompt: number; completion: number }, toolCalls?: any[]) => void;
+  updateLastMessage: (content: string, tokens?: { prompt: number; completion: number }, toolCalls?: any[], reasoningContent?: string) => void;
   updateSessionTitle: (sessionId: string, title: string) => void;
   clearCurrentSession: () => void;
   clearAll: () => void;
@@ -89,7 +89,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
   },
 
-  updateLastMessage: (content, tokens, toolCalls) => {
+  updateLastMessage: (content, tokens, toolCalls, reasoningContent) => {
     const { currentSession } = get();
     if (!currentSession || currentSession.messages.length === 0) return;
 
@@ -103,6 +103,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         tokens: tokens || lastMessage.tokens,
         // Fixed: Use toolCalls if explicitly provided (even if empty array), otherwise keep existing
         toolCalls: toolCalls !== undefined ? toolCalls : lastMessage.toolCalls,
+        reasoningContent: reasoningContent !== undefined ? reasoningContent : lastMessage.reasoningContent,
         isStreaming: false,
       };
 

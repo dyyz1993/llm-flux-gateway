@@ -360,6 +360,7 @@ export const RoutePlayground: React.FC = () => {
 
     // Accumulate content for final update
     let accumulatedContent = '';
+    let accumulatedReasoning = '';
     let accumulatedToolCalls: ToolCall[] = [];
     // 🔒 防止 onComplete 重复调用
     const isCompletingRef = { current: false };
@@ -383,7 +384,7 @@ export const RoutePlayground: React.FC = () => {
         provider,
         tools: enableTools ? Object.values(TOOL_TEMPLATES) : undefined,
         isRecursive: isRecursive, // 🔒 传递递归标志
-        onChunk: (content, toolCalls) => {
+        onChunk: (content, toolCalls, reasoningContent) => {
           // 🔍 DEBUG: Log onChunk calls
           if (toolCalls && toolCalls.length > 0) {
             console.log('[RoutePlayground] onChunk called with toolCalls:', toolCalls);
@@ -395,13 +396,18 @@ export const RoutePlayground: React.FC = () => {
             setStreamingContent(accumulatedContent);
           }
 
+          // Accumulate reasoning content
+          if (reasoningContent) {
+            accumulatedReasoning = (accumulatedReasoning || '') + reasoningContent;
+          }
+
           if (toolCalls && toolCalls.length > 0) {
             accumulatedToolCalls = toolCalls;
             setStreamingToolCalls(toolCalls);
           }
 
           // Update in real-time
-          chatStore.updateLastMessage(accumulatedContent, undefined, accumulatedToolCalls);
+          chatStore.updateLastMessage(accumulatedContent, undefined, accumulatedToolCalls, accumulatedReasoning);
         },
         onError: (err) => {
           setError(err);
@@ -447,7 +453,7 @@ export const RoutePlayground: React.FC = () => {
               console.log('[RoutePlayground] Tool calls detected, executing...', validToolCalls);
 
               // ⭐ FIX: Persist tool calls to the first assistant message before creating second one
-              chatStore.updateLastMessage(accumulatedContent, undefined, validToolCalls);
+              chatStore.updateLastMessage(accumulatedContent, undefined, validToolCalls, accumulatedReasoning);
 
             // Execute tools
             const toolResults = await ToolExecutionService.executeToolCalls(validToolCalls);
@@ -474,7 +480,8 @@ export const RoutePlayground: React.FC = () => {
               chatStore.updateLastMessage(
                 accumulatedContent + '\n\n[Error: Maximum tool execution depth exceeded]',
                 undefined,
-                []
+                [],
+                accumulatedReasoning
               );
               setStreamingContent('');
               setStreamingToolCalls([]);
@@ -533,7 +540,7 @@ export const RoutePlayground: React.FC = () => {
                 // This is the final response after tool execution
                 // Clear tool calls from display since they belong to the previous message
                 console.log('[RoutePlayground] Final response after tool execution, clearing tool calls display');
-                chatStore.updateLastMessage(accumulatedContent, tokens, []); // Empty array for final response
+                chatStore.updateLastMessage(accumulatedContent, tokens, [], accumulatedReasoning);
                 // 🔒 Reset depth after successful completion
                 console.log(`[RoutePlayground] Resetting tool execution depth from ${toolExecutionDepthRef.current} to 0`);
                 toolExecutionDepthRef.current = 0;
@@ -544,10 +551,10 @@ export const RoutePlayground: React.FC = () => {
                   // GLM bug: it returned both content and tool_calls
                   // Ignore the tool_calls and only show content
                   console.warn('[RoutePlayground] GLM returned both content and tool_calls, ignoring tool_calls');
-                  chatStore.updateLastMessage(accumulatedContent, tokens, []);
+                  chatStore.updateLastMessage(accumulatedContent, tokens, [], accumulatedReasoning);
                 } else {
                   // Normal response
-                  chatStore.updateLastMessage(accumulatedContent, tokens, accumulatedToolCalls);
+                  chatStore.updateLastMessage(accumulatedContent, tokens, accumulatedToolCalls, accumulatedReasoning);
                 }
               }
               setStreamingContent('');
@@ -601,6 +608,7 @@ export const RoutePlayground: React.FC = () => {
 
       // Update with the final result
       let accumulatedContent = result.content || '';
+      let accumulatedReasoning = result.reasoningContent || '';
       let accumulatedToolCalls = result.toolCalls || [];
       const tokens = result.tokens;
 
@@ -627,7 +635,7 @@ export const RoutePlayground: React.FC = () => {
         console.log('[RoutePlayground Non-Streaming] Tool calls detected:', validToolCalls);
 
         // Update with first response containing tool calls
-        chatStore.updateLastMessage(accumulatedContent, undefined, validToolCalls);
+        chatStore.updateLastMessage(accumulatedContent, undefined, validToolCalls, accumulatedReasoning);
 
         // Execute tools
         const toolResults = await ToolExecutionService.executeToolCalls(validToolCalls);
@@ -652,10 +660,11 @@ export const RoutePlayground: React.FC = () => {
         if (currentDepth > MAX_TOOL_EXECUTION_DEPTH) {
           console.error('[RoutePlayground Non-Streaming] Max tool execution depth reached, aborting');
           chatStore.updateLastMessage(
-            accumulatedContent + '\n\n[Error: Maximum tool execution depth exceeded]',
-            undefined,
-            []
-          );
+                accumulatedContent + '\n\n[Error: Maximum tool execution depth exceeded]',
+                undefined,
+                [],
+                accumulatedReasoning
+              );
           setStreamingContent('');
           setStreamingToolCalls([]);
           toolExecutionDepthRef.current = 0; // Reset depth
@@ -695,7 +704,7 @@ export const RoutePlayground: React.FC = () => {
         // No valid tool calls - could be final response or GLM bug
         if (toolExecutionDepthRef.current > 0) {
           // Final response after tool execution
-          chatStore.updateLastMessage(accumulatedContent, tokens, []);
+          chatStore.updateLastMessage(accumulatedContent, tokens, [], accumulatedReasoning);
           // 🔒 Reset depth after successful completion
           console.log(`[RoutePlayground Non-Streaming] Resetting tool execution depth from ${toolExecutionDepthRef.current} to 0`);
           toolExecutionDepthRef.current = 0;
@@ -704,10 +713,10 @@ export const RoutePlayground: React.FC = () => {
           if (accumulatedToolCalls.length > 0 && accumulatedContent) {
             // GLM bug: it returned both content and tool_calls
             console.warn('[RoutePlayground Non-Streaming] GLM returned both content and tool_calls, ignoring tool_calls');
-            chatStore.updateLastMessage(accumulatedContent, tokens, []);
+            chatStore.updateLastMessage(accumulatedContent, tokens, [], accumulatedReasoning);
           } else {
             // Normal response
-            chatStore.updateLastMessage(accumulatedContent, tokens, accumulatedToolCalls);
+            chatStore.updateLastMessage(accumulatedContent, tokens, accumulatedToolCalls, accumulatedReasoning);
           }
         }
 

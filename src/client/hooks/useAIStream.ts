@@ -38,14 +38,14 @@ interface StreamOptions {
       name: string;
       arguments: string;
     };
-  }>) => void;
+  }>, reasoningContent?: string) => void;
   onError: (error: string) => void;
   onComplete?: (tokens: { prompt: number; completion: number }) => void;
 }
 
 interface StreamResult {
   stream: (options: StreamOptions) => Promise<void>;
-  request: (options: Omit<StreamOptions, 'onChunk'>) => Promise<{ content: string; toolCalls?: ToolCall[]; tokens?: { prompt: number; completion: number } }>;
+  request: (options: Omit<StreamOptions, 'onChunk'>) => Promise<{ content: string; toolCalls?: ToolCall[]; tokens?: { prompt: number; completion: number }; reasoningContent?: string }>;
   cancel: () => void;
   isLoading: boolean;
 }
@@ -224,7 +224,7 @@ export function useAIStream(): StreamResult {
     abortControllerRef.current = new AbortController();
 
     try {
-      let result: { content: string; toolCalls?: ToolCall[]; tokens?: { prompt: number; completion: number } };
+      let result: { content: string; toolCalls?: ToolCall[]; tokens?: { prompt: number; completion: number }; reasoningContent?: string };
 
       switch (provider) {
         case 'openai':
@@ -356,10 +356,18 @@ async function streamOpenAI(params: {
   for await (const chunk of stream as any) {
     const content = chunk.choices[0]?.delta?.content;
     const toolCalls = chunk.choices[0]?.delta?.tool_calls;
+    const reasoningContent = chunk.choices[0]?.delta?.reasoning_content;
+
+    // Handle reasoning content delta (deepseek reasoning_content)
+    // 注意：reasoning_content 可能为 null（transition 标记），只传有实际内容的值
+    const rc = (typeof reasoningContent === 'string' && reasoningContent.length > 0) ? reasoningContent : undefined;
 
     // Handle content delta
     if (content) {
-      params.onChunk(content, toToolCallsArray(Array.from(accumulatedToolCalls.values())));
+      params.onChunk(content, toToolCallsArray(Array.from(accumulatedToolCalls.values())), rc);
+    } else if (rc) {
+      // 只有 reasoning_content 没有 content 的情况
+      params.onChunk('', toToolCallsArray(Array.from(accumulatedToolCalls.values())), rc);
     }
 
     // Handle tool_calls
@@ -751,7 +759,7 @@ async function requestOpenAI(params: {
   baseURL: string;
   tools?: StreamOptions['tools'];
   abortSignal?: AbortSignal;
-}): Promise<{ content: string; toolCalls?: ToolCall[]; tokens?: { prompt: number; completion: number } }> {
+}): Promise<{ content: string; toolCalls?: ToolCall[]; tokens?: { prompt: number; completion: number }; reasoningContent?: string }> {
   const client = new OpenAI({
     apiKey: params.apiKey,
     baseURL: params.baseURL,
@@ -795,6 +803,10 @@ async function requestOpenAI(params: {
     content = rawContent || '';
   }
 
+  // Extract reasoning content (deepseek non-streaming)
+  const reasoningContent = (response.choices[0]?.message as any)?.reasoning_content;
+  const rc = (typeof reasoningContent === 'string' && reasoningContent.length > 0) ? reasoningContent : undefined;
+
   // Extract tool calls
   // GLM API uses camelCase "toolCalls", standard OpenAI uses snake_case "tool_calls"
   const messageData = response.choices[0]?.message as any;
@@ -821,7 +833,7 @@ async function requestOpenAI(params: {
     completion: response.usage.completion_tokens || 0,
   } : undefined;
 
-  return { content, toolCalls, tokens };
+  return { content, toolCalls, tokens, reasoningContent: rc };
 }
 
 // ==========================================

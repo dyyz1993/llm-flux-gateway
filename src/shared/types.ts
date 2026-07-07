@@ -432,6 +432,7 @@ export interface ChatMessage {
   isStreaming?: boolean;
   name?: string; // For tool messages: the tool name that was called
   toolCallId?: string; // For tool messages: the ID of the tool call this result belongs to
+  reasoningContent?: string; // 推理/思考内容（deepseek reasoning_content）
 }
 
 export interface ChatSession {
