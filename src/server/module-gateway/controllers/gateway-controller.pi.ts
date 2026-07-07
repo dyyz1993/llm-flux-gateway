@@ -279,6 +279,8 @@ export async function handleGatewayRequestPi(
 
         const outputAdapter = getOutputAdapter(responseFormat);
         const output = outputAdapter.responseToJson(result);
+        // 把模型名设回客户端请求的名字，避免 AI 工具检测到"模型循环"
+        output.model = body.model;
 
         const latency = Date.now() - startTime;
         await requestLogService.updateLog(logId, {
