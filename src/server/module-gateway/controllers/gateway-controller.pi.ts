@@ -179,6 +179,11 @@ export async function handleGatewayRequestPi(
               totalCost = u.cost.total;
             }
 
+            // pi-ai 发出 error 事件（非 throw，是 event stream 的一部分）
+            if (event.type === 'error') {
+              errorMsg = event.error.errorMessage || 'Upstream stream error';
+            }
+
             const sseLines = [...outputAdapter.eventToSSE(event)];
             for (const line of sseLines) {
               await ss.write(line);
@@ -215,15 +220,24 @@ export async function handleGatewayRequestPi(
         } finally {
           const latency = Date.now() - startTime;
           await requestLogService.updateLog(logId, {
-            statusCode: errorMsg ? 500 : 200,
+            statusCode: errorMsg ? 502 : (promptTokens ? 200 : 500),
             promptTokens, completionTokens,
             cacheReadTokens: cachedRead, cacheWriteTokens: cachedWrite,
             reasoningTokens,
             inputCost, outputCost,
             cacheReadCost, cacheWriteCost, totalCost,
             latencyMs: latency,
-            errorMessage: errorMsg,
+            errorMessage: errorMsg || (promptTokens ? undefined : 'No response data received'),
           });
+
+          // 流式请求出错时追加一条错误 trace
+          if (errorMsg) {
+            logRequestTrace({
+              metadata: { requestId, timestamp: new Date().toISOString(), vendor: sourceFormat, url: `${match.route.baseUrl}${match.route.endpoint}`, requestType: 'streaming', latency, statusCode: 502 },
+              request: { method: 'POST', url: `${match.route.baseUrl}${match.route.endpoint}`, headers: {}, body },
+              error: { message: errorMsg },
+            }).catch(() => {});
+          }
         }
       });
     } else {

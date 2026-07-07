@@ -111,10 +111,22 @@ app.route('/', gatewayRouter);
 
 // Error handler
 app.onError((err, c) => {
-  console.error('[Unhandled Error]', err);
+  const requestId = c.get('requestId') || 'unknown';
+  console.error(`[Unhandled Error] ${requestId}:`, err);
+  // 尝试记录请求体到日志
+  try {
+    const { writeFile, mkdir } = require('node:fs/promises');
+    const { join } = require('node:path');
+    const logsDir = join(process.cwd(), 'logs', 'request-traces');
+    mkdir(logsDir, { recursive: true }).then(() => {
+      writeFile(join(logsDir, `error-${requestId}-${Date.now()}.json`), JSON.stringify({
+        error: err instanceof Error ? { message: err.message, stack: err.stack?.split('\n').slice(0, 3).join('\n') } : String(err),
+        timestamp: new Date().toISOString(),
+      }, null, 2)).catch(() => {});
+    }).catch(() => {});
+  } catch {}
   return c.json({
-    success: false,
-    error: err instanceof Error ? err.message : 'Internal Server Error',
+    error: { message: err instanceof Error ? err.message : 'Internal Server Error', type: 'api_error' },
   }, 500);
 });
 
