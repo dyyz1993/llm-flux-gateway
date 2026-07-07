@@ -238,10 +238,17 @@ export async function handleGatewayRequestPi(
         if (result.stopReason === 'error' || result.stopReason === 'aborted') {
           const errMsg = result.errorMessage || 'Upstream request failed';
           const latency = Date.now() - startTime;
+          console.error(`[Gateway] ⚠️ Upstream error: ${errMsg} (model=${upstreamModel}, route=${match.route.id}, latency=${latency}ms)`);
           await requestLogService.updateLog(logId, {
             statusCode: 502, promptTokens: 0, completionTokens: 0, latencyMs: latency,
             errorMessage: errMsg,
           });
+          // 也写一份 request trace 文件
+          logRequestTrace({
+            metadata: { requestId, timestamp: new Date().toISOString(), vendor: match.route.requestFormat, url: `${match.route.baseUrl}${match.route.endpoint}`, requestType: 'non-streaming', latency, statusCode: 502 },
+            request: { method: 'POST', url: `${match.route.baseUrl}${match.route.endpoint}`, headers: {}, body },
+            error: { message: errMsg },
+          }).catch(() => {});
           return c.json({
             error: { message: errMsg, type: 'upstream_error', code: 502 },
           }, 502);
