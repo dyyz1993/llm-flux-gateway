@@ -176,6 +176,13 @@ export interface RequestLog {
   cachedTokens?: number;
   cacheReadTokens?: number;
   cacheWriteTokens?: number;
+  reasoningTokens?: number;          // 推理/思考 token 数
+  inputCost?: number;                // 输入费用
+  outputCost?: number;               // 输出费用
+  cacheReadCost?: number;            // 缓存命中节省的费用
+  cacheWriteCost?: number;           // 缓存写入费用
+  totalCost?: number;                // 总费用（pi-ai 计算）
+  cacheHitRate?: number;             // 缓存命中率 0-100%
 
   // Timing
   latencyMs: number; // Total request duration
@@ -224,13 +231,17 @@ export interface OverviewStats {
   totalTokens: number;
   totalPromptTokens?: number;
   totalCompletionTokens?: number;
-  promptRatio?: number;  // prompt / total * 100
-  completionRatio?: number;  // completion / total * 100
+  totalReasoningTokens?: number;        // 总推理 tokens
+  promptRatio?: number;
+  completionRatio?: number;
+  reasoningRatio?: number;              // reasoning / total * 100
   avgLatency: number;
   avgTTFB: number;
   successRate: number;
   errorRate: number;
-  costEstimate: number;
+  costEstimate: number;                 // 旧的粗略估算（保留兼容）
+  totalCost?: number;                   // 真实费用（新）
+  avgCacheHitRate?: number;             // 平均缓存命中率
 }
 
 /**
@@ -242,12 +253,16 @@ export interface ModelStats {
   totalTokens: number;
   promptTokens: number;
   completionTokens: number;
-  promptRatio?: number;  // prompt / total * 100
-  completionRatio?: number;  // completion / total * 100
+  reasoningTokens?: number;             // 该模型的推理 tokens 总数
+  totalCost?: number;                   // 该模型的费用
+  promptRatio?: number;
+  completionRatio?: number;
+  reasoningRatio?: number;              // reasoning / total * 100
   avgLatency: number;
   avgTTFB: number;
   errorCount: number;
   cachedRequests: number;
+  avgCacheHitRate?: number;             // 平均缓存命中率
 }
 
 /**
@@ -304,6 +319,7 @@ export interface CacheStats {
   avgCachedTokens: number;
   cacheReadTokens: number;
   cacheWriteTokens: number;
+  cacheSavedCost?: number;      // 缓存节省的费用估算
 }
 
 /**

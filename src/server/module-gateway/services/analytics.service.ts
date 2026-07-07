@@ -128,6 +128,9 @@ class AnalyticsService {
       total_tokens: number;
       total_prompt_tokens: number;
       total_completion_tokens: number;
+      total_reasoning_tokens: number;
+      total_cost: number;
+      avg_cache_hit_rate: number;
       avg_latency: number;
       avg_ttfb: number;
       success_count: number;
@@ -138,6 +141,9 @@ class AnalyticsService {
         SUM(total_tokens) as total_tokens,
         SUM(prompt_tokens) as total_prompt_tokens,
         SUM(completion_tokens) as total_completion_tokens,
+        COALESCE(SUM(reasoning_tokens), 0) as total_reasoning_tokens,
+        COALESCE(SUM(total_cost), 0) as total_cost,
+        COALESCE(AVG(cache_hit_rate), 0) as avg_cache_hit_rate,
         AVG(latency_ms) as avg_latency,
         AVG(time_to_first_byte_ms) as avg_ttfb,
         SUM(CASE WHEN status_code >= 200 AND status_code < 300 THEN 1 ELSE 0 END) as success_count,
@@ -147,17 +153,14 @@ class AnalyticsService {
 
     if (!result) {
       return {
-        totalRequests: 0,
-        totalTokens: 0,
-        totalPromptTokens: 0,
-        totalCompletionTokens: 0,
-        promptRatio: 0,
-        completionRatio: 0,
-        avgLatency: 0,
-        avgTTFB: 0,
-        successRate: 0,
-        errorRate: 0,
-        costEstimate: 0,
+        totalRequests: 0, totalTokens: 0,
+        totalPromptTokens: 0, totalCompletionTokens: 0,
+        totalReasoningTokens: 0,
+        promptRatio: 0, completionRatio: 0, reasoningRatio: 0,
+        avgLatency: 0, avgTTFB: 0,
+        successRate: 0, errorRate: 0,
+        costEstimate: 0, totalCost: 0,
+        avgCacheHitRate: 0,
       };
     }
 
@@ -168,26 +171,24 @@ class AnalyticsService {
     const totalTokens = result.total_tokens || 0;
     const totalPromptTokens = result.total_prompt_tokens || 0;
     const totalCompletionTokens = result.total_completion_tokens || 0;
+    const totalReasoningTokens = result.total_reasoning_tokens || 0;
 
-    // Calculate ratios
     const promptRatio = totalTokens > 0 ? (totalPromptTokens / totalTokens) * 100 : 0;
     const completionRatio = totalTokens > 0 ? (totalCompletionTokens / totalTokens) * 100 : 0;
-
-    // Simple cost estimation: $0.001 per 1K tokens
-    const costEstimate = (totalTokens / 1000) * 0.001;
+    const reasoningRatio = totalTokens > 0 ? (totalReasoningTokens / totalTokens) * 100 : 0;
+    const costEstimate = (totalTokens / 1000) * 0.001; // 保留旧估算做对比
 
     return {
       totalRequests: result.total_requests,
-      totalTokens,
-      totalPromptTokens,
-      totalCompletionTokens,
-      promptRatio,
-      completionRatio,
+      totalTokens, totalPromptTokens, totalCompletionTokens,
+      totalReasoningTokens,
+      promptRatio, completionRatio, reasoningRatio,
       avgLatency: result.avg_latency || 0,
       avgTTFB: result.avg_ttfb || 0,
-      successRate,
-      errorRate: 100 - successRate,
+      successRate, errorRate: 100 - successRate,
       costEstimate,
+      totalCost: result.total_cost || 0,
+      avgCacheHitRate: result.avg_cache_hit_rate || 0,
     };
   }
 
@@ -201,6 +202,9 @@ class AnalyticsService {
       total_tokens: number;
       prompt_tokens: number;
       completion_tokens: number;
+      reasoning_tokens: number;
+      total_cost: number;
+      avg_cache_hit_rate: number;
       avg_latency: number;
       avg_ttfb: number;
       error_count: number;
@@ -212,6 +216,9 @@ class AnalyticsService {
         SUM(total_tokens) as total_tokens,
         SUM(prompt_tokens) as prompt_tokens,
         SUM(completion_tokens) as completion_tokens,
+        COALESCE(SUM(reasoning_tokens), 0) as reasoning_tokens,
+        COALESCE(SUM(total_cost), 0) as total_cost,
+        COALESCE(AVG(cache_hit_rate), 0) as avg_cache_hit_rate,
         AVG(latency_ms) as avg_latency,
         AVG(time_to_first_byte_ms) as avg_ttfb,
         SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) as error_count,
@@ -225,19 +232,22 @@ class AnalyticsService {
       const totalTokens = row.total_tokens || 0;
       const promptTokens = row.prompt_tokens || 0;
       const completionTokens = row.completion_tokens || 0;
+      const reasoningTokens = row.reasoning_tokens || 0;
 
       return {
         model: row.model,
         requestCount: row.request_count,
-        totalTokens,
-        promptTokens,
-        completionTokens,
+        totalTokens, promptTokens, completionTokens,
+        reasoningTokens,
+        totalCost: row.total_cost || 0,
         promptRatio: totalTokens > 0 ? (promptTokens / totalTokens) * 100 : 0,
         completionRatio: totalTokens > 0 ? (completionTokens / totalTokens) * 100 : 0,
+        reasoningRatio: totalTokens > 0 ? (reasoningTokens / totalTokens) * 100 : 0,
         avgLatency: row.avg_latency || 0,
         avgTTFB: row.avg_ttfb || 0,
         errorCount: row.error_count,
         cachedRequests: row.cached_requests,
+        avgCacheHitRate: row.avg_cache_hit_rate || 0,
       };
     });
   }
@@ -400,13 +410,15 @@ class AnalyticsService {
       total_cached_tokens: number;
       cache_read_tokens: number;
       cache_write_tokens: number;
+      cache_saved_cost: number;
     }>(`
       SELECT
         COUNT(*) as total_requests,
         SUM(CASE WHEN cached_tokens > 0 THEN 1 ELSE 0 END) as cached_requests,
         COALESCE(SUM(cached_tokens), 0) as total_cached_tokens,
         COALESCE(SUM(cache_read_tokens), 0) as cache_read_tokens,
-        COALESCE(SUM(cache_write_tokens), 0) as cache_write_tokens
+        COALESCE(SUM(cache_write_tokens), 0) as cache_write_tokens,
+        COALESCE(SUM(cache_read_cost), 0) as cache_saved_cost
       FROM request_logs
     `);
 
@@ -417,6 +429,7 @@ class AnalyticsService {
         avgCachedTokens: 0,
         cacheReadTokens: 0,
         cacheWriteTokens: 0,
+        cacheSavedCost: 0,
       };
     }
 
@@ -434,6 +447,7 @@ class AnalyticsService {
       avgCachedTokens,
       cacheReadTokens: result.cache_read_tokens,
       cacheWriteTokens: result.cache_write_tokens,
+      cacheSavedCost: result.cache_saved_cost || 0,
     };
   }
 

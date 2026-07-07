@@ -27,6 +27,9 @@ describe('AnalyticsService', () => {
     total_tokens: 125000,
     total_prompt_tokens: 75000,
     total_completion_tokens: 50000,
+    total_reasoning_tokens: 10000,
+    total_cost: 0.15,
+    avg_cache_hit_rate: 12.5,
     avg_latency: 450.5,
     avg_ttfb: 125.3,
     success_count: 50,
@@ -53,13 +56,17 @@ describe('AnalyticsService', () => {
         totalTokens: 125000,
         totalPromptTokens: 75000,
         totalCompletionTokens: 50000,
+        totalReasoningTokens: 10000,
         promptRatio: (75000 / 125000) * 100,
         completionRatio: (50000 / 125000) * 100,
+        reasoningRatio: (10000 / 125000) * 100,
         avgLatency: 450.5,
         avgTTFB: 125.3,
         successRate: (50 / 55) * 100,
         errorRate: 100 - (50 / 55) * 100,
         costEstimate: (125000 / 1000) * 0.001,
+        totalCost: 0.15,
+        avgCacheHitRate: 12.5,
       });
     });
 
@@ -73,13 +80,17 @@ describe('AnalyticsService', () => {
         totalTokens: 0,
         totalPromptTokens: 0,
         totalCompletionTokens: 0,
+        totalReasoningTokens: 0,
         promptRatio: 0,
         completionRatio: 0,
+        reasoningRatio: 0,
         avgLatency: 0,
         avgTTFB: 0,
         successRate: 0,
         errorRate: 0,
         costEstimate: 0,
+        totalCost: 0,
+        avgCacheHitRate: 0,
       });
     });
 
@@ -113,6 +124,9 @@ describe('AnalyticsService', () => {
         total_tokens: 75000,
         prompt_tokens: 50000,
         completion_tokens: 25000,
+        reasoning_tokens: 5000,
+        total_cost: 0.08,
+        avg_cache_hit_rate: 15.0,
         avg_latency: 420.5,
         avg_ttfb: 115.2,
         error_count: 2,
@@ -124,6 +138,9 @@ describe('AnalyticsService', () => {
         total_tokens: 50000,
         prompt_tokens: 35000,
         completion_tokens: 15000,
+        reasoning_tokens: 3000,
+        total_cost: 0.05,
+        avg_cache_hit_rate: 10.0,
         avg_latency: 480.3,
         avg_ttfb: 135.8,
         error_count: 1,
@@ -155,12 +172,16 @@ describe('AnalyticsService', () => {
         totalTokens: 75000,
         promptTokens: 50000,
         completionTokens: 25000,
+        reasoningTokens: 5000,
+        totalCost: 0.08,
         promptRatio: (50000 / 75000) * 100,
         completionRatio: (25000 / 75000) * 100,
+        reasoningRatio: (5000 / 75000) * 100,
         avgLatency: 420.5,
         avgTTFB: 115.2,
         errorCount: 2,
         cachedRequests: 5,
+        avgCacheHitRate: 15.0,
       });
     });
 
@@ -392,6 +413,7 @@ describe('AnalyticsService', () => {
       total_cached_tokens: 12000,
       cache_read_tokens: 8000,
       cache_write_tokens: 4000,
+      cache_saved_cost: 0.02,
     };
 
     it('should return cache statistics with hit rate calculation', async () => {
@@ -408,6 +430,7 @@ describe('AnalyticsService', () => {
         avgCachedTokens: 12000 / 8,
         cacheReadTokens: 8000,
         cacheWriteTokens: 4000,
+        cacheSavedCost: 0.02,
       });
     });
 
@@ -422,6 +445,7 @@ describe('AnalyticsService', () => {
         avgCachedTokens: 0,
         cacheReadTokens: 0,
         cacheWriteTokens: 0,
+        cacheSavedCost: 0,
       });
     });
 
@@ -432,6 +456,7 @@ describe('AnalyticsService', () => {
         total_cached_tokens: 0,
         cache_read_tokens: 0,
         cache_write_tokens: 0,
+        cache_saved_cost: 0,
       });
 
       const result = await analyticsService.getCacheStats();
