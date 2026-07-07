@@ -233,6 +233,20 @@ export async function handleGatewayRequestPi(
       try {
         const completeOpts = { ...options, apiKey: match.route.upstreamApiKey, maxRetries: 0 };
         const result = await models.complete(piModel!, context, completeOpts);
+
+        // 处理上游返回的错误（如 Key 无效、限流等）
+        if (result.stopReason === 'error' || result.stopReason === 'aborted') {
+          const errMsg = result.errorMessage || 'Upstream request failed';
+          const latency = Date.now() - startTime;
+          await requestLogService.updateLog(logId, {
+            statusCode: 502, promptTokens: 0, completionTokens: 0, latencyMs: latency,
+            errorMessage: errMsg,
+          });
+          return c.json({
+            error: { message: errMsg, type: 'upstream_error', code: 502 },
+          }, 502);
+        }
+
         const outputAdapter = getOutputAdapter(responseFormat);
         const output = outputAdapter.responseToJson(result);
 
