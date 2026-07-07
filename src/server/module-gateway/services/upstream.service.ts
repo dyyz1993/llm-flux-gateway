@@ -7,7 +7,6 @@
 
 import { config } from '../../shared/config';
 import { systemConfigService } from '../../module-system/services/system-config.service';
-import type { ProtocolTranspiler } from '../../module-protocol-transpiler';
 import type { VendorType } from '../../../shared/types';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';

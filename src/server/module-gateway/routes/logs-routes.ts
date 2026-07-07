@@ -1,7 +1,6 @@
 import { Hono } from 'hono';
 import { queryFirst } from '@server/shared/database';
 import { requestLogService } from '../services/request-log.service';
-import { protocolTranspiler } from '../../module-protocol-transpiler/protocol-transpiler-singleton';
 import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { existsSync } from 'node:fs';
@@ -153,30 +152,21 @@ router.post('/:id/retry', async (c) => {
       reconstructedBody = JSON.parse(log.originalRequestRaw);
       console.log('[Logs] Using original_request_raw for 100% reconstruction');
     } catch (e) {
-      console.warn('[Logs] Failed to parse original_request_raw, falling back to reconstruction');
+      console.warn('[Logs] Failed to parse original_request_raw');
     }
   }
 
   // Priority 2: Reconstruct from components (fallback for older logs)
+  // Use the stored fields directly - new gateway controller handles format conversion
   if (!reconstructedBody) {
-    // 1. Reconstruct internal request format (camelCase)
-    const internalRequest = {
+    reconstructedBody = {
       model: log.originalModel,
       messages: log.messages,
-      tools: log.requestTools,
-      temperature: log.temperature,
       ...(log.requestParams || {}),
     };
-
-    // 2. Convert internal request back to original source format
-    reconstructedBody = internalRequest;
-    const converter = protocolTranspiler.getConverter(originalFormat);
-    if (converter && typeof converter.convertRequestFromInternal === 'function') {
-      const result = converter.convertRequestFromInternal(internalRequest as any);
-      if (result.success) {
-        reconstructedBody = result.data;
-      }
-    }
+    if (log.requestTools) reconstructedBody.tools = log.requestTools;
+    if (log.temperature) reconstructedBody.temperature = log.temperature;
+    console.log('[Logs] Using component-based reconstruction (no transpiler)');
   }
 
   console.log('[Logs] Retrying request from log:', id, {

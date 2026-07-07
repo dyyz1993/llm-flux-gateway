@@ -280,7 +280,7 @@ describe('Dashboard Component', () => {
 
       await waitFor(() => {
         expect(screen.getByText('90.9%')!).toBeInTheDocument(); // Success Rate
-        expect(screen.getByText('$0.13')!).toBeInTheDocument(); // Cost (0.125.toFixed(2) = 0.13)
+        expect(screen.getByText('$0.1250')!).toBeInTheDocument(); // Cost (0.125 costEstimate fallback)
         expect(screen.getByText('14.6%')!).toBeInTheDocument(); // Cache Hit Rate
       });
     });
@@ -431,7 +431,7 @@ describe('Dashboard Component', () => {
       );
 
       // Verify zero values are displayed correctly
-      expect(screen.getByText('$0.00')).toBeInTheDocument(); // Cost estimate
+      expect(screen.getByText('$0.0000')).toBeInTheDocument(); // Cost (0 fallback)
     });
 
     it('should not display key stats table when no keys exist', async () => {

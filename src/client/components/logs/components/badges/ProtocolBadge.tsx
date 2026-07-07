@@ -1,5 +1,5 @@
 import React from 'react';
-import { ApiFormat } from '@server/module-protocol-transpiler';
+import { ApiFormat } from '@shared/types';
 import { getProtocolInfo } from '../../utils/logHelpers';
 
 interface ProtocolBadgeProps {

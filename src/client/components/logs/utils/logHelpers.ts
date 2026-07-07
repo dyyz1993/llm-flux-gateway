@@ -1,5 +1,5 @@
 import { Vendor } from '@shared/types';
-import { ApiFormat } from '@server/module-protocol-transpiler';
+import { ApiFormat } from '@shared/types';
 
 /**
  * Find vendor by model ID from vendors list

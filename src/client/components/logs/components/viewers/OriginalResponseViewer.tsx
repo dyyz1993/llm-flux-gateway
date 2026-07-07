@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Code, XCircle, ChevronDown, ChevronUp, Terminal } from 'lucide-react';
-import { ApiFormat } from '@server/module-protocol-transpiler';
+import { ApiFormat } from '@shared/types';
 import { ResponseParser, type ParsedResponse } from '@shared/response-parser';
 import { fetchProtocolLog } from '@client/services/apiClient';
 import { isStructuredContent } from '../../utils/contentFormatters';

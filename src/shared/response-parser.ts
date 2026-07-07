@@ -9,7 +9,7 @@
  * - Frontend: LogExplorer component
  */
 
-import { ApiFormat } from '../server/module-protocol-transpiler';
+import { ApiFormat } from './types';
 
 // ==========================================
 // Type Definitions for Parsed Response
