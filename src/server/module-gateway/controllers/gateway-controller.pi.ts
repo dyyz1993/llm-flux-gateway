@@ -142,6 +142,8 @@ export async function handleGatewayRequestPi(
       return streamText(c, async (ss) => {
         const outputAdapter = getOutputAdapter(responseFormat);
         const streamConverter = outputAdapter.createStreamConverter();
+        // 设置响应 model 为客户端请求的模型名（如 flash-v2），不是上游模型名
+        streamConverter.reset(undefined, body.model);
         let promptTokens = 0;
         let completionTokens = 0;
         let cachedRead = 0;

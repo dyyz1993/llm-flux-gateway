@@ -20,6 +20,7 @@ export type ResponseFormat = 'openai' | 'anthropic' | 'gemini';
  */
 export interface SSEConverter {
   eventToSSE(event: AssistantMessageEvent): Generator<string>;
+  reset(id?: string, model?: string, created?: number): void;
 }
 
 export interface OutputAdapter {
@@ -41,12 +42,14 @@ const registry: Partial<Record<ResponseFormat, OutputAdapter>> = {
   anthropic: {
     createStreamConverter: () => ({
       eventToSSE: piEventToAnthropicSSE,
+      reset: () => {},
     }),
     responseToJson: piResponseToAnthropicJson,
   },
   gemini: {
     createStreamConverter: () => ({
       eventToSSE: piEventToGeminiSSE,
+      reset: () => {},
     }),
     responseToJson: piResponseToGeminiJson,
   },

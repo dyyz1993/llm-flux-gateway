@@ -36,13 +36,20 @@ export function createOpenaiSSEConverter() {
 
   function makeChunk(extra: Record<string, any>): string {
     // id/created 一旦生成就保持不变（不因 done 事件的 responseId 覆盖）
+    // 注意：key 顺序匹配上游 — id, object, created, model, choices, usage
     const chunk: Record<string, any> = {
       id: responseId || fallbackId,
       object: 'chat.completion.chunk',
       created: responseCreated || fallbackCreated,
       model: responseModel,
-      usage: null,
     };
+    // 先合并 choices，后加 usage，匹配上游 key 顺序
+    if (extra.choices) {
+      chunk.choices = extra.choices;
+      delete extra.choices;
+    }
+    chunk.usage = null;
+    // 合并剩余字段（如 error）
     Object.assign(chunk, extra);
     return sse(chunk);
   }
@@ -69,7 +76,7 @@ export function createOpenaiSSEConverter() {
         case 'start': {
           hasSeenThinking = false;
           yield makeChunk({
-            choices: [{ index: 0, delta: { role: 'assistant', content: null, reasoning_content: '' }, finish_reason: null, logprobs: null }],
+            choices: [{ index: 0, finish_reason: null, logprobs: null, delta: { role: 'assistant', content: null, reasoning_content: '' } }],
           });
           break;
         }
@@ -78,11 +85,11 @@ export function createOpenaiSSEConverter() {
           if (hasSeenThinking) {
             hasSeenThinking = false;
             yield makeChunk({
-              choices: [{ index: 0, delta: { content: event.delta, reasoning_content: null }, finish_reason: null, logprobs: null }],
+              choices: [{ index: 0, finish_reason: null, logprobs: null, delta: { content: event.delta, reasoning_content: null } }],
             });
           } else {
             yield makeChunk({
-              choices: [{ index: 0, delta: { content: event.delta }, finish_reason: null, logprobs: null }],
+              choices: [{ index: 0, finish_reason: null, logprobs: null, delta: { content: event.delta } }],
             });
           }
           break;
@@ -93,7 +100,7 @@ export function createOpenaiSSEConverter() {
         case 'thinking_delta': {
           hasSeenThinking = true;
           yield makeChunk({
-            choices: [{ index: 0, delta: { content: null, reasoning_content: event.delta }, finish_reason: null, logprobs: null }],
+            choices: [{ index: 0, finish_reason: null, logprobs: null, delta: { content: null, reasoning_content: event.delta } }],
           });
           break;
         }
@@ -103,29 +110,21 @@ export function createOpenaiSSEConverter() {
 
         case 'toolcall_start': {
           yield makeChunk({
-            choices: [{ index: 0, delta: {
-              tool_calls: [{ index: event.contentIndex, id: '', type: 'function', function: { name: '', arguments: '' } }],
-            }, finish_reason: null, logprobs: null }],
+            choices: [{ index: 0, finish_reason: null, logprobs: null, delta: { tool_calls: [{ index: event.contentIndex, id: '', type: 'function', function: { name: '', arguments: '' } }] } }],
           });
           break;
         }
 
         case 'toolcall_delta': {
           yield makeChunk({
-            choices: [{ index: 0, delta: {
-              tool_calls: [{ index: event.contentIndex, function: { arguments: event.delta } }],
-            }, finish_reason: null, logprobs: null }],
+            choices: [{ index: 0, finish_reason: null, logprobs: null, delta: { tool_calls: [{ index: event.contentIndex, function: { arguments: event.delta } }] } }],
           });
           break;
         }
 
         case 'toolcall_end': {
           yield makeChunk({
-            choices: [{ index: 0, delta: {
-              tool_calls: [{ index: event.contentIndex, id: event.toolCall.id, type: 'function',
-                function: { name: event.toolCall.name, arguments: JSON.stringify(event.toolCall.arguments) },
-              }],
-            }, finish_reason: null, logprobs: null }],
+            choices: [{ index: 0, finish_reason: null, logprobs: null, delta: { tool_calls: [{ index: event.contentIndex, id: event.toolCall.id, type: 'function', function: { name: event.toolCall.name, arguments: JSON.stringify(event.toolCall.arguments) } }] } }],
           });
           break;
         }
@@ -133,7 +132,7 @@ export function createOpenaiSSEConverter() {
         case 'done': {
           const u = event.message.usage;
           const usageChunk: Record<string, any> = {
-            choices: [{ index: 0, delta: {}, finish_reason: mapStopReason(event.reason) }],
+            choices: [{ index: 0, finish_reason: mapStopReason(event.reason), logprobs: null, delta: {} }],
             usage: {
               prompt_tokens: u.input, completion_tokens: u.output, total_tokens: u.totalTokens,
               prompt_tokens_details: { cached_tokens: u.cacheRead },
