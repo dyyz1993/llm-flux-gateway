@@ -8,7 +8,7 @@
 import { config } from '../../shared/config';
 import { systemConfigService } from '../../module-system/services/system-config.service';
 import type { VendorType } from '../../../shared/types';
-import { writeFile, mkdir } from 'node:fs/promises';
+import { writeFile, mkdir, readdir, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { existsSync } from 'node:fs';
 import { Agent, request } from 'undici';
@@ -96,6 +96,20 @@ export async function logRequestTrace(data: RequestTraceData): Promise<void> {
   if (!existsSync(logsDir)) {
     await mkdir(logsDir, { recursive: true });
   }
+
+  // 自动清理：保留最多 500 个文件，超了删最旧的
+  try {
+    const files = await readdir(logsDir);
+    if (files.length > 500) {
+      const sorted = files
+        .filter(f => f.endsWith('.json') || f.endsWith('.log'))
+        .map(f => ({ name: f, path: join(logsDir, f), time: 0 }))
+        .sort((a, b) => a.name.localeCompare(b.name)); // 文件名含时间戳，排序即按时间
+      const toDelete = sorted.slice(0, sorted.length - 500);
+      await Promise.all(toDelete.map(f => unlink(f.path).catch(() => {})));
+      console.log(`[Upstream] Cleaned up ${toDelete.length} old trace files (${files.length} → 500)`);
+    }
+  } catch { /* 清理失败不影响主流程 */ }
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const uuidSuffix = data.metadata.requestId.slice(-6);
