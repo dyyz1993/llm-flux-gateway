@@ -129,10 +129,10 @@ describe('reasoning + content 合并', () => {
     const thinkingChunk = JSON.parse(lines[0]!.slice(6));
     expect(thinkingChunk.choices[0].delta.reasoning_content).toBe('Reasoning step...');
     expect(thinkingChunk.choices[0].delta.content).toBeNull(); // upstream also sends content:null with reasoning_content
-    // text_delta → 独立 content chunk
+    // text_delta → 独立 content chunk（但带 reasoning_content:null 过渡标记）
     const textChunk = JSON.parse(lines[1]!.slice(6));
     expect(textChunk.choices[0].delta.content).toBe('Answer');
-    expect(textChunk.choices[0].delta.reasoning_content).toBeUndefined();
+    expect(textChunk.choices[0].delta.reasoning_content).toBeNull();
   });
 
   it('只有 text_delta（无 reasoning）不合并', () => {

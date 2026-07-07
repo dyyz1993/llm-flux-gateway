@@ -20,14 +20,22 @@ import type { AssistantMessageEvent, AssistantMessage } from '@earendil-works/pi
  *   - text 阶段：每条 chunk 包含 content:"增量"（无 reasoning_content）
  *
  * 我们的转换器同样增量输出 reasoning_content，匹配上游实时行为。
+ *
+ * 注意：上游在从 reasoning 切换到 text 时，第一个 content chunk 会带
+ * reasoning_content: null 作为过渡标记。我们也要匹配这一行为。
  */
 export function createOpenaiSSEConverter() {
+  let hasSeenThinking = false;
+
   return {
-    reset() { /* 无状态，无需重置 */ },
+    reset() {
+      hasSeenThinking = false;
+    },
 
     *eventToSSE(event: AssistantMessageEvent): Generator<string> {
       switch (event.type) {
         case 'start': {
+          hasSeenThinking = false;
           yield sse({
             choices: [{ index: 0, delta: { role: 'assistant' }, finish_reason: null }],
           });
@@ -35,15 +43,25 @@ export function createOpenaiSSEConverter() {
         }
 
         case 'text_delta': {
-          yield sse({
-            choices: [{ index: 0, delta: { content: event.delta }, finish_reason: null }],
-          });
+          // 如果之前有 thinking_delta，第一个 content chunk 加 reasoning_content: null
+          // 匹配上游从 reasoning 切到 text 的过渡行为
+          if (hasSeenThinking) {
+            hasSeenThinking = false;
+            yield sse({
+              choices: [{ index: 0, delta: { content: event.delta, reasoning_content: null }, finish_reason: null }],
+            });
+          } else {
+            yield sse({
+              choices: [{ index: 0, delta: { content: event.delta }, finish_reason: null }],
+            });
+          }
           break;
         }
 
         case 'text_end': break;
 
         case 'thinking_delta': {
+          hasSeenThinking = true;
           // 增量输出 reasoning_content，content: null 匹配上游行为
           yield sse({
             choices: [{ index: 0, delta: { content: null, reasoning_content: event.delta }, finish_reason: null }],
