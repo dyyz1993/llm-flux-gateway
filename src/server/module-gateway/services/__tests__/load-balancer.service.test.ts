@@ -121,22 +121,84 @@ describe('LoadBalancerService', () => {
         },
       ];
 
-      // 运行多次测试，检查权重分布
+      // 运行多次测试，检查优先级策略：同优先级同健康状态，选第一个
       const results: string[] = [];
-      for (let i = 0; i < 1000; i++) {
+      for (let i = 0; i < 100; i++) {
         const selected = service.selectRoute(members);
         if (selected) {
           results.push(selected.route!.id);
         }
       }
 
-      // 统计选择次数
+      // 同优先级下始终选第一个健康的
       const route1Count = results.filter(r => r === 'route-1').length;
-      const route2Count = results.filter(r => r === 'route-2').length;
+      expect(route1Count).toBe(100); // 始终选 route-1
+    });
 
-      // route-1 应该被选择约 75% 的时间 (300 / (300 + 100))
-      expect(route1Count).toBeGreaterThan(700);
-      expect(route2Count).toBeGreaterThan(50);
+    it('应该优先选择优先级更高的成员', () => {
+      const members: LoadBalancerMember[] = [
+        {
+          id: 'member-high',
+          apiKeyId: 'key-1',
+          routeId: 'route-high',
+          priority: 1, // 高优先级
+          weight: 50,
+          healthStatus: 'healthy',
+          failCount: 0,
+          successCount: 10,
+          lastCheckAt: null,
+          lastSuccessAt: null,
+          lastFailAt: null,
+          avgLatencyMs: null,
+          route: {
+            id: 'route-high',
+            name: 'High Priority',
+            baseUrl: 'https://api.example.com',
+            endpoint: '/chat',
+            upstreamApiKey: 'key',
+            upstreamModel: 'gpt-4',
+            isActive: true,
+            overrides: [],
+            priority: 1,
+            requestFormat: 'openai',
+            responseFormat: 'openai',
+          },
+        },
+        {
+          id: 'member-low',
+          apiKeyId: 'key-1',
+          routeId: 'route-low',
+          priority: 10, // 低优先级
+          weight: 100,
+          healthStatus: 'healthy',
+          failCount: 0,
+          successCount: 10,
+          lastCheckAt: null,
+          lastSuccessAt: null,
+          lastFailAt: null,
+          avgLatencyMs: null,
+          route: {
+            id: 'route-low',
+            name: 'Low Priority',
+            baseUrl: 'https://api.example.com',
+            endpoint: '/chat',
+            upstreamApiKey: 'key',
+            upstreamModel: 'gpt-3.5',
+            isActive: true,
+            overrides: [],
+            priority: 10,
+            requestFormat: 'openai',
+            responseFormat: 'openai',
+          },
+        },
+      ];
+
+      // 始终选高优先级的 route-high，虽然它 weight 更低
+      for (let i = 0; i < 50; i++) {
+        const selected = service.selectRoute(members);
+        expect(selected?.route?.id).toBe('route-high');
+        expect(selected?.memberId).toBe('member-high');
+      }
     });
 
     it('应该跳过不健康的成员', () => {

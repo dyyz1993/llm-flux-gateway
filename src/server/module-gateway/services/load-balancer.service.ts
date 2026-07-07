@@ -47,66 +47,49 @@ export class LoadBalancerService {
     this.healthyOnly = value;
   }
 
+  /**
+   * 选择上游成员。
+   *
+   * 策略：优先级优先（不是负载均衡轮询）。
+   * 优先选 priority 最高的健康成员（数值越小优先级越高），
+   * 相同优先级下选健康的，只有高优先级的挂了才降级到低优先级。
+   *
+   * 这样同一个模型始终命中同一个上游 Key，缓存不碎片化。
+   */
   selectRoute(members: LoadBalancerMember[]): RouteMatchWithLB | null {
-    const eligibleMembers = this.healthyOnly
-      ? members.filter((m) => m.healthStatus !== 'unhealthy')
-      : members;
+    const eligible = members.filter((m) => m.healthStatus !== 'unhealthy');
+    if (eligible.length === 0) return null;
 
-    if (eligibleMembers.length === 0) {
-      return null;
-    }
-
-    const totalWeight = eligibleMembers.reduce((sum, m) => {
-      if (m.healthStatus === 'degraded') {
-        return sum + m.weight * 0.5;
+    // 按优先级排序（越小越优先），相同优先级下健康优先于 degraded
+    eligible.sort((a, b) => {
+      if (a.priority !== b.priority) return a.priority - b.priority;
+      // 同优先级：healthy > degraded
+      if (a.healthStatus !== b.healthStatus) {
+        return a.healthStatus === 'healthy' ? -1 : 1;
       }
-      return sum + m.weight;
-    }, 0);
+      return 0;
+    });
 
-    if (totalWeight <= 0) {
-      return eligibleMembers[0]?.route
-        ? {
-            route: eligibleMembers[0].route,
-            memberId: eligibleMembers[0].id,
-            weight: eligibleMembers[0].weight,
-            healthStatus: eligibleMembers[0].healthStatus,
-          }
-        : null;
-    }
-
-    let random = Math.random() * totalWeight;
-
-    for (const member of eligibleMembers) {
-      const effectiveWeight =
-        member.healthStatus === 'degraded' ? member.weight * 0.5 : member.weight;
-      random -= effectiveWeight;
-      if (random <= 0 && member.route) {
-        return {
-          route: member.route,
-          memberId: member.id,
-          weight: member.weight,
-          healthStatus: member.healthStatus,
-        };
-      }
-    }
-
-    const fallback = eligibleMembers[0];
-    return fallback?.route
+    const chosen = eligible[0];
+    return chosen?.route
       ? {
-          route: fallback.route,
-          memberId: fallback.id,
-          weight: fallback.weight,
-          healthStatus: fallback.healthStatus,
+          route: chosen.route,
+          memberId: chosen.id,
+          weight: chosen.weight,
+          healthStatus: chosen.healthStatus,
         }
       : null;
   }
 
+  /**
+   * 排除指定成员后重新选择（降级/重试用）
+   */
   selectNextRoute(
     members: LoadBalancerMember[],
     excludeMemberId: string
   ): RouteMatchWithLB | null {
-    const remainingMembers = members.filter((m) => m.id !== excludeMemberId);
-    return this.selectRoute(remainingMembers);
+    const remaining = members.filter((m) => m.id !== excludeMemberId);
+    return this.selectRoute(remaining);
   }
 
   async markSuccess(memberId: string, latencyMs: number): Promise<void> {
