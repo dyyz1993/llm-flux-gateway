@@ -601,6 +601,16 @@ router.get('/keys', async (c) => {
   } catch { return c.json({ data: [] }); }
 });
 
+// 直连配置 API（绕过 AI 模式，直接调用工具）
+router.post('/setup', async (c) => {
+  const { providerId, apiKey } = await c.req.json();
+  if (!providerId || !apiKey) {
+    return c.json({ success: false, error: '需要 providerId 和 apiKey' });
+  }
+  const result = await tools.quickSetup({ providerId, apiKey });
+  return c.json(result);
+});
+
 // 获取可用模型列表
 router.get('/models', async (c) => {
   const models = await getAvailableModels();
