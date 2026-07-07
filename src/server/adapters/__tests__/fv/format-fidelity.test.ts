@@ -7,7 +7,6 @@
  * 包含 SSE 和非 SSE 两种模式。
  */
 import { describe, it, expect } from 'vitest';
-import { fauxAssistantMessage, fauxText } from '@earendil-works/pi-ai/providers/faux';
 import { piEventToOpenaiSSE, piResponseToOpenaiJson, createOpenaiSSEConverter } from '../../output/openai.adapter';
 import type { AssistantMessage } from '@earendil-works/pi-ai';
 
@@ -129,7 +128,7 @@ describe('reasoning + content 合并', () => {
     // thinking_delta → 独立 reasoning_content chunk
     const thinkingChunk = JSON.parse(lines[0]!.slice(6));
     expect(thinkingChunk.choices[0].delta.reasoning_content).toBe('Reasoning step...');
-    expect(thinkingChunk.choices[0].delta.content).toBeUndefined();
+    expect(thinkingChunk.choices[0].delta.content).toBeNull(); // upstream also sends content:null with reasoning_content
     // text_delta → 独立 content chunk
     const textChunk = JSON.parse(lines[1]!.slice(6));
     expect(textChunk.choices[0].delta.content).toBe('Answer');

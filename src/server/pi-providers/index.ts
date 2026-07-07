@@ -133,7 +133,7 @@ export async function registerPiRoute(config: PiRouteConfig): Promise<Model<Api>
       // pi-ai 会错误地发送 thinking: {type:"disabled"}，导致上游不返回 reasoning_content。
       // 修复：如果模型 reasoning=true 但 thinkingLevelMap 没有 off 键，
       // 则显式设 off=null，让 pi-ai 知道此模型不能关闭 reasoning。
-      if (piModel && piModel.reasoning && piModel.compat?.thinkingFormat === 'deepseek') {
+      if (piModel && piModel.reasoning && (piModel.compat as any)?.thinkingFormat === 'deepseek') {
         const tlm = piModel.thinkingLevelMap as any;
         if (!tlm || !('off' in tlm)) {
           piModel.thinkingLevelMap = { ...(tlm || {}), off: null };

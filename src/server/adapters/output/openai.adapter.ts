@@ -44,9 +44,9 @@ export function createOpenaiSSEConverter() {
         case 'text_end': break;
 
         case 'thinking_delta': {
-          // 增量输出 reasoning_content，匹配上游实时流式行为
+          // 增量输出 reasoning_content，content: null 匹配上游行为
           yield sse({
-            choices: [{ index: 0, delta: { reasoning_content: event.delta }, finish_reason: null }],
+            choices: [{ index: 0, delta: { content: null, reasoning_content: event.delta }, finish_reason: null }],
           });
           break;
         }
@@ -126,6 +126,7 @@ export function* piEventToOpenaiSSE(event: AssistantMessageEvent): Generator<str
  */
 export function piResponseToOpenaiJson(msg: AssistantMessage): Record<string, any> {
   const content = extractTextContent(msg.content);
+  const reasoningContent = extractReasoningContent(msg.content);
   const toolCalls = extractToolCallsFromContent(msg.content);
 
   const response: Record<string, any> = {
@@ -153,6 +154,11 @@ export function piResponseToOpenaiJson(msg: AssistantMessage): Record<string, an
       },
     },
   };
+
+  // reasoning_content 字段（deepseek 兼容）
+  if (reasoningContent) {
+    response.choices[0].message.reasoning_content = reasoningContent;
+  }
 
   if (toolCalls.length > 0) {
     response.choices[0].message.tool_calls = toolCalls;
@@ -197,6 +203,15 @@ function extractTextContent(content: AssistantMessage['content']): string | null
   const texts = content.filter((b): b is { type: 'text'; text: string } => b.type === 'text');
   if (texts.length === 0) return null;
   return texts.map(t => t.text).join('');
+}
+
+/**
+ * 从 content blocks 中提取 reasoning/thinking 内容（非流式 response 的 reasoning_content 字段）
+ */
+function extractReasoningContent(content: AssistantMessage['content']): string | null {
+  const blocks = content.filter((b): b is { type: 'thinking'; thinking: string } => b.type === 'thinking');
+  if (blocks.length === 0) return null;
+  return blocks.map(t => t.thinking).join('');
 }
 
 /**
