@@ -116,7 +116,7 @@ describe('流式 SSE - 格式保真度', () => {
 // ============================================================
 
 describe('reasoning + content 合并', () => {
-  it('thinking_delta + text_delta 合并到同一 chunk', () => {
+  it('thinking_delta 输出为独立 reasoning_content chunk，匹配上游实时行为', () => {
     const converter = createOpenaiSSEConverter();
     const msg = makeMsg('result');
 
@@ -125,10 +125,15 @@ describe('reasoning + content 合并', () => {
       ...converter.eventToSSE({ type: 'text_delta', contentIndex: 0, delta: 'Answer', partial: msg }),
     ];
 
-    expect(lines).toHaveLength(1);
-    const parsed = JSON.parse(lines[0]!.slice(6));
-    expect(parsed.choices[0].delta.content).toBe('Answer');
-    expect(parsed.choices[0].delta.reasoning_content).toBe('Reasoning step...');
+    expect(lines).toHaveLength(2);
+    // thinking_delta → 独立 reasoning_content chunk
+    const thinkingChunk = JSON.parse(lines[0]!.slice(6));
+    expect(thinkingChunk.choices[0].delta.reasoning_content).toBe('Reasoning step...');
+    expect(thinkingChunk.choices[0].delta.content).toBeUndefined();
+    // text_delta → 独立 content chunk
+    const textChunk = JSON.parse(lines[1]!.slice(6));
+    expect(textChunk.choices[0].delta.content).toBe('Answer');
+    expect(textChunk.choices[0].delta.reasoning_content).toBeUndefined();
   });
 
   it('只有 text_delta（无 reasoning）不合并', () => {

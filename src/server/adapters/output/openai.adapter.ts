@@ -13,28 +13,21 @@ import type { AssistantMessageEvent, AssistantMessage } from '@earendil-works/pi
 // ============================================================
 
 /**
- * 上游（如 DeepSeek）会把 reasoning_content 和 content 合并到同一个 chunk 中发送。
- * pi-ai 则分成了 thinking_delta 和 text_delta 两个独立事件。
- * 为了还原上游行为，创建一个带状态的流式转换器，将紧邻的 thinking_delta + text_delta 合并。
+ * 流式转换器：pi-ai 事件 → OpenAI SSE
+ *
+ * 上游（如 DeepSeek）的 SSE 模式：
+ *   - reasoning 阶段：每条 chunk 包含 content:null + reasoning_content:"增量"
+ *   - text 阶段：每条 chunk 包含 content:"增量"（无 reasoning_content）
+ *
+ * 我们的转换器同样增量输出 reasoning_content，匹配上游实时行为。
  */
 export function createOpenaiSSEConverter() {
-  let pendingReasoning = '';
-
   return {
-    /**
-     * 重置状态（新流开始时调用）
-     */
-    reset() {
-      pendingReasoning = '';
-    },
+    reset() { /* 无状态，无需重置 */ },
 
-    /**
-     * 将 pi-ai 事件转换为 SSE 行，带 reasoning 合并
-     */
     *eventToSSE(event: AssistantMessageEvent): Generator<string> {
       switch (event.type) {
         case 'start': {
-          pendingReasoning = '';
           yield sse({
             choices: [{ index: 0, delta: { role: 'assistant' }, finish_reason: null }],
           });
@@ -42,23 +35,19 @@ export function createOpenaiSSEConverter() {
         }
 
         case 'text_delta': {
-          if (pendingReasoning) {
-            yield sse({
-              choices: [{ index: 0, delta: { content: event.delta, reasoning_content: pendingReasoning }, finish_reason: null }],
-            });
-            pendingReasoning = '';
-          } else {
-            yield sse({
-              choices: [{ index: 0, delta: { content: event.delta }, finish_reason: null }],
-            });
-          }
+          yield sse({
+            choices: [{ index: 0, delta: { content: event.delta }, finish_reason: null }],
+          });
           break;
         }
 
         case 'text_end': break;
 
         case 'thinking_delta': {
-          pendingReasoning += event.delta;
+          // 增量输出 reasoning_content，匹配上游实时流式行为
+          yield sse({
+            choices: [{ index: 0, delta: { reasoning_content: event.delta }, finish_reason: null }],
+          });
           break;
         }
 
@@ -95,12 +84,6 @@ export function createOpenaiSSEConverter() {
         }
 
         case 'done': {
-          if (pendingReasoning) {
-            yield sse({
-              choices: [{ index: 0, delta: { reasoning_content: pendingReasoning }, finish_reason: null }],
-            });
-            pendingReasoning = '';
-          }
           const usageChunk: Record<string, any> = {
             choices: [{ index: 0, delta: {}, finish_reason: mapStopReason(event.reason) }],
           };
@@ -119,12 +102,6 @@ export function createOpenaiSSEConverter() {
         }
 
         case 'error': {
-          if (pendingReasoning) {
-            yield sse({
-              choices: [{ index: 0, delta: { reasoning_content: pendingReasoning }, finish_reason: null }],
-            });
-            pendingReasoning = '';
-          }
           yield sse({ error: { message: event.error.errorMessage ?? 'Unknown error', type: 'upstream_error' } });
           yield 'data: [DONE]\n\n';
           break;
@@ -136,17 +113,7 @@ export function createOpenaiSSEConverter() {
 
 // 保留简单版本（无状态，单事件直接映射，用于测试）
 export function* piEventToOpenaiSSE(event: AssistantMessageEvent): Generator<string> {
-  // 复用 converter 的核心逻辑，但不做 reasoning 缓存（单事件模式）
   const converter = createOpenaiSSEConverter();
-  
-  // thinking_delta 在单事件模式下需要直接输出
-  if (event.type === 'thinking_delta') {
-    yield sse({
-      choices: [{ index: 0, delta: { reasoning_content: event.delta }, finish_reason: null }],
-    });
-    return;
-  }
-
   yield* converter.eventToSSE(event);
 }
 

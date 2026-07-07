@@ -119,7 +119,25 @@ export async function registerPiRoute(config: PiRouteConfig): Promise<Model<Api>
     if (config.apiType === 'openai-completions') {
       const builtinModel = builtin.getModel('opencode-go', config.upstreamModel) as Model<Api> | undefined;
       if (builtinModel) {
-        piModel = { ...builtinModel, provider: config.id, baseUrl: config.baseUrl };
+        // 保留内置模型的 compat/thinkingLevelMap/reasoning 设置
+        // 但 provider 要改成 config.id（让 pi-ai 能找到这个 provider）
+        const { provider: _, ...rest } = builtinModel as any;
+        piModel = {
+          ...rest,
+          provider: config.id,
+          baseUrl: config.baseUrl,
+        } as Model<Api>;
+      }
+
+      // 修复 pi-ai bug: thinkingLevelMap.off 未定义时（undefined !== null → true），
+      // pi-ai 会错误地发送 thinking: {type:"disabled"}，导致上游不返回 reasoning_content。
+      // 修复：如果模型 reasoning=true 但 thinkingLevelMap 没有 off 键，
+      // 则显式设 off=null，让 pi-ai 知道此模型不能关闭 reasoning。
+      if (piModel && piModel.reasoning && piModel.compat?.thinkingFormat === 'deepseek') {
+        const tlm = piModel.thinkingLevelMap as any;
+        if (!tlm || !('off' in tlm)) {
+          piModel.thinkingLevelMap = { ...(tlm || {}), off: null };
+        }
       }
     }
   } catch { /* fallback */ }
