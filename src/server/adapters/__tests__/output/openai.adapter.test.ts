@@ -59,6 +59,12 @@ function validateOpenaiSseLine(sseLine: string): SSEValidationResult {
     return { valid: false, errors };
   }
 
+  // 验证顶层字段（上游每行都包含）
+  if (typeof parsed.id !== 'string') errors.push('id must be a string');
+  if (parsed.object !== 'chat.completion.chunk') errors.push('object must be "chat.completion.chunk"');
+  if (typeof parsed.created !== 'number') errors.push('created must be a number');
+  if (typeof parsed.model !== 'string') errors.push('model must be a string');
+
   // 验证标准字段
   if (!parsed.choices || !Array.isArray(parsed.choices) || parsed.choices.length === 0) {
     errors.push('choices must be a non-empty array');
@@ -75,8 +81,8 @@ function validateOpenaiSseLine(sseLine: string): SSEValidationResult {
     }
   }
 
-  // usage 必须在最后一个 chunk 才出现（可选）
-  if (parsed.usage !== undefined) {
+  // usage 在中间 chunk 为 null（匹配上游行为），在最终 chunk 为 usage 对象
+  if (parsed.usage !== undefined && parsed.usage !== null) {
     if (typeof parsed.usage.prompt_tokens !== 'number') errors.push('usage.prompt_tokens must be a number');
     if (typeof parsed.usage.completion_tokens !== 'number') errors.push('usage.completion_tokens must be a number');
     if (typeof parsed.usage.total_tokens !== 'number') errors.push('usage.total_tokens must be a number');

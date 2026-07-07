@@ -2,6 +2,10 @@
  * 输出适配器注册表
  *
  * 根据 responseFormat 选择对应的输出适配器。
+ *
+ * 注意：流式转换器（eventToSSE）是带状态的（thinking 标记、响应元数据等），
+ * 因此每次流式请求前需要创建新的 converter 实例。
+ * 使用 createStreamConverter() 工厂方法创建。
  */
 import { piResponseToOpenaiJson, createOpenaiSSEConverter } from './openai.adapter';
 import { piEventToAnthropicSSE, piResponseToAnthropicJson } from './anthropic.adapter';
@@ -10,25 +14,40 @@ import type { AssistantMessageEvent, AssistantMessage } from '@earendil-works/pi
 
 export type ResponseFormat = 'openai' | 'anthropic' | 'gemini';
 
-export interface OutputAdapter {
+/**
+ * SSE 流式转换器实例。
+ * 每个流式请求创建一个新实例，包含独立的 state。
+ */
+export interface SSEConverter {
   eventToSSE(event: AssistantMessageEvent): Generator<string>;
+}
+
+export interface OutputAdapter {
+  /**
+   * 为流式请求创建新的 SSE 转换器实例。
+   * 每次流式响应前调用，返回带独立 state 的转换器。
+   */
+  createStreamConverter(): SSEConverter;
   responseToJson(msg: AssistantMessage): Record<string, any>;
 }
 
-// 每个 adapter 实例可以有自己的状态（如 reasoning 合并）
 const openaiAdapter: OutputAdapter = {
-  eventToSSE: createOpenaiSSEConverter().eventToSSE,
+  createStreamConverter: () => createOpenaiSSEConverter(),
   responseToJson: piResponseToOpenaiJson,
 };
 
 const registry: Partial<Record<ResponseFormat, OutputAdapter>> = {
   openai: openaiAdapter,
   anthropic: {
-    eventToSSE: piEventToAnthropicSSE,
+    createStreamConverter: () => ({
+      eventToSSE: piEventToAnthropicSSE,
+    }),
     responseToJson: piResponseToAnthropicJson,
   },
   gemini: {
-    eventToSSE: piEventToGeminiSSE,
+    createStreamConverter: () => ({
+      eventToSSE: piEventToGeminiSSE,
+    }),
     responseToJson: piResponseToGeminiJson,
   },
 };

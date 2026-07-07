@@ -141,6 +141,7 @@ export async function handleGatewayRequestPi(
 
       return streamText(c, async (ss) => {
         const outputAdapter = getOutputAdapter(responseFormat);
+        const streamConverter = outputAdapter.createStreamConverter();
         let promptTokens = 0;
         let completionTokens = 0;
         let cachedRead = 0;
@@ -190,7 +191,7 @@ export async function handleGatewayRequestPi(
               errorMsg = event.error.errorMessage || 'Upstream stream error';
             }
 
-            const sseLines = [...outputAdapter.eventToSSE(event)];
+            const sseLines = [...streamConverter.eventToSSE(event)];
             for (const line of sseLines) {
               await ss.write(line);
               chunkCount++;
@@ -219,7 +220,7 @@ export async function handleGatewayRequestPi(
                 timestamp: Date.now(),
               },
             };
-            for (const line of [...(outputAdapter.eventToSSE as any)(errorEvent)]) {
+            for (const line of [...streamConverter.eventToSSE(errorEvent)]) {
               await ss.write(line);
             }
           } catch { /* 忽略 SSE 写入错误 */ }

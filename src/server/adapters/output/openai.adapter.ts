@@ -16,6 +16,7 @@ import type { AssistantMessageEvent, AssistantMessage } from '@earendil-works/pi
  * 流式转换器：pi-ai 事件 → OpenAI SSE
  *
  * 上游（如 DeepSeek）的 SSE 模式：
+ *   - 每行都包含 id/object/created/model/usage 等顶层字段
  *   - reasoning 阶段：每条 chunk 包含 content:null + reasoning_content:"增量"
  *   - text 阶段：每条 chunk 包含 content:"增量"（无 reasoning_content）
  *
@@ -26,33 +27,62 @@ import type { AssistantMessageEvent, AssistantMessage } from '@earendil-works/pi
  */
 export function createOpenaiSSEConverter() {
   let hasSeenThinking = false;
+  let responseId = '';
+  let responseModel = '';
+  let responseCreated = 0;
+  // 在未收到上游 responseId 前，用本地生成的 fallback 确保同一流 ID 一致
+  const fallbackId = `chatcmpl-${Date.now()}`;
+  const fallbackCreated = Math.floor(Date.now() / 1000);
+
+  function makeChunk(extra: Record<string, any>): string {
+    // id/created 一旦生成就保持不变（不因 done 事件的 responseId 覆盖）
+    const chunk: Record<string, any> = {
+      id: responseId || fallbackId,
+      object: 'chat.completion.chunk',
+      created: responseCreated || fallbackCreated,
+      model: responseModel,
+      usage: null,
+    };
+    Object.assign(chunk, extra);
+    return sse(chunk);
+  }
 
   return {
-    reset() {
+    reset(id?: string, model?: string, created?: number) {
       hasSeenThinking = false;
+      if (id) responseId = id;
+      if (model) responseModel = model;
+      if (created) responseCreated = created;
     },
 
     *eventToSSE(event: AssistantMessageEvent): Generator<string> {
+      // 从事件中提取元数据（只取第一次，不覆盖已设置的值）
+      if (event.type === 'done' && event.message) {
+        if (!responseModel && event.message.model) responseModel = event.message.model;
+        if (!responseCreated && event.message.timestamp) responseCreated = Math.floor(event.message.timestamp / 1000);
+      }
+      if (event.type === 'start' && event.partial?.model && !responseModel) {
+        responseModel = event.partial.model;
+      }
+
       switch (event.type) {
         case 'start': {
           hasSeenThinking = false;
-          yield sse({
-            choices: [{ index: 0, delta: { role: 'assistant' }, finish_reason: null }],
+          yield makeChunk({
+            choices: [{ index: 0, delta: { role: 'assistant', content: null, reasoning_content: '' }, finish_reason: null, logprobs: null }],
           });
           break;
         }
 
         case 'text_delta': {
-          // 如果之前有 thinking_delta，第一个 content chunk 加 reasoning_content: null
-          // 匹配上游从 reasoning 切到 text 的过渡行为
           if (hasSeenThinking) {
             hasSeenThinking = false;
-            yield sse({
-              choices: [{ index: 0, delta: { content: event.delta, reasoning_content: null }, finish_reason: null }],
+            yield makeChunk({
+              choices: [{ index: 0, delta: { content: event.delta, reasoning_content: null }, finish_reason: null, logprobs: null }],
             });
           } else {
-            yield sse({
-              choices: [{ index: 0, delta: { content: event.delta }, finish_reason: null }],
+            yield makeChunk({
+              choices: [{ index: 0, delta: { content: event.delta }, finish_reason: null, logprobs: null }],
             });
           }
           break;
@@ -62,9 +92,8 @@ export function createOpenaiSSEConverter() {
 
         case 'thinking_delta': {
           hasSeenThinking = true;
-          // 增量输出 reasoning_content，content: null 匹配上游行为
-          yield sse({
-            choices: [{ index: 0, delta: { content: null, reasoning_content: event.delta }, finish_reason: null }],
+          yield makeChunk({
+            choices: [{ index: 0, delta: { content: null, reasoning_content: event.delta }, finish_reason: null, logprobs: null }],
           });
           break;
         }
@@ -73,54 +102,51 @@ export function createOpenaiSSEConverter() {
         case 'thinking_end': break;
 
         case 'toolcall_start': {
-          yield sse({
+          yield makeChunk({
             choices: [{ index: 0, delta: {
               tool_calls: [{ index: event.contentIndex, id: '', type: 'function', function: { name: '', arguments: '' } }],
-            }, finish_reason: null }],
+            }, finish_reason: null, logprobs: null }],
           });
           break;
         }
 
         case 'toolcall_delta': {
-          yield sse({
+          yield makeChunk({
             choices: [{ index: 0, delta: {
               tool_calls: [{ index: event.contentIndex, function: { arguments: event.delta } }],
-            }, finish_reason: null }],
+            }, finish_reason: null, logprobs: null }],
           });
           break;
         }
 
         case 'toolcall_end': {
-          yield sse({
+          yield makeChunk({
             choices: [{ index: 0, delta: {
               tool_calls: [{ index: event.contentIndex, id: event.toolCall.id, type: 'function',
                 function: { name: event.toolCall.name, arguments: JSON.stringify(event.toolCall.arguments) },
               }],
-            }, finish_reason: null }],
+            }, finish_reason: null, logprobs: null }],
           });
           break;
         }
 
         case 'done': {
+          const u = event.message.usage;
           const usageChunk: Record<string, any> = {
             choices: [{ index: 0, delta: {}, finish_reason: mapStopReason(event.reason) }],
+            usage: {
+              prompt_tokens: u.input, completion_tokens: u.output, total_tokens: u.totalTokens,
+              prompt_tokens_details: { cached_tokens: u.cacheRead },
+              completion_tokens_details: { reasoning_tokens: u.reasoning ?? 0 },
+            },
           };
-          const u = event.message.usage;
-          usageChunk.usage = {
-            prompt_tokens: u.input, completion_tokens: u.output, total_tokens: u.totalTokens,
-            prompt_tokens_details: { cached_tokens: u.cacheRead },
-            completion_tokens_details: { reasoning_tokens: u.reasoning ?? 0 },
-          };
-          if (event.message.responseId) usageChunk.id = event.message.responseId;
-          usageChunk.model = event.message.model;
-          usageChunk.created = Math.floor(event.message.timestamp / 1000);
-          yield sse(usageChunk);
+          yield makeChunk(usageChunk);
           yield 'data: [DONE]\n\n';
           break;
         }
 
         case 'error': {
-          yield sse({ error: { message: event.error.errorMessage ?? 'Unknown error', type: 'upstream_error' } });
+          yield makeChunk({ error: { message: event.error.errorMessage ?? 'Unknown error', type: 'upstream_error' } });
           yield 'data: [DONE]\n\n';
           break;
         }
