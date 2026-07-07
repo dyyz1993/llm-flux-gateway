@@ -403,6 +403,28 @@ export const LogDetail: React.FC<LogDetailProps> = ({ selectedLog, apiKeys, vend
             </div>
           </div>
 
+          {/* 第二行指标：推理/缓存/费用 */}
+          <div className="grid grid-cols-3 gap-4 mt-4">
+            {log.reasoningTokens !== undefined && (
+              <div className="p-3 bg-[#1a1a1a] rounded border border-[#333]">
+                <div className="text-[10px] text-purple-400 uppercase font-semibold mb-1">Reasoning</div>
+                <div className="text-sm font-mono text-purple-300">{log.reasoningTokens}</div>
+              </div>
+            )}
+            {log.cacheHitRate !== undefined && (
+              <div className="p-3 bg-[#1a1a1a] rounded border border-[#333]">
+                <div className="text-[10px] text-amber-400 uppercase font-semibold mb-1">Cache Hit</div>
+                <div className="text-sm font-mono text-amber-300">{log.cacheHitRate.toFixed(1)}%</div>
+              </div>
+            )}
+            {log.totalCost !== undefined && (
+              <div className="p-3 bg-[#1a1a1a] rounded border border-[#333]">
+                <div className="text-[10px] text-pink-400 uppercase font-semibold mb-1">Cost</div>
+                <div className="text-sm font-mono text-pink-300">${log.totalCost.toFixed(6)}</div>
+              </div>
+            )}
+          </div>
+
           {/* Error Message Display */}
           {log.errorMessage && (
             <div className="mt-4 p-4 bg-red-950/20 border border-red-500/20 rounded-lg">

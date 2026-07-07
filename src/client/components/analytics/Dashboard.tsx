@@ -323,9 +323,9 @@ export const Dashboard: React.FC = () => {
           isLoading={isLoading}
         />
         <Card
-          title="Est. Cost"
-          value={`$${(overviewStats?.costEstimate || 0).toFixed(2)}`}
-          sub="Based on token usage"
+          title="Cost"
+          value={`$${(overviewStats?.totalCost ?? overviewStats?.costEstimate ?? 0).toFixed(4)}`}
+          sub={overviewStats?.totalCost ? `$${(overviewStats.costEstimate || 0).toFixed(4)} est.` : 'Estimated'}
           icon={DollarSign}
           isLoading={isLoading}
         />
@@ -471,6 +471,9 @@ export const Dashboard: React.FC = () => {
                   <th className="text-right py-3 px-4 text-gray-400 font-medium">Total</th>
                   <th className="text-right py-3 px-4 text-gray-400 font-medium">Prompt</th>
                   <th className="text-right py-3 px-4 text-gray-400 font-medium">Completion</th>
+                  <th className="text-right py-3 px-4 text-gray-400 font-medium">Reasoning</th>
+                  <th className="text-right py-3 px-4 text-gray-400 font-medium">Cache Hit</th>
+                  <th className="text-right py-3 px-4 text-gray-400 font-medium">Cost</th>
                   <th className="text-right py-3 px-4 text-gray-400 font-medium">Comp %</th>
                   <th className="text-right py-3 px-4 text-gray-400 font-medium">Avg Latency</th>
                 </tr>
@@ -490,6 +493,15 @@ export const Dashboard: React.FC = () => {
                     </td>
                     <td className="py-3 px-4 text-right text-emerald-300">
                       {formatNumber(stat.completionTokens)}
+                    </td>
+                    <td className="py-3 px-4 text-right text-purple-300">
+                      {stat.reasoningTokens ? formatNumber(stat.reasoningTokens) : '-'}
+                    </td>
+                    <td className="py-3 px-4 text-right text-amber-300">
+                      {stat.avgCacheHitRate ? `${stat.avgCacheHitRate.toFixed(1)}%` : '-'}
+                    </td>
+                    <td className="py-3 px-4 text-right text-pink-300">
+                      {stat.totalCost ? `$${stat.totalCost.toFixed(4)}` : '-'}
                     </td>
                     <td className="py-3 px-4 text-right text-gray-300">
                       <span className="text-xs">
