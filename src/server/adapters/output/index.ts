@@ -3,7 +3,7 @@
  *
  * 根据 responseFormat 选择对应的输出适配器。
  */
-import { piEventToOpenaiSSE, piResponseToOpenaiJson } from './openai.adapter';
+import { piResponseToOpenaiJson, createOpenaiSSEConverter } from './openai.adapter';
 import { piEventToAnthropicSSE, piResponseToAnthropicJson } from './anthropic.adapter';
 import { piEventToGeminiSSE, piResponseToGeminiJson } from './gemini.adapter';
 import type { AssistantMessageEvent, AssistantMessage } from '@earendil-works/pi-ai';
@@ -11,17 +11,18 @@ import type { AssistantMessageEvent, AssistantMessage } from '@earendil-works/pi
 export type ResponseFormat = 'openai' | 'anthropic' | 'gemini';
 
 export interface OutputAdapter {
-  /** 流式: pi-ai 事件 → 厂商 SSE 文本行 */
   eventToSSE(event: AssistantMessageEvent): Generator<string>;
-  /** 非流式: pi-ai AssistantMessage → 厂商 JSON */
   responseToJson(msg: AssistantMessage): Record<string, any>;
 }
 
+// 每个 adapter 实例可以有自己的状态（如 reasoning 合并）
+const openaiAdapter: OutputAdapter = {
+  eventToSSE: createOpenaiSSEConverter().eventToSSE,
+  responseToJson: piResponseToOpenaiJson,
+};
+
 const registry: Partial<Record<ResponseFormat, OutputAdapter>> = {
-  openai: {
-    eventToSSE: piEventToOpenaiSSE,
-    responseToJson: piResponseToOpenaiJson,
-  },
+  openai: openaiAdapter,
   anthropic: {
     eventToSSE: piEventToAnthropicSSE,
     responseToJson: piResponseToAnthropicJson,

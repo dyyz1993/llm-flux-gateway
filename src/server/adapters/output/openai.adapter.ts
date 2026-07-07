@@ -13,151 +13,141 @@ import type { AssistantMessageEvent, AssistantMessage } from '@earendil-works/pi
 // ============================================================
 
 /**
- * 将 pi-ai 的 AssistantMessageEvent 转换为 OpenAI SSE 文本行。
- *
- * 输出格式: "data: {json}\n\n"
- * 返回生成器，每个事件可能产生 0-N 条 SSE 行。
+ * 上游（如 DeepSeek）会把 reasoning_content 和 content 合并到同一个 chunk 中发送。
+ * pi-ai 则分成了 thinking_delta 和 text_delta 两个独立事件。
+ * 为了还原上游行为，创建一个带状态的流式转换器，将紧邻的 thinking_delta + text_delta 合并。
  */
+export function createOpenaiSSEConverter() {
+  let pendingReasoning = '';
+
+  return {
+    /**
+     * 重置状态（新流开始时调用）
+     */
+    reset() {
+      pendingReasoning = '';
+    },
+
+    /**
+     * 将 pi-ai 事件转换为 SSE 行，带 reasoning 合并
+     */
+    *eventToSSE(event: AssistantMessageEvent): Generator<string> {
+      switch (event.type) {
+        case 'start': {
+          pendingReasoning = '';
+          yield sse({
+            choices: [{ index: 0, delta: { role: 'assistant' }, finish_reason: null }],
+          });
+          break;
+        }
+
+        case 'text_delta': {
+          if (pendingReasoning) {
+            yield sse({
+              choices: [{ index: 0, delta: { content: event.delta, reasoning_content: pendingReasoning }, finish_reason: null }],
+            });
+            pendingReasoning = '';
+          } else {
+            yield sse({
+              choices: [{ index: 0, delta: { content: event.delta }, finish_reason: null }],
+            });
+          }
+          break;
+        }
+
+        case 'text_end': break;
+
+        case 'thinking_delta': {
+          pendingReasoning += event.delta;
+          break;
+        }
+
+        case 'thinking_start':
+        case 'thinking_end': break;
+
+        case 'toolcall_start': {
+          yield sse({
+            choices: [{ index: 0, delta: {
+              tool_calls: [{ index: event.contentIndex, id: '', type: 'function', function: { name: '', arguments: '' } }],
+            }, finish_reason: null }],
+          });
+          break;
+        }
+
+        case 'toolcall_delta': {
+          yield sse({
+            choices: [{ index: 0, delta: {
+              tool_calls: [{ index: event.contentIndex, function: { arguments: event.delta } }],
+            }, finish_reason: null }],
+          });
+          break;
+        }
+
+        case 'toolcall_end': {
+          yield sse({
+            choices: [{ index: 0, delta: {
+              tool_calls: [{ index: event.contentIndex, id: event.toolCall.id, type: 'function',
+                function: { name: event.toolCall.name, arguments: JSON.stringify(event.toolCall.arguments) },
+              }],
+            }, finish_reason: null }],
+          });
+          break;
+        }
+
+        case 'done': {
+          if (pendingReasoning) {
+            yield sse({
+              choices: [{ index: 0, delta: { reasoning_content: pendingReasoning }, finish_reason: null }],
+            });
+            pendingReasoning = '';
+          }
+          const usageChunk: Record<string, any> = {
+            choices: [{ index: 0, delta: {}, finish_reason: mapStopReason(event.reason) }],
+          };
+          const u = event.message.usage;
+          usageChunk.usage = {
+            prompt_tokens: u.input, completion_tokens: u.output, total_tokens: u.totalTokens,
+            prompt_tokens_details: { cached_tokens: u.cacheRead },
+            completion_tokens_details: { reasoning_tokens: u.reasoning ?? 0 },
+          };
+          if (event.message.responseId) usageChunk.id = event.message.responseId;
+          usageChunk.model = event.message.model;
+          usageChunk.created = Math.floor(event.message.timestamp / 1000);
+          yield sse(usageChunk);
+          yield 'data: [DONE]\n\n';
+          break;
+        }
+
+        case 'error': {
+          if (pendingReasoning) {
+            yield sse({
+              choices: [{ index: 0, delta: { reasoning_content: pendingReasoning }, finish_reason: null }],
+            });
+            pendingReasoning = '';
+          }
+          yield sse({ error: { message: event.error.errorMessage ?? 'Unknown error', type: 'upstream_error' } });
+          yield 'data: [DONE]\n\n';
+          break;
+        }
+      }
+    },
+  };
+}
+
+// 保留简单版本（无状态，单事件直接映射，用于测试）
 export function* piEventToOpenaiSSE(event: AssistantMessageEvent): Generator<string> {
-  switch (event.type) {
-    case 'start': {
-      // 首条 chunk: 声明 assistant 角色
-      yield sse({
-        choices: [{ index: 0, delta: { role: 'assistant' }, finish_reason: null }],
-      });
-      break;
-    }
-
-    case 'text_delta': {
-      yield sse({
-        choices: [{ index: 0, delta: { content: event.delta }, finish_reason: null }],
-      });
-      break;
-    }
-
-    case 'text_end': {
-      // OpenAI 不要求 text_end 事件，可忽略
-      break;
-    }
-
-    case 'thinking_delta': {
-      // OpenAI 将推理内容放在 reasoning_content 字段
-      yield sse({
-        choices: [{ index: 0, delta: { reasoning_content: event.delta }, finish_reason: null }],
-      });
-      break;
-    }
-
-    case 'thinking_start':
-    case 'thinking_end': {
-      // OpenAI 没有 thinking_start/end 的概念，忽略
-      break;
-    }
-
-    case 'toolcall_start': {
-      // 声明 tool_call 开始
-      yield sse({
-        choices: [{
-          index: 0,
-          delta: {
-            tool_calls: [{
-              index: event.contentIndex,
-              id: '',
-              type: 'function',
-              function: { name: '', arguments: '' },
-            }],
-          },
-          finish_reason: null,
-        }],
-      });
-      break;
-    }
-
-    case 'toolcall_delta': {
-      // 追加 tool arguments 增量
-      yield sse({
-        choices: [{
-          index: 0,
-          delta: {
-            tool_calls: [{
-              index: event.contentIndex,
-              function: { arguments: event.delta },
-            }],
-          },
-          finish_reason: null,
-        }],
-      });
-      break;
-    }
-
-    case 'toolcall_end': {
-      // 发送完整 tool_call 信息（id + name + arguments）
-      yield sse({
-        choices: [{
-          index: 0,
-          delta: {
-            tool_calls: [{
-              index: event.contentIndex,
-              id: event.toolCall.id,
-              type: 'function',
-              function: {
-                name: event.toolCall.name,
-                arguments: JSON.stringify(event.toolCall.arguments),
-              },
-            }],
-          },
-          finish_reason: null,
-        }],
-      });
-      break;
-    }
-
-    case 'done': {
-      // 最终 chunk: finish_reason + usage
-      const usageChunk: Record<string, any> = {
-        choices: [{
-          index: 0,
-          delta: {},
-          finish_reason: mapStopReason(event.reason),
-        }],
-      };
-
-      // usage
-      const u = event.message.usage;
-      usageChunk.usage = {
-        prompt_tokens: u.input,
-        completion_tokens: u.output,
-        total_tokens: u.totalTokens,
-        prompt_tokens_details: {
-          cached_tokens: u.cacheRead,
-        },
-        completion_tokens_details: {
-          reasoning_tokens: u.reasoning ?? 0,
-        },
-      };
-
-      // id / created / model
-      if (event.message.responseId) usageChunk.id = event.message.responseId;
-      usageChunk.model = event.message.model;
-      usageChunk.created = Math.floor(event.message.timestamp / 1000);
-
-      yield sse(usageChunk);
-      yield 'data: [DONE]\n\n';
-      break;
-    }
-
-    case 'error': {
-      // 错误: 发送错误信息 + [DONE]
-      yield sse({
-        error: {
-          message: event.error.errorMessage ?? 'Unknown error',
-          type: 'upstream_error',
-        },
-      });
-      yield 'data: [DONE]\n\n';
-      break;
-    }
+  // 复用 converter 的核心逻辑，但不做 reasoning 缓存（单事件模式）
+  const converter = createOpenaiSSEConverter();
+  
+  // thinking_delta 在单事件模式下需要直接输出
+  if (event.type === 'thinking_delta') {
+    yield sse({
+      choices: [{ index: 0, delta: { reasoning_content: event.delta }, finish_reason: null }],
+    });
+    return;
   }
+
+  yield* converter.eventToSSE(event);
 }
 
 // ============================================================
