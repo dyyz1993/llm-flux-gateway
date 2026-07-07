@@ -238,7 +238,9 @@ export async function handleGatewayRequestPi(
         if (result.stopReason === 'error' || result.stopReason === 'aborted') {
           const errMsg = result.errorMessage || 'Upstream request failed';
           const latency = Date.now() - startTime;
-          console.error(`[Gateway] ⚠️ Upstream error: ${errMsg} (model=${upstreamModel}, route=${match.route.id}, latency=${latency}ms)`);
+          console.error(`[Gateway] ⚠️ Upstream error: ${errMsg}`);
+          console.error(`[Gateway]    request: ${JSON.stringify({ model: body.model, messages: body.messages?.length + ' msgs', tools: body.tools?.length || 0, max_tokens: body.max_tokens })}`);
+          console.error(`[Gateway]    route: ${match.route.id} → ${upstreamModel} (${latency}ms)`);
           await requestLogService.updateLog(logId, {
             statusCode: 502, promptTokens: 0, completionTokens: 0, latencyMs: latency,
             errorMessage: errMsg,
