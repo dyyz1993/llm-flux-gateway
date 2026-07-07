@@ -30,7 +30,7 @@ export function createOpenaiSSEConverter() {
   let responseId = '';
   let responseModel = '';
   let responseCreated = 0;
-  // 在未收到上游 responseId 前，用本地生成的 fallback 确保同一流 ID 一致
+  let toolCallIndex = 0; // tool_calls 自己的索引（从 0 开始），与 pi-ai contentIndex 解耦
   const fallbackId = `chatcmpl-${Date.now()}`;
   const fallbackCreated = Math.floor(Date.now() / 1000);
 
@@ -57,6 +57,7 @@ export function createOpenaiSSEConverter() {
   return {
     reset(id?: string, model?: string, created?: number) {
       hasSeenThinking = false;
+      toolCallIndex = 0;
       if (id) responseId = id;
       if (model) responseModel = model;
       if (created) responseCreated = created;
@@ -109,22 +110,24 @@ export function createOpenaiSSEConverter() {
         case 'thinking_end': break;
 
         case 'toolcall_start': {
+          const tcIdx = toolCallIndex++;
           yield makeChunk({
-            choices: [{ index: 0, finish_reason: null, logprobs: null, delta: { tool_calls: [{ index: event.contentIndex, id: '', type: 'function', function: { name: '', arguments: '' } }] } }],
+            choices: [{ index: 0, finish_reason: null, logprobs: null, delta: { tool_calls: [{ index: tcIdx, id: '', type: 'function', function: { name: '', arguments: '' } }] } }],
           });
           break;
         }
 
         case 'toolcall_delta': {
+          // delta 阶段用当前 toolCallIndex - 1（刚才 start 时已经 +1）
           yield makeChunk({
-            choices: [{ index: 0, finish_reason: null, logprobs: null, delta: { tool_calls: [{ index: event.contentIndex, function: { arguments: event.delta } }] } }],
+            choices: [{ index: 0, finish_reason: null, logprobs: null, delta: { tool_calls: [{ index: toolCallIndex - 1, function: { arguments: event.delta } }] } }],
           });
           break;
         }
 
         case 'toolcall_end': {
           yield makeChunk({
-            choices: [{ index: 0, finish_reason: null, logprobs: null, delta: { tool_calls: [{ index: event.contentIndex, id: event.toolCall.id, type: 'function', function: { name: event.toolCall.name, arguments: JSON.stringify(event.toolCall.arguments) } }] } }],
+            choices: [{ index: 0, finish_reason: null, logprobs: null, delta: { tool_calls: [{ index: toolCallIndex - 1, id: event.toolCall.id, type: 'function', function: { name: event.toolCall.name, arguments: JSON.stringify(event.toolCall.arguments) } }] } }],
           });
           break;
         }

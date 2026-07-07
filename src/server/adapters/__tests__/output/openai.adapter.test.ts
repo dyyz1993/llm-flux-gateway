@@ -221,7 +221,7 @@ function makeErrorEvent(errorMessage = 'Upstream error'): AssistantMessageEvent 
   };
 }
 
-import { piEventToOpenaiSSE, piResponseToOpenaiJson } from '../../output/openai.adapter';
+import { piEventToOpenaiSSE, piResponseToOpenaiJson, createOpenaiSSEConverter } from '../../output/openai.adapter';
 
 // ============================================================
 // 1. 流式事件 → OpenAI SSE 映射测试 (T01-T17)
@@ -293,20 +293,24 @@ describe('OpenAI 输出适配器 — 流式 (SSE)', () => {
       expect(tc.function.arguments).toBe('{"city":"Tokyo"}');
     });
 
-    it('T08: 多个 tool call（不同 contentIndex）→ 独立的 index', () => {
+    it('T08: 多个 tool call → 独立的 index（从 0 开始递增）', () => {
+      // 使用有状态的 converter（通过 createOpenaiSSEConverter）
+      const converter = createOpenaiSSEConverter();
       const events = [
         makeToolCallStartEvent(0),
         makeToolCallStartEvent(1),
         makeToolCallEndEvent('get_weather', { city: 'Tokyo' }, 0),
         makeToolCallEndEvent('search', { query: 'news' }, 1),
       ];
-      const sseLines = events.flatMap(e => [...piEventToOpenaiSSE(e)]);
+      const sseLines = events.flatMap(e => [...converter.eventToSSE(e)]);
       expect(sseLines).toHaveLength(4);
       const tc0 = JSON.parse(sseLines[0]!.slice(6)).choices[0].delta.tool_calls[0];
       const tc1 = JSON.parse(sseLines[1]!.slice(6)).choices[0].delta.tool_calls[0];
       const tc2 = JSON.parse(sseLines[2]!.slice(6)).choices[0].delta.tool_calls[0];
       const tc3 = JSON.parse(sseLines[3]!.slice(6)).choices[0].delta.tool_calls[0];
+      // 第一个 tool call index = 0（不管 pi-ai 的 contentIndex 是多少）
       expect(tc0.index).toBe(0);
+      // 第二个 tool call index = 1
       expect(tc1.index).toBe(1);
       expect(tc2.id).toBe('call_0');
       expect(tc3.id).toBe('call_1');
