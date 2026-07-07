@@ -158,6 +158,7 @@ export async function handleGatewayRequestPi(
         let chunkCount = 0;
         let errorMsg: string | undefined;
         let accumulatedText = '';
+        let accumulatedToolCalls: any[] = [];
 
         const streamOpts = {
           ...options,
@@ -193,6 +194,18 @@ export async function handleGatewayRequestPi(
             // 广播 reasoning delta
             if (event.type === 'thinking_delta') {
               sseBroadcasterService.broadcastLogDelta(logId, event.delta, 'reasoning').catch(() => {});
+            }
+
+            // 捕获 tool calls 用于日志记录
+            if (event.type === 'toolcall_end' && event.toolCall) {
+              accumulatedToolCalls.push({
+                id: event.toolCall.id,
+                type: 'function',
+                function: {
+                  name: event.toolCall.name,
+                  arguments: JSON.stringify(event.toolCall.arguments || {}),
+                },
+              });
             }
 
             // pi-ai 发出 error 事件（非 throw，是 event stream 的一部分）
@@ -245,6 +258,7 @@ export async function handleGatewayRequestPi(
             latencyMs: latency,
             errorMessage: errorMsg || (promptTokens ? undefined : 'No response data received'),
             responseContent: accumulatedText || undefined,
+            responseToolCalls: accumulatedToolCalls.length > 0 ? accumulatedToolCalls : undefined,
           });
 
           // 流式请求出错时追加一条错误 trace
