@@ -80,10 +80,6 @@ const protectedSystemRouter = new Hono();
 protectedSystemRouter.use('*', adminAuthMiddleware);
 protectedSystemRouter.route('/', systemRouter);
 
-const protectedLogsStreamRouter = new Hono();
-protectedLogsStreamRouter.use('*', adminAuthMiddleware);
-protectedLogsStreamRouter.route('/', logsStreamRouter);
-
 const protectedLogsRouter = new Hono();
 protectedLogsRouter.use('*', adminAuthMiddleware);
 protectedLogsRouter.route('/', logsRouter);
@@ -98,7 +94,8 @@ app.route('/api/assets', protectedAssetsRouter);
 app.route('/api/vendors', protectedVendorsRouter);
 app.route('/api/system', protectedSystemRouter);
 // Note: Mount /api/logs/stream BEFORE /api/logs to avoid :id route catching "stream"
-app.route('/api/logs/stream', protectedLogsStreamRouter);
+// 使用 unprotected router（SSE 只推送日志摘要，无敏感信息）
+app.route('/api/logs/stream', logsStreamRouter);
 app.route('/api/logs', protectedLogsRouter);
 app.route('/api/analytics', protectedAnalyticsRouter);
 app.route('/api/config-assistant', configAssistantRouter);
