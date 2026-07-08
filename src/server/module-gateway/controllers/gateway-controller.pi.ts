@@ -71,14 +71,18 @@ export async function handleGatewayRequestPi(
 
   const { context, options } = piContext;
 
-  // 3. 路由匹配
-  const match = await routeMatcherService.findMatch(body.model, apiKeyId);
-  if (!match) {
+  // 3. 路由匹配（取所有匹配的路由，用于 failover）
+  const matches = await routeMatcherService.findAllMatches(body.model, apiKeyId);
+  if (!matches || matches.length === 0) {
     return c.json({
       success: false,
       error: `No matching route for model: ${body.model}`,
     }, 404);
   }
+
+  // 取第一个匹配作为主路由
+  const match = matches[0];
+  const fallbackMatch = matches.length > 1 ? matches[1] : null;
 
   // 4. 重写规则
   const rewriteResult = rewriteService.applyRules(

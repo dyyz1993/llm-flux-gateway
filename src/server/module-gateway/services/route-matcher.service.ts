@@ -142,6 +142,80 @@ export class RouteMatcherService {
   }
 
   /**
+   * Find ALL matching routes for a model, ordered by priority.
+   * Used for failover: if the first route fails, the controller can
+   * try the next one automatically.
+   */
+  async findAllMatches(requestedModel: string, apiKeyId?: string): Promise<RouteMatch[]> {
+    let sql = `
+      SELECT
+        r.id, r.name, v.base_url, v.endpoint,
+        a.api_key as upstream_api_key, r.is_active, r.overrides, r.priority
+      FROM routes r
+      INNER JOIN assets a ON r.asset_id = a.id
+      INNER JOIN vendor_templates v ON a.vendor_id = v.id
+    `;
+
+    const params: any[] = [];
+    if (apiKeyId) {
+      sql += ` INNER JOIN api_key_routes akr ON r.id = akr.route_id WHERE r.is_active = 1 AND akr.api_key_id = ?`;
+      params.push(apiKeyId);
+    } else {
+      sql += ` WHERE r.is_active = 1`;
+    }
+    sql += ` ORDER BY r.priority DESC`;
+
+    const routes = queryAll<any>(sql, params);
+    const matches: RouteMatch[] = [];
+
+    for (const route of routes) {
+      const overrides = JSON.parse(route.overrides || '[]');
+      const inferredFormat = inferFormatFromVendorTemplate({ baseUrl: route.base_url, endpoint: route.endpoint || '/chat/completions' });
+      const modelOverrideRules = overrides.filter((o: any) => o.field === 'model');
+
+      let matched = false;
+      for (const rule of modelOverrideRules) {
+        for (const pattern of rule.matchValues) {
+          const parsed = parseWildcardPattern(pattern);
+          if (matchesWildcardPattern(requestedModel, parsed)) {
+            matches.push({
+              route: {
+                id: route.id, name: route.name, baseUrl: route.base_url,
+                endpoint: route.endpoint || '/chat/completions',
+                upstreamModel: rule.rewriteValue, upstreamApiKey: route.upstream_api_key,
+                isActive: route.is_active === 1, overrides, priority: route.priority,
+                requestFormat: inferredFormat, responseFormat: inferredFormat,
+              },
+              matchedRules: [rule],
+              rewrittenModel: rule.rewriteValue,
+            });
+            matched = true;
+            break;
+          }
+        }
+        if (matched) break;
+      }
+
+      // Passthrough if no rules matched but it has overrides
+      if (!matched && modelOverrideRules.length === 0) {
+        matches.push({
+          route: {
+            id: route.id, name: route.name, baseUrl: route.base_url,
+            endpoint: route.endpoint || '/chat/completions',
+            upstreamModel: requestedModel, upstreamApiKey: route.upstream_api_key,
+            isActive: route.is_active === 1, overrides, priority: route.priority,
+            requestFormat: inferredFormat, responseFormat: inferredFormat,
+          },
+          matchedRules: [],
+          rewrittenModel: requestedModel,
+        });
+      }
+    }
+
+    return matches;
+  }
+
+  /**
    * Get all active routes (for model list endpoint)
    */
   async getActiveRoutes() {
